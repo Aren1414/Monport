@@ -8,48 +8,36 @@ import { useEffect, useState } from "react";
 import { useConnect, useAccount } from "wagmi";
 import React from "react";
 
-// Custom hook for Coinbase Wallet detection and auto-connection
-function useCoinbaseWalletAutoConnect() {
-  const [isCoinbaseWallet, setIsCoinbaseWallet] = useState(false);
-  const { connect, connectors } = useConnect();
-  const { isConnected } = useAccount();
+// Adding Monad Testnet with correct Chain ID and RPC URL
+const monadTestnet = {
+  id: 10143, // Corrected Chain ID
+  name: "Monad Testnet",
+  network: "monad",
+  nativeCurrency: {
+    name: "MON",
+    symbol: "$MON",
+    decimals: 18,
+  },
+  rpcUrls: {
+    default: "https://testnet-rpc.monad.xyz", // Corrected RPC URL
+  },
+  blockExplorers: {
+    default: { name: "Monad Explorer", url: "https://testnet.monadexplorer.com" },
+  },
+  testnet: true,
+};
 
-  useEffect(() => {
-    // Check if we're running in Coinbase Wallet
-    const checkCoinbaseWallet = () => {
-      const isInCoinbaseWallet = window.ethereum?.isCoinbaseWallet || 
-        window.ethereum?.isCoinbaseWalletExtension ||
-        window.ethereum?.isCoinbaseWalletBrowser;
-      setIsCoinbaseWallet(!!isInCoinbaseWallet);
-    };
-    
-    checkCoinbaseWallet();
-    window.addEventListener('ethereum#initialized', checkCoinbaseWallet);
-    
-    return () => {
-      window.removeEventListener('ethereum#initialized', checkCoinbaseWallet);
-    };
-  }, []);
-
-  useEffect(() => {
-    // Auto-connect if in Coinbase Wallet and not already connected
-    if (isCoinbaseWallet && !isConnected) {
-      connect({ connector: connectors[1] }); // Coinbase Wallet connector
-    }
-  }, [isCoinbaseWallet, isConnected, connect, connectors]);
-
-  return isCoinbaseWallet;
-}
-
+// Configuring wagmi with Monad Testnet
 export const config = createConfig({
-  chains: [base, optimism, mainnet, degen, unichain, celo],
+  chains: [mainnet, optimism, base, degen, unichain, celo, monadTestnet], // Added Monad Testnet
   transports: {
-    [base.id]: http(),
-    [optimism.id]: http(),
     [mainnet.id]: http(),
+    [optimism.id]: http(),
+    [base.id]: http(),
     [degen.id]: http(),
     [unichain.id]: http(),
     [celo.id]: http(),
+    [monadTestnet.id]: http(), // Corrected Chain ID and RPC
   },
   connectors: [
     farcasterFrame(),
@@ -69,12 +57,44 @@ export const config = createConfig({
 
 const queryClient = new QueryClient();
 
-// Wrapper component that provides Coinbase Wallet auto-connection
+// Auto-connect for Coinbase Wallet
+function useCoinbaseWalletAutoConnect() {
+  const [isCoinbaseWallet, setIsCoinbaseWallet] = useState(false);
+  const { connect, connectors } = useConnect();
+  const { isConnected } = useAccount();
+
+  useEffect(() => {
+    const checkCoinbaseWallet = () => {
+      const isInCoinbaseWallet = window.ethereum?.isCoinbaseWallet || 
+        window.ethereum?.isCoinbaseWalletExtension ||
+        window.ethereum?.isCoinbaseWalletBrowser;
+      setIsCoinbaseWallet(!!isInCoinbaseWallet);
+    };
+    
+    checkCoinbaseWallet();
+    window.addEventListener('ethereum#initialized', checkCoinbaseWallet);
+    
+    return () => {
+      window.removeEventListener('ethereum#initialized', checkCoinbaseWallet);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (isCoinbaseWallet && !isConnected) {
+      connect({ connector: connectors[1] }); // Coinbase Wallet connector
+    }
+  }, [isCoinbaseWallet, isConnected, connect, connectors]);
+
+  return isCoinbaseWallet;
+}
+
+// Wrapper for auto-connection
 function CoinbaseWalletAutoConnect({ children }: { children: React.ReactNode }) {
   useCoinbaseWalletAutoConnect();
   return <>{children}</>;
 }
 
+// Final wagmi provider configuration
 export default function Provider({ children }: { children: React.ReactNode }) {
   return (
     <WagmiProvider config={config}>
