@@ -1,3 +1,5 @@
+"use client";
+
 import { Metadata } from "next";
 import { useRouter } from "next/navigation";
 import WelcomeTab from "~/components/WelcomeTab";
@@ -27,7 +29,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default function Home() {
   const router = useRouter();
-  const { tab } = router.query;
+  const tab = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("tab") : null;
 
   const renderTab = () => {
     switch (tab) {
