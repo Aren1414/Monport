@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Head from "next/head";
 import { getSession } from "~/auth";
 import "~/app/globals.css";
 import { Providers } from "~/app/providers";
@@ -19,15 +18,14 @@ export default async function RootLayout({
 
   return (
     <html lang="en">
-      <Head>
+      <head>
         <meta charSet="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <meta name="description" content="MonPort Mini App for Farcaster" />
+        <meta name="description" content={APP_DESCRIPTION} />
         <meta name="theme-color" content="#2266ee" />
         <title>{APP_NAME}</title>
-        <link rel="icon" href="/favicon.ico" />
         <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
-      </Head>
+      </head>
       <body>
         <noscript>You need to enable JavaScript to run this app.</noscript>
         <Providers session={session}>{children}</Providers>
