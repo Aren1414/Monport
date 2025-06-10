@@ -24,7 +24,7 @@ export default async function RootLayout({
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <meta name="description" content="MonPort Mini App for Farcaster" />
         <meta name="theme-color" content="#2266ee" />
-        <title>MonPort Mini App</title>
+        <title>{APP_NAME}</title>
         <link rel="icon" href="/favicon.ico" />
         <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
       </Head>
