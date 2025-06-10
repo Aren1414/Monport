@@ -18,6 +18,7 @@ body {
   color: var(--foreground);
   background: var(--background);
   font-family: 'Inter', Helvetica, Arial, sans-serif;
+  margin: 0;
 }
 
 * {
@@ -33,4 +34,65 @@ body {
   :root {
     --radius: 0.5rem;
   }
+}
+
+/* ==== Custom Styles from App.css ==== */
+.app-container {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 16px;
+  padding-bottom: 100px;
+}
+
+.tab-navigation {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  max-width: 480px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  background-color: #ffffff;
+  padding: 10px;
+  border-top: 1px solid #ddd;
+  box-shadow: 0 -1px 6px rgba(0, 0, 0, 0.05);
+  z-index: 1000;
+}
+
+.tab-navigation button {
+  flex: 1;
+  margin: 3px;
+  padding: 10px;
+  background-color: #eef1f5;
+  border: none;
+  border-radius: 8px;
+  font-weight: bold;
+  color: #000;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.tab-navigation button:hover {
+  background-color: #d5e2f5;
+}
+
+/* ==== Component-Specific Styles ==== */
+.welcome-tab {
+  text-align: center;
+  padding: 20px;
+}
+
+.mint-btn {
+  background-color: #2266ee;
+  color: white;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.mint-btn:hover {
+  background-color: #184fc9;
 }
