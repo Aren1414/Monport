@@ -1,5 +1,7 @@
 import { NeynarAPIClient, Configuration, WebhookUserCreated } from '@neynar/nodejs-sdk';
 import { APP_URL } from './constants';
+import { addUserScore, getLeaderboard, getUserRank } from './leaderboard';
+import { calculatePoints } from './points';
 
 let neynarClient: NeynarAPIClient | null = null;
 
@@ -73,4 +75,41 @@ export async function sendNeynarFrameNotification({
   } catch (error) {
     return { state: "error", error };
   }
-} 
+}
+
+// ✅ **Leaderboard integration without removing any original functionality**
+export async function updateUserScore(fid: number, action: keyof typeof POINTS_RULES) {
+  const points = calculatePoints(action);
+  const user = await getNeynarUser(fid);
+
+  if (user) {
+    addUserScore(fid, user.username, user.pfp_url ?? "", points);
+  }
+}
+
+export async function getLeaderboardData(fid: number) {
+  const leaderboard = await getLeaderboard();
+  const userRank = await getUserRank(fid);
+  return { leaderboard, userRank };
+}
+
+export async function sendLeaderboardNotification(fid: number, pointsEarned: number) {
+  try {
+    const client = getNeynarClient();
+    const targetFids = [fid];
+    const notification = {
+      title: "🔥 New Points Earned!",
+      body: `You earned ${pointsEarned} points! Your new rank: ${await getUserRank(fid)} 🎉`,
+      target_url: APP_URL,
+    };
+
+    const result = await client.publishFrameNotifications({ 
+      targetFids, 
+      notification 
+    });
+
+    return result.notification_deliveries.length > 0 ? { state: "success" } : { state: "no_token" };
+  } catch (error) {
+    return { state: "error", error };
+  }
+}
