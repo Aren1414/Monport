@@ -1,24 +1,21 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import WelcomeTab from "~/components/tabs/WelcomeTab";
-import SwapTab from "~/components/tabs/SwapTab";
-import DeployTab from "~/components/tabs/DeployTab";
-import ProfileTab from "~/components/tabs/ProfileTab";
-import LeaderboardTab from "~/components/tabs/LeaderboardTab";
+import WelcomeTab from "~/tabs/WelcomeTab";
+import SwapTab from "~/tabs/SwapTab";
+import DeployTab from "~/tabs/DeployTab";
+import ProfileTab from "~/tabs/ProfileTab";
+import LeaderboardTab from "~/tabs/LeaderboardTab";
 import "~/styles/App.css";
 
 export default function Home() {
   const router = useRouter();
-  const searchParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
   const [tab, setTab] = useState<string | null>(null);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const currentTab = new URLSearchParams(window.location.search).get("tab");
-      setTab(currentTab);
-    }
+    const currentTab = new URLSearchParams(window.location.search).get("tab");
+    setTab(currentTab);
   }, []);
 
   const renderTab = () => {
