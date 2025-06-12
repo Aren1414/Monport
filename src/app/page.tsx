@@ -1,16 +1,25 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import WelcomeTab from "~/components/WelcomeTab";
-import SwapTab from "~/components/SwapTab";
-import DeployTab from "~/components/DeployTab";
-import ProfileTab from "~/components/ProfileTab";
-import LeaderboardTab from "~/components/LeaderboardTab";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
+import WelcomeTab from "~/components/tabs/WelcomeTab";
+import SwapTab from "~/components/tabs/SwapTab";
+import DeployTab from "~/components/tabs/DeployTab";
+import ProfileTab from "~/components/tabs/ProfileTab";
+import LeaderboardTab from "~/components/tabs/LeaderboardTab";
 import "~/styles/App.css";
 
 export default function Home() {
   const router = useRouter();
-  const tab = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("tab") : null;
+  const searchParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
+  const [tab, setTab] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const currentTab = new URLSearchParams(window.location.search).get("tab");
+      setTab(currentTab);
+    }
+  }, []);
 
   const renderTab = () => {
     switch (tab) {
@@ -22,9 +31,15 @@ export default function Home() {
         return <ProfileTab />;
       case "leaderboard":
         return <LeaderboardTab />;
+      case "welcome":
       default:
         return <WelcomeTab />;
     }
+  };
+
+  const changeTab = (target: string) => {
+    router.push(`/?tab=${target}`);
+    setTab(target);
   };
 
   return (
@@ -32,11 +47,11 @@ export default function Home() {
       <main className="tab-content">{renderTab()}</main>
 
       <nav className="tab-navigation">
-        <button onClick={() => router.push("/?tab=profile")}>Profile</button>
-        <button onClick={() => router.push("/?tab=swap")}>Swap</button>
-        <button onClick={() => router.push("/?tab=welcome")}>Welcome</button>
-        <button onClick={() => router.push("/?tab=deploy")}>Deploy</button>
-        <button onClick={() => router.push("/?tab=leaderboard")}>Leaderboard</button>
+        <button onClick={() => changeTab("welcome")}>🏠 Welcome</button>
+        <button onClick={() => changeTab("swap")}>🔄 Swap</button>
+        <button onClick={() => changeTab("deploy")}>🚀 Deploy</button>
+        <button onClick={() => changeTab("profile")}>👤 Profile</button>
+        <button onClick={() => changeTab("leaderboard")}>🏆 Leaderboard</button>
       </nav>
     </div>
   );
