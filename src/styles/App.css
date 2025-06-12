@@ -1,0 +1,40 @@
+.app-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  padding: 1rem;
+  background-color: #f9fafb;
+}
+
+.tab-content {
+  flex: 1;
+  padding: 1rem;
+  background: #ffffff;
+  border-radius: 1rem;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.05);
+  margin-bottom: 1rem;
+}
+
+.tab-navigation {
+  display: flex;
+  justify-content: space-around;
+  padding: 0.75rem;
+  background-color: #ffffff;
+  border-radius: 1rem;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.05);
+}
+
+.tab-navigation button {
+  flex: 1;
+  padding: 0.5rem;
+  margin: 0 0.25rem;
+  background-color: #2266ee;
+  color: white;
+  border-radius: 0.5rem;
+  font-weight: bold;
+  transition: background-color 0.2s;
+}
+
+.tab-navigation button:hover {
+  background-color: #1144cc;
+}
