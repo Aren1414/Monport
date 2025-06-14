@@ -1,6 +1,5 @@
 import { NeynarAPIClient, Configuration, WebhookUserCreated } from '@neynar/nodejs-sdk';
 import { APP_URL } from './constants';
-import { addUserScore, getLeaderboard, getUserRank } from './leaderboard';
 import { calculatePoints } from './points';
 
 let neynarClient: NeynarAPIClient | null = null;
