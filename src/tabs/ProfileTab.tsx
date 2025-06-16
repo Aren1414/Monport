@@ -8,6 +8,7 @@ import {
   fetchAccountTokens,
   fetchAccountActivity,
 } from "~/utils/monadExplorer";
+import Image from "next/image";
 
 export default function ProfileTab(): JSX.Element {
   const { address, isConnected } = useAccount();
@@ -52,17 +53,33 @@ export default function ProfileTab(): JSX.Element {
   return (
     <div className="p-4 space-y-4">
       <div className="flex items-center space-x-4">
-        <img src={avatar} width={64} height={64} className="rounded-full" alt="avatar" />
+        <Image
+          src={avatar}
+          width={64} 
+          height={64} 
+          className="rounded-full"
+          alt="avatar"
+        />
         <div>
           <div className="text-lg font-bold">{username}</div>
           <div className="text-sm text-gray-500">{address}</div>
         </div>
       </div>
-      <div><strong>Balance:</strong> {balance} MON</div>
-      <div><strong>Transactions:</strong> {txCount}</div>
-      <div><strong>Token Count:</strong> {tokenCount}</div>
-      <div><strong>Active Days:</strong> {activeDays}</div>
-      <div><strong>Volume:</strong> {volumeMon.toFixed(2)} MON</div>
+      <div>
+        <strong>Balance:</strong> {balance} MON
+      </div>
+      <div>
+        <strong>Transactions:</strong> {txCount}
+      </div>
+      <div>
+        <strong>Token Count:</strong> {tokenCount}
+      </div>
+      <div>
+        <strong>Active Days:</strong> {activeDays}
+      </div>
+      <div>
+        <strong>Volume:</strong> {volumeMon.toFixed(2)} MON
+      </div>
     </div>
   );
 }
