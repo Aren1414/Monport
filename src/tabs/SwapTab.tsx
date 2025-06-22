@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { useAccount } from "wagmi";
-import { ethers } from "ethers";
+import { BrowserProvider, JsonRpcProvider } from "ethers"; 
 import * as KuruSdk from "@kuru-labs/kuru-sdk";
 import { RPC_URL, ROUTER_ADDRESS, TOKENS } from "~/lib/constants";
 
@@ -17,7 +17,7 @@ export default function SwapTab(): JSX.Element {
   const getQuote = async () => {
     if (!fromToken || !toToken || !amountIn) return;
     setLoading(true);
-    const provider = new ethers.JsonRpcProvider(RPC_URL);
+    const provider = new JsonRpcProvider(RPC_URL); 
     try {
       const path = await KuruSdk.PathFinder.findBestPath(
         provider,
@@ -37,8 +37,8 @@ export default function SwapTab(): JSX.Element {
     if (!isConnected || !quote) return alert("Connect wallet & get quote");
     setLoading(true);
     try {
-      const provider = new ethers.Web3Provider((window as any).ethereum);
-      const signer = provider.getSigner();
+      const provider = new BrowserProvider((window as any).ethereum); 
+      const signer = await provider.getSigner();
       const path = await KuruSdk.PathFinder.findBestPath(
         provider, fromToken, toToken, Number(amountIn), "amountIn"
       );
