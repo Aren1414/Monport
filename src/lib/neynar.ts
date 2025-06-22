@@ -73,14 +73,17 @@ export async function updateUserScore(fid: number, action: keyof typeof POINTS_R
   const user = await getNeynarUser(fid);
 
   if (user) {
-    addUserScore(fid, user.username, user.pfp_url ?? "", points);
+    // Placeholder: Leaderboard integration will be enabled later
+    console.log(`[dev] would add ${points} pts to ${user.username}`);
   }
 }
 
 export async function getLeaderboardData(fid: number) {
-  const leaderboard = await getLeaderboard();
-  const userRank = await getUserRank(fid);
-  return { leaderboard, userRank };
+  // Placeholder stub while leaderboard is not implemented
+  return {
+    leaderboard: [],
+    userRank: null,
+  };
 }
 
 export async function sendLeaderboardNotification(fid: number, pointsEarned: number) {
@@ -89,7 +92,7 @@ export async function sendLeaderboardNotification(fid: number, pointsEarned: num
     const targetFids = [fid];
     const notification = {
       title: "🔥 New Points Earned!",
-      body: `You earned ${pointsEarned} points! Your new rank: ${await getUserRank(fid)} 🎉`,
+      body: `You earned ${pointsEarned} points!`,
       target_url: APP_URL,
     };
 
