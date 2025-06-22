@@ -10,7 +10,7 @@ import {
 } from "~/utils/monadExplorer";
 import Image from "next/image";
 
-export default function ProfileTab(): JSX.Element {
+export default function ProfileTab() {
   const { address, isConnected } = useAccount();
   const [balance, setBalance] = useState<string>("0.0000");
   const [username, setUsername] = useState<string>("");

@@ -11,7 +11,7 @@ interface Ethereumish {
   request?: (...args: readonly unknown[]) => Promise<unknown>;
 }
 
-export default function SwapTab(): JSX.Element {
+export default function SwapTab() {
   const { isConnected } = useAccount();
   const [fromToken, setFromToken] = useState(TOKENS.USDC);
   const [toToken, setToToken] = useState(TOKENS.MON);

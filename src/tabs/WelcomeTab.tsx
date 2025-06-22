@@ -13,7 +13,7 @@ const VIDEO_URL =
 
 const MONAD_TESTNET_CHAIN_ID = 10143;
 
-export default function WelcomeTab(): JSX.Element {
+export default function WelcomeTab() {
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
 
