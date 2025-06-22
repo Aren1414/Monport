@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useAccount, useChainId, switchChain } from "wagmi";
+import { useAccount, useChainId } from "wagmi";
+import { switchChain } from "wagmi/actions";
 import { BrowserProvider, Contract, parseUnits } from "ethers";
 import welcomeAbi from "~/abis/WelcomeNFT.json";
 
