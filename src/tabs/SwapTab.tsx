@@ -2,12 +2,12 @@
 
 import React, { useState } from "react";
 import { useAccount } from "wagmi";
-import { BrowserProvider, JsonRpcProvider } from "ethers"; 
+import { BrowserProvider, JsonRpcProvider } from "ethers";
 import * as KuruSdk from "@kuru-labs/kuru-sdk";
 import { RPC_URL, ROUTER_ADDRESS, TOKENS } from "~/lib/constants";
 
 export default function SwapTab(): JSX.Element {
-  const { address, isConnected } = useAccount();
+  const { isConnected } = useAccount(); // 'address' حذف شد
   const [fromToken, setFromToken] = useState(TOKENS.USDC);
   const [toToken, setToToken] = useState(TOKENS.MON);
   const [amountIn, setAmountIn] = useState("");
@@ -17,11 +17,12 @@ export default function SwapTab(): JSX.Element {
   const getQuote = async () => {
     if (!fromToken || !toToken || !amountIn) return;
     setLoading(true);
-    const provider = new JsonRpcProvider(RPC_URL); 
+    const provider = new JsonRpcProvider(RPC_URL);
     try {
       const path = await KuruSdk.PathFinder.findBestPath(
         provider,
-        fromToken, toToken,
+        fromToken,
+        toToken,
         Number(amountIn),
         "amountIn"
       );
@@ -37,10 +38,16 @@ export default function SwapTab(): JSX.Element {
     if (!isConnected || !quote) return alert("Connect wallet & get quote");
     setLoading(true);
     try {
-      const provider = new BrowserProvider((window as any).ethereum); 
+      const provider = new BrowserProvider(
+        (window as unknown as { ethereum: any }).ethereum
+      );
       const signer = await provider.getSigner();
       const path = await KuruSdk.PathFinder.findBestPath(
-        provider, fromToken, toToken, Number(amountIn), "amountIn"
+        provider,
+        fromToken,
+        toToken,
+        Number(amountIn),
+        "amountIn"
       );
       await KuruSdk.TokenSwap.swap(
         signer,
@@ -51,7 +58,7 @@ export default function SwapTab(): JSX.Element {
         path.route.outputDecimals,
         30,
         true,
-        tx => console.log("tx", tx.hash)
+        (tx) => console.log("tx", tx.hash)
       );
       alert("✅ Swap successful");
       setAmountIn("");
@@ -68,14 +75,14 @@ export default function SwapTab(): JSX.Element {
       <h2>🔄 Swap</h2>
 
       <label>From Token:</label>
-      <select value={fromToken} onChange={e => setFromToken(e.target.value)}>
+      <select value={fromToken} onChange={(e) => setFromToken(e.target.value)}>
         {Object.entries(TOKENS).map(([sym, addr]) => (
           <option key={sym} value={addr}>{sym}</option>
         ))}
       </select>
 
       <label>To Token:</label>
-      <select value={toToken} onChange={e => setToToken(e.target.value)}>
+      <select value={toToken} onChange={(e) => setToToken(e.target.value)}>
         {Object.entries(TOKENS).map(([sym, addr]) => (
           <option key={sym} value={addr}>{sym}</option>
         ))}
@@ -84,7 +91,7 @@ export default function SwapTab(): JSX.Element {
       <input
         placeholder="Amount In"
         value={amountIn}
-        onChange={e => setAmountIn(e.target.value)}
+        onChange={(e) => setAmountIn(e.target.value)}
       />
 
       <button onClick={getQuote} disabled={loading}>
