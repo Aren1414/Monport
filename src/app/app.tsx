@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import dynamic from "next/dynamic";
-import { APP_NAME } from "~/lib/constants";
 
 const WelcomeTab = dynamic(() => import("~/tabs/WelcomeTab"), { ssr: false });
 const ProfileTab = dynamic(() => import("~/tabs/ProfileTab"), { ssr: false });
@@ -10,7 +9,7 @@ const SwapTab = dynamic(() => import("~/tabs/SwapTab"), { ssr: false });
 const DeployTab = dynamic(() => import("~/tabs/DeployTab"), { ssr: false });
 const LeaderboardTab = dynamic(() => import("~/tabs/LeaderboardTab"), { ssr: false });
 
-export default function App({ title }: { title?: string } = { title: APP_NAME }) {
+export default function App() {
   const [activeTab, setActiveTab] = useState("welcome");
 
   return (
