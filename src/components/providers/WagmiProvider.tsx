@@ -10,7 +10,7 @@ import React from "react";
 
 // Adding Monad Testnet with correct Chain ID and RPC URL
 const monadTestnet = {
-  id: 10143, // Corrected Chain ID
+  id: 10143,
   name: "Monad Testnet",
   network: "monad",
   nativeCurrency: {
@@ -19,10 +19,15 @@ const monadTestnet = {
     decimals: 18,
   },
   rpcUrls: {
-    default: "https://testnet-rpc.monad.xyz", // Corrected RPC URL
+    default: {
+      http: ["https://testnet-rpc.monad.xyz"],
+    },
   },
   blockExplorers: {
-    default: { name: "Monad Explorer", url: "https://testnet.monadexplorer.com" },
+    default: {
+      name: "Monad Explorer",
+      url: "https://testnet.monadexplorer.com",
+    },
   },
   testnet: true,
 };
