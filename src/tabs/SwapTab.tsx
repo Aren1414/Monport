@@ -8,7 +8,7 @@ import { RPC_URL, ROUTER_ADDRESS, TOKENS } from "~/lib/constants";
 
 interface Ethereumish {
   isMetaMask?: boolean;
-  request?: (...args: unknown[]) => Promise<unknown>;
+  request?: (...args: readonly unknown[]) => Promise<unknown>;
 }
 
 export default function SwapTab(): JSX.Element {
@@ -82,14 +82,18 @@ export default function SwapTab(): JSX.Element {
       <label>From Token:</label>
       <select value={fromToken} onChange={(e) => setFromToken(e.target.value)}>
         {Object.entries(TOKENS).map(([sym, addr]) => (
-          <option key={sym} value={addr}>{sym}</option>
+          <option key={sym} value={addr}>
+            {sym}
+          </option>
         ))}
       </select>
 
       <label>To Token:</label>
       <select value={toToken} onChange={(e) => setToToken(e.target.value)}>
         {Object.entries(TOKENS).map(([sym, addr]) => (
-          <option key={sym} value={addr}>{sym}</option>
+          <option key={sym} value={addr}>
+            {sym}
+          </option>
         ))}
       </select>
 
