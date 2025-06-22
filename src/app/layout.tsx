@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script"; 
 import { getSession } from "~/auth";
 import "~/app/globals.css";
 import { Providers } from "~/app/providers";
@@ -33,7 +34,11 @@ export default async function RootLayout({
         <meta name="description" content={APP_DESCRIPTION} />
         <meta name="theme-color" content="#2266ee" />
         <title>{APP_NAME}</title>
-        <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+
+       <Script
+          src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"
+          strategy="beforeInteractive"
+        />
       </head>
       <body>
         <noscript>You need to enable JavaScript to run this app.</noscript>
