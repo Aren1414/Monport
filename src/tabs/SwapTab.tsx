@@ -6,8 +6,13 @@ import { BrowserProvider, JsonRpcProvider } from "ethers";
 import * as KuruSdk from "@kuru-labs/kuru-sdk";
 import { RPC_URL, ROUTER_ADDRESS, TOKENS } from "~/lib/constants";
 
+interface Ethereumish {
+  isMetaMask?: boolean;
+  request?: (...args: unknown[]) => Promise<unknown>;
+}
+
 export default function SwapTab(): JSX.Element {
-  const { isConnected } = useAccount(); // 'address' حذف شد
+  const { isConnected } = useAccount();
   const [fromToken, setFromToken] = useState(TOKENS.USDC);
   const [toToken, setToToken] = useState(TOKENS.MON);
   const [amountIn, setAmountIn] = useState("");
@@ -39,7 +44,7 @@ export default function SwapTab(): JSX.Element {
     setLoading(true);
     try {
       const provider = new BrowserProvider(
-        (window as unknown as { ethereum: any }).ethereum
+        (window as unknown as { ethereum: Ethereumish }).ethereum
       );
       const signer = await provider.getSigner();
       const path = await KuruSdk.PathFinder.findBestPath(
