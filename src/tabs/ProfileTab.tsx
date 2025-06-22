@@ -24,7 +24,7 @@ export default function ProfileTab() {
     const load = async () => {
       if (!isConnected || !address) return;
       // Farcaster profile
-      const ctx: FrameContext = await sdk.context;
+      const ctx = await sdk.context;
       const u = ctx.user;
       if (u) {
         setUsername(u.username ?? address.substring(0, 6));
