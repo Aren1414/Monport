@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { useAccount } from "wagmi";
-import { sdk, type FrameContext } from "@farcaster/frame-sdk";
+import sdk from "@farcaster/frame-sdk";
 import { getAddressBalance } from "~/utils/monad";
 import {
   fetchAccountTxCount,
