@@ -20,6 +20,7 @@
     "cleanup": "lsof -ti :3000 | xargs kill -9"
   },
   "dependencies": {
+    "ethers": "5.8.0",
     "@ethersproject/signing-key": "^5.8.0",
     "@farcaster/auth-client": ">=0.3.0 <1.0.0",
     "@farcaster/auth-kit": ">=0.6.0 <1.0.0",
