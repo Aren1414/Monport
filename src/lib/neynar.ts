@@ -73,38 +73,7 @@ export async function updateUserScore(fid: number, action: keyof typeof POINTS_R
   const user = await getNeynarUser(fid);
 
   if (user) {
-    // Placeholder: Leaderboard integration will be enabled later
-    console.log(`[dev] would add ${points} pts to ${user.username}`);
-  }
-}
-
-export async function getLeaderboardData(fid: number) {
-  // Placeholder stub while leaderboard is not implemented
-  return {
-    leaderboard: [],
-    userRank: null,
-  };
-}
-
-export async function sendLeaderboardNotification(fid: number, pointsEarned: number) {
-  try {
-    const client = getNeynarClient();
-    const targetFids = [fid];
-    const notification = {
-      title: "🔥 New Points Earned!",
-      body: `You earned ${pointsEarned} points!`,
-      target_url: APP_URL,
-    };
-
-    const result = await client.publishFrameNotifications({
-      targetFids,
-      notification,
-    });
-
-    return result.notification_deliveries.length > 0
-      ? { state: "success" }
-      : { state: "no_token" };
-  } catch (error) {
-    return { state: "error", error };
+    // Placeholder: leaderboard logic to be implemented later
+    console.log(`[dev] +${points} pts → ${user.username}`);
   }
 }
