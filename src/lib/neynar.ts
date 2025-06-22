@@ -1,17 +1,14 @@
 import { NeynarAPIClient, Configuration, WebhookUserCreated } from '@neynar/nodejs-sdk';
 import { APP_URL } from './constants';
-import { calculatePoints } from './points';
+import { calculatePoints, POINTS_RULES } from './points';
 
 let neynarClient: NeynarAPIClient | null = null;
 
-// Example usage:
-// const client = getNeynarClient();
-// const user = await client.lookupUserByFid(fid); 
 export function getNeynarClient() {
   if (!neynarClient) {
-    const apiKey = process.env.NEYNAR_API_KEY;
+    const apiKey = process.env.NEYNARAPIKEY;
     if (!apiKey) {
-      throw new Error('NEYNAR_API_KEY not configured');
+      throw new Error('NEYNARAPIKEY not configured');
     }
     const config = new Configuration({ apiKey });
     neynarClient = new NeynarAPIClient(config);
@@ -33,10 +30,7 @@ export async function getNeynarUser(fid: number): Promise<User | null> {
 }
 
 type SendFrameNotificationResult =
-  | {
-      state: "error";
-      error: unknown;
-    }
+  | { state: "error"; error: unknown }
   | { state: "no_token" }
   | { state: "rate_limit" }
   | { state: "success" };
@@ -59,24 +53,21 @@ export async function sendNeynarFrameNotification({
       target_url: APP_URL,
     };
 
-    const result = await client.publishFrameNotifications({ 
-      targetFids, 
-      notification 
+    const result = await client.publishFrameNotifications({
+      targetFids,
+      notification,
     });
 
     if (result.notification_deliveries.length > 0) {
       return { state: "success" };
-    } else if (result.notification_deliveries.length === 0) {
-      return { state: "no_token" };
     } else {
-      return { state: "error", error: result || "Unknown error" };
+      return { state: "no_token" };
     }
   } catch (error) {
     return { state: "error", error };
   }
 }
 
-// ✅ **Leaderboard integration without removing any original functionality**
 export async function updateUserScore(fid: number, action: keyof typeof POINTS_RULES) {
   const points = calculatePoints(action);
   const user = await getNeynarUser(fid);
@@ -102,12 +93,14 @@ export async function sendLeaderboardNotification(fid: number, pointsEarned: num
       target_url: APP_URL,
     };
 
-    const result = await client.publishFrameNotifications({ 
-      targetFids, 
-      notification 
+    const result = await client.publishFrameNotifications({
+      targetFids,
+      notification,
     });
 
-    return result.notification_deliveries.length > 0 ? { state: "success" } : { state: "no_token" };
+    return result.notification_deliveries.length > 0
+      ? { state: "success" }
+      : { state: "no_token" };
   } catch (error) {
     return { state: "error", error };
   }
