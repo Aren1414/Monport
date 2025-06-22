@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useAccount, useNetwork, useSwitchNetwork } from "wagmi";
+import { useAccount } from "wagmi";
+import { useChainId, switchChain } from "wagmi/actions";
 import { BrowserProvider, Contract, parseUnits } from "ethers";
 import welcomeAbi from "~/abis/WelcomeNFT.json";
 
@@ -14,20 +15,19 @@ const MONAD_TESTNET_CHAIN_ID = 10143;
 
 export default function WelcomeTab(): JSX.Element {
   const { address, isConnected } = useAccount();
-  const { chain } = useNetwork();
-  const { switchNetworkAsync } = useSwitchNetwork();
+  const chainId = useChainId();
 
   const [selectedAmount, setSelectedAmount] = useState<number>(1);
   const [isMinting, setIsMinting] = useState<boolean>(false);
 
   useEffect(() => {
-    if (isConnected && chain?.id !== MONAD_TESTNET_CHAIN_ID && switchNetworkAsync) {
-      switchNetworkAsync(MONAD_TESTNET_CHAIN_ID);
+    if (isConnected && chainId !== MONAD_TESTNET_CHAIN_ID) {
+      switchChain({ chainId: MONAD_TESTNET_CHAIN_ID });
     }
-  }, [isConnected, chain, switchNetworkAsync]);
+  }, [isConnected, chainId]);
 
   const mintNFT = async (): Promise<void> => {
-    if (!address || chain?.id !== MONAD_TESTNET_CHAIN_ID) {
+    if (!address || chainId !== MONAD_TESTNET_CHAIN_ID) {
       alert("Please connect wallet and switch to Monad Testnet.");
       return;
     }
