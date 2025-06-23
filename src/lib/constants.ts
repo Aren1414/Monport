@@ -42,7 +42,17 @@ export const TOKENS = {
   YAKI: "0xfe140e1dCe99Be9F4F15d657CD9b7BF622270C50",
 };
 
-// Smart Contract Addresses (specific to your dApp)
+// Token Metadata: decimals per token
+export const TOKEN_METADATA: Record<string, { decimals: number }> = {
+  [TOKENS.MON]: { decimals: 18 },
+  [TOKENS.USDC]: { decimals: 6 },
+  [TOKENS.USDT]: { decimals: 6 },
+  [TOKENS.DAK]: { decimals: 18 },
+  [TOKENS.CHOG]: { decimals: 18 },
+  [TOKENS.YAKI]: { decimals: 18 },
+};
+
+// Smart Contract Addresses
 export const WELCOME_NFT_ADDRESS = "0x40649af9dEE8bDB94Dc21BA2175AE8f5181f14AE";
 export const MONPORT_FACTORY_ADDRESS = "0x3FFA88641129f4Ac39287Bd2768A165Ac6055e31";
 
