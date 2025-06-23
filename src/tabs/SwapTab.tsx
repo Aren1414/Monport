@@ -2,9 +2,10 @@
 
 import React, { useState } from "react";
 import { useAccount } from "wagmi";
-import { BrowserProvider, JsonRpcProvider } from "ethers";
+import { BrowserProvider } from "ethers";
 import * as KuruSdk from "@kuru-labs/kuru-sdk";
 import { RPC_URL, ROUTER_ADDRESS, TOKENS } from "~/lib/constants";
+import { getKuruProvider } from "~/lib/kuru/getKuruProvider";
 
 interface Ethereumish {
   isMetaMask?: boolean;
@@ -22,7 +23,7 @@ export default function SwapTab() {
   const getQuote = async () => {
     if (!fromToken || !toToken || !amountIn) return;
     setLoading(true);
-    const provider = new JsonRpcProvider(RPC_URL);
+    const provider = getKuruProvider();
     try {
       const path = await KuruSdk.PathFinder.findBestPath(
         provider,
