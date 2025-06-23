@@ -4,7 +4,11 @@ import React, { useState } from "react";
 import { useAccount } from "wagmi";
 import { ethers } from "ethers";
 import * as KuruSdk from "@kuru-labs/kuru-sdk";
-import { ROUTER_ADDRESS, TOKENS } from "~/lib/constants";
+import {
+  ROUTER_ADDRESS,
+  TOKENS,
+  TOKEN_METADATA
+} from "~/lib/constants";
 import { getKuruProvider } from "~/lib/kuru/getKuruProvider";
 
 export default function SwapTab() {
@@ -50,13 +54,22 @@ export default function SwapTab() {
         Number(amountIn),
         "amountIn"
       );
+
+      const inputDecimals = TOKEN_METADATA[fromToken]?.decimals;
+      const outputDecimals = TOKEN_METADATA[toToken]?.decimals;
+
+      if (inputDecimals === undefined || outputDecimals === undefined) {
+        alert("Missing token decimal metadata.");
+        return;
+      }
+
       await KuruSdk.TokenSwap.swap(
         signer,
         ROUTER_ADDRESS,
         path,
         Number(amountIn),
-        path.route.inputDecimals,
-        path.route.outputDecimals,
+        inputDecimals,
+        outputDecimals,
         30,
         true,
         (tx) => console.log("tx", tx.hash)
