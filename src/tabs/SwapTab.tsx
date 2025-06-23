@@ -7,11 +7,6 @@ import * as KuruSdk from "@kuru-labs/kuru-sdk";
 import { ROUTER_ADDRESS, TOKENS } from "~/lib/constants";
 import { getKuruProvider } from "~/lib/kuru/getKuruProvider";
 
-interface Ethereumish {
-  isMetaMask?: boolean;
-  request?: (...args: readonly unknown[]) => Promise<unknown>;
-}
-
 export default function SwapTab() {
   const { isConnected } = useAccount();
   const [fromToken, setFromToken] = useState(TOKENS.USDC);
@@ -45,7 +40,7 @@ export default function SwapTab() {
     setLoading(true);
     try {
       const provider = new ethers.providers.Web3Provider(
-        (window as any).ethereum
+        (window as Window & typeof globalThis & { ethereum?: unknown }).ethereum!
       );
       const signer = await provider.getSigner();
       const path = await KuruSdk.PathFinder.findBestPath(
