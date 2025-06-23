@@ -72,8 +72,13 @@ export default function SwapTab() {
         outputDecimals,
         30,
         true,
-        (tx) => console.log("tx", tx.hash)
+        (tx) => {
+          if (tx && typeof tx.hash === "string") {
+            console.log("tx", tx.hash);
+          }
+        }
       );
+
       alert("✅ Swap successful");
       setAmountIn("");
       setQuote(null);
