@@ -2,9 +2,9 @@
 
 import React, { useState } from "react";
 import { useAccount } from "wagmi";
-import { BrowserProvider } from "ethers";
+import { ethers } from "ethers";
 import * as KuruSdk from "@kuru-labs/kuru-sdk";
-import { RPC_URL, ROUTER_ADDRESS, TOKENS } from "~/lib/constants";
+import { ROUTER_ADDRESS, TOKENS } from "~/lib/constants";
 import { getKuruProvider } from "~/lib/kuru/getKuruProvider";
 
 interface Ethereumish {
@@ -44,8 +44,8 @@ export default function SwapTab() {
     if (!isConnected || !quote) return alert("Connect wallet & get quote");
     setLoading(true);
     try {
-      const provider = new BrowserProvider(
-        (window as unknown as { ethereum: Ethereumish }).ethereum
+      const provider = new ethers.providers.Web3Provider(
+        (window as any).ethereum
       );
       const signer = await provider.getSigner();
       const path = await KuruSdk.PathFinder.findBestPath(
