@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { useAccount, useChainId } from "wagmi";
 import { switchChain } from "wagmi/actions";
-import { BrowserProvider, Contract, parseUnits } from "ethers";
+import { ethers, Contract, utils } from "ethers";
 import welcomeAbi from "~/abis/WelcomeNFT.json";
 
 const WELCOME_CONTRACT_ADDRESS = "0x40649af9dEE8bDB94Dc21BA2175AE8f5181f14AE";
@@ -34,10 +34,10 @@ export default function WelcomeTab() {
 
     try {
       setIsMinting(true);
-      const provider = new BrowserProvider(window.ethereum);
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
       const signer = await provider.getSigner();
       const contract = new Contract(WELCOME_CONTRACT_ADDRESS, welcomeAbi, signer);
-      const totalPrice = parseUnits((NFT_PRICE * selectedAmount).toString(), 18);
+      const totalPrice = utils.parseUnits((NFT_PRICE * selectedAmount).toString(), 18);
       const tx = await contract.mint(selectedAmount, { value: totalPrice });
       await tx.wait();
       alert("Mint successful.");
