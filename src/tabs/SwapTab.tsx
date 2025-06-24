@@ -72,8 +72,8 @@ export default function SwapTab() {
         outputDecimals,
         30,
         true,
-        (tx: string) => {
-          console.log("tx", tx);
+        (txHash: string | null) => {
+          if (txHash) console.log("tx", txHash);
         }
       );
 
