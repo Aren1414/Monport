@@ -21,10 +21,10 @@ export default function WelcomeTab() {
   const [isMinting, setIsMinting] = useState<boolean>(false);
 
   useEffect(() => {
-    if (isConnected && chainId !== MONAD_TESTNET_CHAIN_ID) {
-      switchChain({ chainId: MONAD_TESTNET_CHAIN_ID });
-    }
-  }, [isConnected, chainId]);
+  if (isConnected && chainId !== MONAD_TESTNET_CHAIN_ID) {
+    switchChain(undefined, { chainId: MONAD_TESTNET_CHAIN_ID });
+  }
+}, [isConnected, chainId]);
 
   const mintNFT = async (): Promise<void> => {
     if (!address || chainId !== MONAD_TESTNET_CHAIN_ID) {
