@@ -105,8 +105,8 @@ function useMetaMaskAutoConnect() {
 
 /** ✅ Wrapper that handles all auto-connections */
 function WalletAutoConnect({ children }: { children: React.ReactNode }) {
-  useCoinbaseAutoConnect()
-  useMetaMaskAutoConnect()
+  void useCoinbaseAutoConnect()
+  void useMetaMaskAutoConnect()
   return <>{children}</>
 }
 
