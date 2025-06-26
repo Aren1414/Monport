@@ -2,14 +2,13 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { APP_URL, APP_NAME, APP_DESCRIPTION } from "~/lib/constants";
 
-/**
- */
 export const revalidate = 300;
 
-export async function generateMetadata(
-  props: Promise<{ params: { fid: string } }>
-): Promise<Metadata> {
-  const { params } = await props;
+export async function generateMetadata({
+  params,
+}: {
+  params: { fid: string };
+}): Promise<Metadata> {
   const { fid } = params;
   const imageUrl = `${APP_URL}/api/opengraph-image?fid=${fid}`;
 
@@ -23,9 +22,9 @@ export async function generateMetadata(
         url: `${APP_URL}/?tab=welcome`,
         name: APP_NAME,
         splashImageUrl: `${APP_URL}/logo.png`,
-        splashBackgroundColor: "#ffffff"
-      }
-    }
+        splashBackgroundColor: "#ffffff",
+      },
+    },
   };
 
   return {
@@ -36,11 +35,11 @@ export async function generateMetadata(
       description: APP_DESCRIPTION,
       images: [imageUrl],
       url: `${APP_URL}/share/${fid}`,
-      type: "website"
+      type: "website",
     },
     other: {
-      "fc:frame": JSON.stringify(frame)
-    }
+      "fc:frame": JSON.stringify(frame),
+    },
   };
 }
 
