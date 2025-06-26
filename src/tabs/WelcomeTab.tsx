@@ -2,7 +2,8 @@
 
 import React, { useEffect, useState } from 'react'
 import { useAccount, useChainId, useSwitchChain, useWalletClient } from 'wagmi'
-import { writeContract, parseEther } from 'viem/actions'
+import { writeContract } from 'viem/actions'
+import { parseEther } from 'viem'
 import welcomeAbi from '~/abis/WelcomeNFT.json'
 
 const WELCOME_CONTRACT_ADDRESS = '0x40649af9dEE8bDB94Dc21BA2175AE8f5181f14AE'
