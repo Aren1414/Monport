@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react'
 import { WagmiProvider, createConfig, http } from 'wagmi'
 import { base, optimism, mainnet, degen, unichain, celo } from 'wagmi/chains'
-import { farcasterFrame } from '@farcaster/frame-wagmi-connector'
+import { farcasterFrame as miniAppConnector } from '@farcaster/frame-wagmi-connector'
 import { metaMask, coinbaseWallet } from 'wagmi/connectors'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { APP_NAME, APP_ICON_URL, APP_URL } from '~/lib/constants'
@@ -33,7 +33,7 @@ const monadTestnet = {
   testnet: true,
 }
 
-/** ✅ wagmi config with Farcaster + wallets */
+/** ✅ wagmi config */
 export const config = createConfig({
   chains: [mainnet, optimism, base, degen, unichain, celo, monadTestnet],
   transports: {
@@ -46,7 +46,7 @@ export const config = createConfig({
     [monadTestnet.id]: http(),
   },
   connectors: [
-    farcasterFrame(),
+    miniAppConnector(),
     coinbaseWallet({
       appName: APP_NAME,
       appLogoUrl: APP_ICON_URL,
@@ -70,9 +70,7 @@ function useCoinbaseAutoConnect() {
   const { isConnected } = useAccount()
 
   useEffect(() => {
-    const isCB =
-      window?.ethereum?.isCoinbaseWallet ||
-      window?.ethereum?.isCoinbaseWalletBrowser
+    const isCB = window?.ethereum?.isCoinbaseWallet || window?.ethereum?.isCoinbaseWalletBrowser
     setEnabled(!!isCB)
   }, [])
 
@@ -103,7 +101,7 @@ function useMetaMaskAutoConnect() {
   }, [enabled, isConnected, connect, connectors])
 }
 
-/** ✅ Wrapper that handles all auto-connections */
+/** ✅ Wrapper for all auto-connections */
 function WalletAutoConnect({ children }: { children: React.ReactNode }) {
   void useCoinbaseAutoConnect()
   void useMetaMaskAutoConnect()
