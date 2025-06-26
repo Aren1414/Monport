@@ -33,7 +33,7 @@ const monadTestnet = {
   testnet: true,
 }
 
-/** ✅ wagmi config with Farcaster + wallets */
+/** ✅ wagmi config */
 export const config = createConfig({
   chains: [mainnet, optimism, base, degen, unichain, celo, monadTestnet],
   transports: {
@@ -63,7 +63,7 @@ export const config = createConfig({
 
 const queryClient = new QueryClient()
 
-/** ✅ Auto-connect handler for Coinbase Wallet */
+/** 🔁 Auto-connect for Coinbase Wallet */
 function useCoinbaseAutoConnect() {
   const [enabled, setEnabled] = useState(false)
   const { connect, connectors } = useConnect()
@@ -84,7 +84,7 @@ function useCoinbaseAutoConnect() {
   }, [enabled, isConnected, connect, connectors])
 }
 
-/** ✅ Auto-connect handler for MetaMask */
+/** 🔁 Auto-connect for MetaMask */
 function useMetaMaskAutoConnect() {
   const [enabled, setEnabled] = useState(false)
   const { connect, connectors } = useConnect()
@@ -103,14 +103,14 @@ function useMetaMaskAutoConnect() {
   }, [enabled, isConnected, connect, connectors])
 }
 
-/** ✅ Wrapper that handles all auto-connections */
+/** 🧠 Wrapper that triggers both auto-connects */
 function WalletAutoConnect({ children }: { children: React.ReactNode }) {
-  useCoinbaseAutoConnect()
-  useMetaMaskAutoConnect()
+  void useCoinbaseAutoConnect()
+  void useMetaMaskAutoConnect()
   return <>{children}</>
 }
 
-/** ✅ Final Provider component wrapping the app */
+/** ✅ Main wagmi provider */
 export default function Provider({ children }: { children: React.ReactNode }) {
   return (
     <WagmiProvider config={config}>
