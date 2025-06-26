@@ -1,13 +1,13 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect } from 'react'
 import { WagmiProvider, createConfig, http } from 'wagmi'
 import { base, optimism, mainnet, degen, unichain, celo } from 'wagmi/chains'
 import { farcasterFrame as miniAppConnector } from '@farcaster/frame-wagmi-connector'
-import { metaMask, coinbaseWallet } from 'wagmi/connectors'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { APP_NAME, APP_ICON_URL, APP_URL } from '~/lib/constants'
+import { coinbaseWallet, metaMask } from 'wagmi/connectors'
 import { useConnect, useAccount } from 'wagmi'
+import { APP_NAME, APP_ICON_URL, APP_URL } from '~/lib/constants'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
 /** ✅ Monad Testnet definition */
 const monadTestnet = {
@@ -63,52 +63,40 @@ export const config = createConfig({
 
 const queryClient = new QueryClient()
 
-/** 🔁 Auto-connect for Coinbase Wallet */
-function useCoinbaseAutoConnect() {
-  const [enabled, setEnabled] = useState(false)
+/** ✅ Combined hook for MetaMask + Coinbase */
+function useAutoConnect() {
   const { connect, connectors } = useConnect()
   const { isConnected } = useAccount()
 
   useEffect(() => {
-    const isCB = window?.ethereum?.isCoinbaseWallet || window?.ethereum?.isCoinbaseWalletBrowser
-    setEnabled(!!isCB)
-  }, [])
+    if (typeof window === 'undefined' || isConnected) return
 
-  useEffect(() => {
-    if (enabled && !isConnected) {
-      const cb = connectors.find(c => c.id === 'coinbaseWallet')
-      cb && connect({ connector: cb })
+    const ethereum = window.ethereum
+    if (!ethereum) return
+
+    const isMetaMask = ethereum.isMetaMask
+    const isCoinbase =
+      ethereum.isCoinbaseWallet || ethereum.isCoinbaseWalletBrowser
+
+    const connector = isMetaMask
+      ? connectors.find(c => c.id === 'metaMask')
+      : isCoinbase
+      ? connectors.find(c => c.id === 'coinbaseWallet')
+      : undefined
+
+    if (connector) {
+      connect({ connector })
     }
-  }, [enabled, isConnected, connect, connectors])
+  }, [connect, connectors, isConnected])
 }
 
-/** 🔁 Auto-connect for MetaMask */
-function useMetaMaskAutoConnect() {
-  const [enabled, setEnabled] = useState(false)
-  const { connect, connectors } = useConnect()
-  const { isConnected } = useAccount()
-
-  useEffect(() => {
-    const isMM = window?.ethereum?.isMetaMask
-    setEnabled(!!isMM)
-  }, [])
-
-  useEffect(() => {
-    if (enabled && !isConnected) {
-      const mm = connectors.find(c => c.id === 'metaMask')
-      mm && connect({ connector: mm })
-    }
-  }, [enabled, isConnected, connect, connectors])
-}
-
-/** ✅ Wrapper for all auto-connections */
+/** ✅ Hook-aware wrapper */
 function WalletAutoConnect({ children }: { children: React.ReactNode }) {
-  void useCoinbaseAutoConnect()
-  void useMetaMaskAutoConnect()
+  useAutoConnect()
   return <>{children}</>
 }
 
-/** ✅ Final Provider component wrapping the app */
+/** ✅ Final exported Provider component */
 export default function Provider({ children }: { children: React.ReactNode }) {
   return (
     <WagmiProvider config={config}>
