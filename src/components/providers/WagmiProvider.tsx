@@ -105,12 +105,12 @@ function useMetaMaskAutoConnect() {
 
 /** ✅ Wrapper that handles all auto-connections */
 function WalletAutoConnect({ children }: { children: React.ReactNode }) {
-  void useCoinbaseAutoConnect()
-  void useMetaMaskAutoConnect()
+  useCoinbaseAutoConnect()
+  useMetaMaskAutoConnect()
   return <>{children}</>
 }
 
-/** ✅ Main Provider component wrapping the app */
+/** ✅ Final Provider component wrapping the app */
 export default function Provider({ children }: { children: React.ReactNode }) {
   return (
     <WagmiProvider config={config}>
