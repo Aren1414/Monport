@@ -1,40 +1,41 @@
-import { createConfig, http, WagmiProvider } from "wagmi";
-import { base, degen, mainnet, optimism, unichain, celo } from "wagmi/chains";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { farcasterFrame } from "@farcaster/frame-wagmi-connector";
-import { coinbaseWallet, metaMask } from 'wagmi/connectors';
-import { APP_NAME, APP_ICON_URL, APP_URL } from "~/lib/constants";
-import { useEffect, useState } from "react";
-import { useConnect, useAccount } from "wagmi";
-import React from "react";
+'use client'
 
-// Adding Monad Testnet with correct Chain ID and RPC URL
+import React, { useEffect, useState } from 'react'
+import { WagmiProvider, createConfig, http } from 'wagmi'
+import { base, optimism, mainnet, degen, unichain, celo } from 'wagmi/chains'
+import { farcasterFrame } from '@farcaster/frame-wagmi-connector'
+import { metaMask, coinbaseWallet } from 'wagmi/connectors'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { APP_NAME, APP_ICON_URL, APP_URL } from '~/lib/constants'
+import { useConnect, useAccount } from 'wagmi'
+
+/** ✅ Monad Testnet definition */
 const monadTestnet = {
   id: 10143,
-  name: "Monad Testnet",
-  network: "monad",
+  name: 'Monad Testnet',
+  network: 'monad',
   nativeCurrency: {
-    name: "MON",
-    symbol: "$MON",
+    name: 'Monad',
+    symbol: '$MON',
     decimals: 18,
   },
   rpcUrls: {
     default: {
-      http: ["https://testnet-rpc.monad.xyz"],
+      http: ['https://testnet-rpc.monad.xyz'],
     },
   },
   blockExplorers: {
     default: {
-      name: "Monad Explorer",
-      url: "https://testnet.monadexplorer.com",
+      name: 'Monad Explorer',
+      url: 'https://testnet.monadexplorer.com',
     },
   },
   testnet: true,
-};
+}
 
-// Configuring wagmi with Monad Testnet
+/** ✅ wagmi config with Farcaster + wallets */
 export const config = createConfig({
-  chains: [mainnet, optimism, base, degen, unichain, celo, monadTestnet], // Added Monad Testnet
+  chains: [mainnet, optimism, base, degen, unichain, celo, monadTestnet],
   transports: {
     [mainnet.id]: http(),
     [optimism.id]: http(),
@@ -42,7 +43,7 @@ export const config = createConfig({
     [degen.id]: http(),
     [unichain.id]: http(),
     [celo.id]: http(),
-    [monadTestnet.id]: http(), // Corrected Chain ID and RPC
+    [monadTestnet.id]: http(),
   },
   connectors: [
     farcasterFrame(),
@@ -58,56 +59,64 @@ export const config = createConfig({
       },
     }),
   ],
-});
+})
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient()
 
-// Auto-connect for Coinbase Wallet
-function useCoinbaseWalletAutoConnect() {
-  const [isCoinbaseWallet, setIsCoinbaseWallet] = useState(false);
-  const { connect, connectors } = useConnect();
-  const { isConnected } = useAccount();
-
-  useEffect(() => {
-    const checkCoinbaseWallet = () => {
-      const isInCoinbaseWallet = window.ethereum?.isCoinbaseWallet || 
-        window.ethereum?.isCoinbaseWalletExtension ||
-        window.ethereum?.isCoinbaseWalletBrowser;
-      setIsCoinbaseWallet(!!isInCoinbaseWallet);
-    };
-    
-    checkCoinbaseWallet();
-    window.addEventListener('ethereum#initialized', checkCoinbaseWallet);
-    
-    return () => {
-      window.removeEventListener('ethereum#initialized', checkCoinbaseWallet);
-    };
-  }, []);
+/** ✅ Auto-connect handler for Coinbase Wallet */
+function useCoinbaseAutoConnect() {
+  const [enabled, setEnabled] = useState(false)
+  const { connect, connectors } = useConnect()
+  const { isConnected } = useAccount()
 
   useEffect(() => {
-    if (isCoinbaseWallet && !isConnected) {
-      connect({ connector: connectors[1] }); // Coinbase Wallet connector
+    const isCB =
+      window?.ethereum?.isCoinbaseWallet ||
+      window?.ethereum?.isCoinbaseWalletBrowser
+    setEnabled(!!isCB)
+  }, [])
+
+  useEffect(() => {
+    if (enabled && !isConnected) {
+      const cb = connectors.find(c => c.id === 'coinbaseWallet')
+      cb && connect({ connector: cb })
     }
-  }, [isCoinbaseWallet, isConnected, connect, connectors]);
-
-  return isCoinbaseWallet;
+  }, [enabled, isConnected, connect, connectors])
 }
 
-// Wrapper for auto-connection
-function CoinbaseWalletAutoConnect({ children }: { children: React.ReactNode }) {
-  useCoinbaseWalletAutoConnect();
-  return <>{children}</>;
+/** ✅ Auto-connect handler for MetaMask */
+function useMetaMaskAutoConnect() {
+  const [enabled, setEnabled] = useState(false)
+  const { connect, connectors } = useConnect()
+  const { isConnected } = useAccount()
+
+  useEffect(() => {
+    const isMM = window?.ethereum?.isMetaMask
+    setEnabled(!!isMM)
+  }, [])
+
+  useEffect(() => {
+    if (enabled && !isConnected) {
+      const mm = connectors.find(c => c.id === 'metaMask')
+      mm && connect({ connector: mm })
+    }
+  }, [enabled, isConnected, connect, connectors])
 }
 
-// Final wagmi provider configuration
+/** ✅ Wrapper that handles all auto-connections */
+function WalletAutoConnect({ children }: { children: React.ReactNode }) {
+  useCoinbaseAutoConnect()
+  useMetaMaskAutoConnect()
+  return <>{children}</>
+}
+
+/** ✅ Main Provider component wrapping the app */
 export default function Provider({ children }: { children: React.ReactNode }) {
   return (
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
-        <CoinbaseWalletAutoConnect>
-          {children}
-        </CoinbaseWalletAutoConnect>
+        <WalletAutoConnect>{children}</WalletAutoConnect>
       </QueryClientProvider>
     </WagmiProvider>
-  );
+  )
 }
