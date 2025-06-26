@@ -33,7 +33,7 @@ const monadTestnet = {
   testnet: true,
 }
 
-/** ✅ wagmi config */
+/** ✅ wagmi config with Farcaster + wallets */
 export const config = createConfig({
   chains: [mainnet, optimism, base, degen, unichain, celo, monadTestnet],
   transports: {
@@ -103,14 +103,14 @@ function useMetaMaskAutoConnect() {
   }, [enabled, isConnected, connect, connectors])
 }
 
-/** 🧠 Wrapper that triggers both auto-connects */
+/** ✅ Wrapper that handles all auto-connections */
 function WalletAutoConnect({ children }: { children: React.ReactNode }) {
   void useCoinbaseAutoConnect()
   void useMetaMaskAutoConnect()
   return <>{children}</>
 }
 
-/** ✅ Main wagmi provider */
+/** ✅ Final Provider component wrapping the app */
 export default function Provider({ children }: { children: React.ReactNode }) {
   return (
     <WagmiProvider config={config}>
