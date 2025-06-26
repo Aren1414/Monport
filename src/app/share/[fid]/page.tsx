@@ -4,12 +4,8 @@ import { APP_URL, APP_NAME, APP_DESCRIPTION } from "~/lib/constants";
 
 export const revalidate = 300;
 
-export async function generateMetadata({
-  params,
-}: {
-  params: { fid: string };
-}): Promise<Metadata> {
-  const { fid } = params;
+export async function generateMetadata(props: any): Promise<Metadata> {
+  const { fid } = props.params;
   const imageUrl = `${APP_URL}/api/opengraph-image?fid=${fid}`;
 
   const frame = {
