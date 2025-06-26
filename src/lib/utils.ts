@@ -1,6 +1,6 @@
-import { type ClassValue, clsx } from 'clsx'
-import { twMerge } from 'tailwind-merge'
-import { mnemonicToAccount } from 'viem/accounts'
+import { type ClassValue, clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
+import { mnemonicToAccount } from "viem/accounts";
 import {
   APP_BUTTON_TEXT,
   APP_DESCRIPTION,
@@ -13,60 +13,63 @@ import {
   APP_WEBHOOK_URL,
   APP_SPLASH_URL,
   APP_SPLASH_BACKGROUND_COLOR,
-} from './constants'
+} from "./constants";
 
 interface FrameMetadata {
-  version: string
-  name: string
-  iconUrl: string
-  homeUrl: string
-  imageUrl?: string
-  buttonTitle?: string
-  splashImageUrl?: string
-  splashBackgroundColor?: string
-  webhookUrl?: string
-  description?: string
-  primaryCategory?: string
-  tags?: string[]
+  version: string;
+  name: string;
+  iconUrl: string;
+  homeUrl: string;
+  imageUrl?: string;
+  buttonTitle?: string;
+  splashImageUrl?: string;
+  splashBackgroundColor?: string;
+  webhookUrl?: string;
+  description?: string;
+  primaryCategory?: string;
+  tags?: string[];
 }
 
 interface FrameManifest {
   accountAssociation?: {
-    header: string
-    payload: string
-    signature: string
-  }
-  frame: FrameMetadata
+    header: string;
+    payload: string;
+    signature: string;
+  };
+  frame: FrameMetadata;
 }
 
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+  return twMerge(clsx(inputs));
 }
 
 export function getSecretEnvVars() {
-  const seedPhrase = process.env.SEED_PHRASE
-  const fid = process.env.FID
+  const seedPhrase = process.env.SEED_PHRASE;
+  const fid = process.env.FID;
 
-  if (!seedPhrase || !fid) return null
+  if (!seedPhrase || !fid) return null;
 
-  return { seedPhrase, fid }
+  return { seedPhrase, fid };
 }
 
 /**
- * ✅ Frame V2 metadata for Warpcast embed preview
+ * ✅ Frame V2 metadata for Warpcast preview (new standard)
  */
 export function getFrameEmbedMetadata(imageUrl?: string) {
   return {
-    version: 'vNext',
-    image: imageUrl ?? APP_OG_IMAGE_URL,
-    buttons: [
-      {
-        label: APP_BUTTON_TEXT ?? 'Open MonPort',
-        action: 'post_redirect',
-        target: `${APP_URL}/?tab=welcome`,
+    version: "next",
+    imageUrl: imageUrl ?? APP_OG_IMAGE_URL,
+    button: {
+      title: APP_BUTTON_TEXT ?? "Open MonPort",
+      action: {
+        type: "launch_frame",
+        url: `${APP_URL}/?tab=welcome`,
+        name: APP_NAME ?? "MonPort",
+        splashImageUrl: APP_SPLASH_URL,
+        splashBackgroundColor: APP_SPLASH_BACKGROUND_COLOR ?? "#ffffff",
       },
-    ],
-  }
+    },
+  };
 }
 
 /**
@@ -75,64 +78,64 @@ export function getFrameEmbedMetadata(imageUrl?: string) {
 export async function getFarcasterMetadata(): Promise<FrameManifest> {
   if (process.env.FRAME_METADATA) {
     try {
-      const metadata = JSON.parse(process.env.FRAME_METADATA)
-      console.log('Using pre-signed frame metadata from environment')
-      return metadata
+      const metadata = JSON.parse(process.env.FRAME_METADATA);
+      console.log("Using pre-signed frame metadata from environment");
+      return metadata;
     } catch (error) {
-      console.warn('Failed to parse FRAME_METADATA from environment:', error)
+      console.warn("Failed to parse FRAME_METADATA from environment:", error);
     }
   }
 
   if (!APP_URL) {
-    throw new Error('NEXT_PUBLIC_URL not configured')
+    throw new Error("NEXT_PUBLIC_URL not configured");
   }
 
-  const domain = new URL(APP_URL).hostname
-  console.log('Using domain for manifest:', domain)
+  const domain = new URL(APP_URL).hostname;
+  console.log("Using domain for manifest:", domain);
 
-  const secretEnvVars = getSecretEnvVars()
+  const secretEnvVars = getSecretEnvVars();
   if (!secretEnvVars) {
-    console.warn('No seed phrase or FID found in environment variables — generating unsigned metadata')
+    console.warn("No seed phrase or FID found in environment variables — generating unsigned metadata");
   }
 
-  let accountAssociation
+  let accountAssociation;
   if (secretEnvVars) {
-    const account = mnemonicToAccount(secretEnvVars.seedPhrase)
-    const custodyAddress = account.address
+    const account = mnemonicToAccount(secretEnvVars.seedPhrase);
+    const custodyAddress = account.address;
 
     const header = {
       fid: parseInt(secretEnvVars.fid),
-      type: 'custody',
+      type: "custody",
       key: custodyAddress,
-    }
-    const encodedHeader = Buffer.from(JSON.stringify(header), 'utf-8').toString('base64')
+    };
+    const encodedHeader = Buffer.from(JSON.stringify(header), "utf-8").toString("base64");
 
     const payload = {
       domain,
-    }
-    const encodedPayload = Buffer.from(JSON.stringify(payload), 'utf-8').toString('base64url')
+    };
+    const encodedPayload = Buffer.from(JSON.stringify(payload), "utf-8").toString("base64url");
 
     const signature = await account.signMessage({
       message: `${encodedHeader}.${encodedPayload}`,
-    })
-    const encodedSignature = Buffer.from(signature, 'utf-8').toString('base64url')
+    });
+    const encodedSignature = Buffer.from(signature, "utf-8").toString("base64url");
 
     accountAssociation = {
       header: encodedHeader,
       payload: encodedPayload,
       signature: encodedSignature,
-    }
+    };
   }
 
   return {
     accountAssociation,
     frame: {
-      version: '1',
-      name: APP_NAME ?? 'MonPort App',
+      version: "1",
+      name: APP_NAME ?? "MonPort",
       iconUrl: APP_ICON_URL,
       homeUrl: APP_URL,
       imageUrl: APP_OG_IMAGE_URL,
-      buttonTitle: APP_BUTTON_TEXT ?? 'Launch',
+      buttonTitle: APP_BUTTON_TEXT ?? "Launch",
       splashImageUrl: APP_SPLASH_URL,
       splashBackgroundColor: APP_SPLASH_BACKGROUND_COLOR,
       webhookUrl: APP_WEBHOOK_URL,
@@ -140,5 +143,5 @@ export async function getFarcasterMetadata(): Promise<FrameManifest> {
       primaryCategory: APP_PRIMARY_CATEGORY,
       tags: APP_TAGS,
     },
-  }
+  };
 }
