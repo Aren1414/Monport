@@ -1,11 +1,12 @@
-import type { Metadata } from "next";
+import type { Metadata, PageProps } from "next";
 import { redirect } from "next/navigation";
 import { APP_URL, APP_NAME, APP_DESCRIPTION } from "~/lib/constants";
 
 export const revalidate = 300;
 
-export async function generateMetadata(props: any): Promise<Metadata> {
-  const { fid } = props.params;
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { fid } = params as { fid: string }; // ← cast برای Type دقیق
+
   const imageUrl = `${APP_URL}/api/opengraph-image?fid=${fid}`;
 
   const frame = {
