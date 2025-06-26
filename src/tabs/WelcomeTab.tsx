@@ -1,8 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useAccount, useChainId } from "wagmi";
-import { switchChain } from "wagmi/actions";
+import { useAccount, useChainId, useSwitchChain } from "wagmi";
 import { ethers, Contract, utils } from "ethers";
 import welcomeAbi from "~/abis/WelcomeNFT.json";
 
@@ -16,17 +15,18 @@ const MONAD_TESTNET_CHAIN_ID = 10143;
 export default function WelcomeTab() {
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
+  const { switchChain } = useSwitchChain();
 
-  const [selectedAmount, setSelectedAmount] = useState<number>(1);
-  const [isMinting, setIsMinting] = useState<boolean>(false);
+  const [selectedAmount, setSelectedAmount] = useState(1);
+  const [isMinting, setIsMinting] = useState(false);
 
   useEffect(() => {
-  if (isConnected && chainId !== MONAD_TESTNET_CHAIN_ID) {
-    switchChain(undefined, { chainId: MONAD_TESTNET_CHAIN_ID });
-  }
-}, [isConnected, chainId]);
+    if (isConnected && chainId !== MONAD_TESTNET_CHAIN_ID) {
+      switchChain({ chainId: MONAD_TESTNET_CHAIN_ID });
+    }
+  }, [isConnected, chainId, switchChain]);
 
-  const mintNFT = async (): Promise<void> => {
+  const mintNFT = async () => {
     if (!address || chainId !== MONAD_TESTNET_CHAIN_ID) {
       alert("Please connect wallet and switch to Monad Testnet.");
       return;
@@ -49,14 +49,14 @@ export default function WelcomeTab() {
     }
   };
 
-  const shareToWarpcast = (): void => {
+  const shareToWarpcast = () => {
     const shareUrl = `https://warpcast.com/~/compose?text=I%20just%20minted%20a%20Welcome%20NFT%20on%20Monad%20via%20@overo.eth!&embeds[]=${encodeURIComponent(
       VIDEO_URL
     )}`;
     window.open(shareUrl, "_blank");
   };
 
-  const followOvero = (): void => {
+  const followOvero = () => {
     window.open("https://warpcast.com/overo.eth", "_blank");
   };
 
