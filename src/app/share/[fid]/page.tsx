@@ -24,11 +24,12 @@ export async function generateMetadata({
       type: "website",
     },
     other: {
-      "fc:frame": JSON.stringify(getFrameEmbedMetadata(imageUrl, `${APP_URL}/?fid=${fid}`)),
+      "fc:frame": JSON.stringify(getFrameEmbedMetadata(imageUrl)),
     },
   };
 }
 
 export default function SharePage() {
+  
   redirect(`/?fid=shared`);
 }
