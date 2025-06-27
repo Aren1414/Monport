@@ -22,7 +22,7 @@
   "dependencies": {
     "ethers": "5.8.0",
     "@ethersproject/signing-key": "5.8.0",
-    "@farcaster/auth-client": "0.3.1",
+    "@farcaster/auth-client": "0.1.1",
     "@farcaster/auth-kit": "0.6.2",
     "@farcaster/frame-core": "0.0.31",
     "@farcaster/frame-node": "0.0.19",
@@ -55,8 +55,8 @@
   },
   "devDependencies": {
     "@types/node": "20.11.30",
-    "@types/react": "19.0.15",
-    "@types/react-dom": "19.0.6",
+    "@types/react": "19.1.8",
+    "@types/react-dom": "19.1.6",
     "crypto": "1.0.1",
     "eslint": "8.57.0",
     "eslint-config-next": "15.0.3",
