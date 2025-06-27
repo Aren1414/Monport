@@ -21,10 +21,16 @@ export function Providers({
   const solanaEndpoint =
     process.env.SOLANA_RPC_ENDPOINT || "https://solana-rpc.publicnode.com";
 
+  const neynarClientId = process.env.NEXT_PUBLIC_NEYNAR_CLIENT_ID;
+
   return (
     <SessionProvider session={session}>
       <WagmiProvider>
-        <NeynarContextProvider>
+        <NeynarContextProvider
+          settings={{
+            clientId: neynarClientId!,
+          }}
+        >
           <SafeFarcasterSolanaProvider endpoint={solanaEndpoint}>
             {children}
           </SafeFarcasterSolanaProvider>
