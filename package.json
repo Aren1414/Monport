@@ -67,6 +67,7 @@
     "typescript": "5.2.2"
   },
   "overrides": {
-    "ethers": "5.8.0"
+    "ethers": "5.8.0",
+    "typescript": "5.2.2"
   }
 }
