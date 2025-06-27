@@ -8,13 +8,19 @@ import { SafeFarcasterSolanaProvider } from "~/components/providers/SafeFarcaste
 
 const WagmiProvider = dynamic(
   () => import("~/components/providers/WagmiProvider"),
-  {
-    ssr: false,
-  }
+  { ssr: false }
 );
 
-export function Providers({ session, children }: { session: Session | null, children: React.ReactNode }) {
-  const solanaEndpoint = process.env.SOLANA_RPC_ENDPOINT || "https://solana-rpc.publicnode.com";
+export function Providers({
+  session,
+  children,
+}: {
+  session: Session | null;
+  children: React.ReactNode;
+}) {
+  const solanaEndpoint =
+    process.env.SOLANA_RPC_ENDPOINT || "https://solana-rpc.publicnode.com";
+
   return (
     <SessionProvider session={session}>
       <WagmiProvider>
