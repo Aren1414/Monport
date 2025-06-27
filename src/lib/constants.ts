@@ -1,14 +1,14 @@
 // App Metadata
-export const APP_URL = process.env.NEXT_PUBLIC_URL!;
-export const APP_NAME = process.env.NEXT_PUBLIC_FRAME_NAME;
-export const APP_DESCRIPTION = process.env.NEXT_PUBLIC_FRAME_DESCRIPTION;
-export const APP_PRIMARY_CATEGORY = process.env.NEXT_PUBLIC_FRAME_PRIMARY_CATEGORY;
-export const APP_TAGS = process.env.NEXT_PUBLIC_FRAME_TAGS?.split(',');
+export const APP_URL = process.env.NEXT_PUBLIC_URL ?? "";
+export const APP_NAME = process.env.NEXT_PUBLIC_FRAME_NAME ?? "MonPort";
+export const APP_DESCRIPTION = process.env.NEXT_PUBLIC_FRAME_DESCRIPTION ?? "";
+export const APP_PRIMARY_CATEGORY = process.env.NEXT_PUBLIC_FRAME_PRIMARY_CATEGORY ?? "Utility";
+export const APP_TAGS = process.env.NEXT_PUBLIC_FRAME_TAGS?.split(',') ?? ["monad", "swap", "nft"];
 export const APP_ICON_URL = `${APP_URL}/icon.png`;
 export const APP_OG_IMAGE_URL = `${APP_URL}/api/opengraph-image`;
 export const APP_SPLASH_URL = `${APP_URL}/splash.png`;
 export const APP_SPLASH_BACKGROUND_COLOR = "#f7f7f7";
-export const APP_BUTTON_TEXT = process.env.NEXT_PUBLIC_FRAME_BUTTON_TEXT;
+export const APP_BUTTON_TEXT = process.env.NEXT_PUBLIC_FRAME_BUTTON_TEXT ?? "Launch";
 export const APP_WEBHOOK_URL =
   process.env.NEYNAR_API_KEY && process.env.NEYNAR_CLIENT_ID
     ? `https://api.neynar.com/f/app/${process.env.NEYNAR_CLIENT_ID}/event`
@@ -17,7 +17,7 @@ export const APP_WEBHOOK_URL =
 // Monad Testnet Network Configuration
 export const MONAD_CHAIN_ID = 10143;
 export const MONAD_CHAIN_PARAMS = {
-  chainId: `0x${MONAD_CHAIN_ID.toString(16)}`, // Hex format
+  chainId: `0x${MONAD_CHAIN_ID.toString(16)}`,
   chainName: "Monad Testnet",
   nativeCurrency: {
     name: "Monad",
@@ -32,7 +32,7 @@ export const RPC_URL = MONAD_CHAIN_PARAMS.rpcUrls[0];
 // Kuru Router Address (from official docs)
 export const ROUTER_ADDRESS = "0xc816865f172d640d93712C68a7E1F83F3fA63235";
 
-// Token Addresses on Monad Testnet (from Kuru documentation)
+// Token Addresses on Monad Testnet
 export const TOKENS = {
   MON: "0x0000000000000000000000000000000000000000", // Native token
   USDC: "0xf817257fed379853cDe0fa4F97AB987181B1E5Ea",
@@ -42,7 +42,7 @@ export const TOKENS = {
   YAKI: "0xfe140e1dCe99Be9F4F15d657CD9b7BF622270C50",
 };
 
-// Token Metadata: decimals per token
+// Token Metadata
 export const TOKEN_METADATA: Record<string, { decimals: number }> = {
   [TOKENS.MON]: { decimals: 18 },
   [TOKENS.USDC]: { decimals: 6 },
