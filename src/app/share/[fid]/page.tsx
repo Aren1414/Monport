@@ -23,11 +23,13 @@ export async function generateMetadata({
       type: "website",
     },
     other: {
-      "fc:frame": JSON.stringify(getFrameEmbedMetadata(imageUrl)),
+      "fc:frame": JSON.stringify(
+        getFrameEmbedMetadata(imageUrl, `${APP_URL}/?fid=${params.fid}`)
+      ),
     },
   };
 }
 
 export default function SharePage() {
-  redirect("/");
+  redirect(`/?fid=shared`);
 }
