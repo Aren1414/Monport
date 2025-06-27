@@ -1,16 +1,19 @@
-// src/app/share/[fid]/page.tsx
-
-import type { Metadata } from "next";
+import type { Metadata, ResolvingMetadata } from "next";
 import { redirect } from "next/navigation";
 import { APP_URL, APP_NAME, APP_DESCRIPTION } from "~/lib/constants";
 import { getFrameEmbedMetadata } from "~/lib/utils";
 
 export const revalidate = 300;
 
+type Props = {
+  params: { fid: string };
+};
+
 export async function generateMetadata(
-  props: { params: { fid: string } }
+  { params }: Props,
+  parent?: ResolvingMetadata
 ): Promise<Metadata> {
-  const { fid } = props.params;
+  const { fid } = params;
   const imageUrl = `${APP_URL}/api/opengraph-image?fid=${fid}`;
 
   return {
