@@ -26,7 +26,7 @@
     "@farcaster/auth-kit": "0.6.2",
     "@farcaster/frame-core": "0.0.31",
     "@farcaster/frame-node": "0.0.19",
-    "@farcaster/frame-sdk": "0.0.36",
+    "@farcaster/frame-sdk": "0.0.57",
     "@farcaster/frame-wagmi-connector": "0.0.21",
     "@farcaster/mini-app-solana": "0.0.5",
     "@kuru-labs/kuru-sdk": "0.0.54",
