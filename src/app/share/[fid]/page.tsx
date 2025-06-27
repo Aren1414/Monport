@@ -15,10 +15,13 @@ export async function generateMetadata({
 
   return {
     title: `${APP_NAME} - Share`,
+    description: APP_DESCRIPTION,
     openGraph: {
       title: APP_NAME,
       description: APP_DESCRIPTION,
       images: [imageUrl],
+      url: `${APP_URL}/share/${fid}`,
+      type: "website",
     },
     other: {
       "fc:frame": JSON.stringify(getFrameEmbedMetadata(imageUrl)),
