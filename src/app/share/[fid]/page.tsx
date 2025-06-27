@@ -5,11 +5,11 @@ import { getFrameEmbedMetadata } from "~/lib/utils";
 
 export const revalidate = 300;
 
-type Props = {
+export async function generateMetadata({
+  params,
+}: {
   params: { fid: string };
-};
-
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+}): Promise<Metadata> {
   const imageUrl = `${APP_URL}/api/opengraph-image?fid=${params.fid}`;
 
   return {
