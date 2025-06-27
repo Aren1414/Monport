@@ -5,16 +5,13 @@ import { getFrameEmbedMetadata } from "~/lib/utils";
 
 export const revalidate = 300;
 
-type Props = {
-  params: {
-    fid: string;
-  };
-};
-
-export async function generateMetadata(
-  { params }: Props
-): Promise<Metadata> {
-  const imageUrl = `${APP_URL}/api/opengraph-image?fid=${params.fid}`;
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ fid: string }>;
+}): Promise<Metadata> {
+  const { fid } = await params;
+  const imageUrl = `${APP_URL}/api/opengraph-image?fid=${fid}`;
 
   return {
     title: `${APP_NAME} - Share`,
@@ -23,13 +20,11 @@ export async function generateMetadata(
       title: APP_NAME,
       description: APP_DESCRIPTION,
       images: [imageUrl],
-      url: `${APP_URL}/share/${params.fid}`,
+      url: `${APP_URL}/share/${fid}`,
       type: "website",
     },
     other: {
-      "fc:frame": JSON.stringify(
-        getFrameEmbedMetadata(imageUrl, `${APP_URL}/?fid=${params.fid}`)
-      ),
+      "fc:frame": JSON.stringify(getFrameEmbedMetadata(imageUrl, `${APP_URL}/?fid=${fid}`)),
     },
   };
 }
