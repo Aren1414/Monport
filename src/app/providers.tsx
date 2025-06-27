@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 import type { Session } from "next-auth";
 import { SessionProvider } from "next-auth/react";
-import { MiniAppProvider } from "@neynar/react";
+import { NeynarContextProvider } from "@neynar/react";
 import { SafeFarcasterSolanaProvider } from "~/components/providers/SafeFarcasterSolanaProvider";
 
 const WagmiProvider = dynamic(
@@ -24,11 +24,11 @@ export function Providers({
   return (
     <SessionProvider session={session}>
       <WagmiProvider>
-        <MiniAppProvider analyticsEnabled={true}>
+        <NeynarContextProvider>
           <SafeFarcasterSolanaProvider endpoint={solanaEndpoint}>
             {children}
           </SafeFarcasterSolanaProvider>
-        </MiniAppProvider>
+        </NeynarContextProvider>
       </WagmiProvider>
     </SessionProvider>
   );
