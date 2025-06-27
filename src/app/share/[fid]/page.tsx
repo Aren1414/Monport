@@ -5,11 +5,11 @@ import { getFrameEmbedMetadata } from "~/lib/utils";
 
 export const revalidate = 300;
 
-export async function generateMetadata({
-  params,
-}: {
+type SharePageParams = {
   params: { fid: string };
-}): Promise<Metadata> {
+};
+
+export async function generateMetadata({ params }: SharePageParams): Promise<Metadata> {
   const { fid } = params;
   const imageUrl = `${APP_URL}/api/opengraph-image?fid=${fid}`;
 
