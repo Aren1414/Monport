@@ -12,6 +12,7 @@ import {
   APP_SPLASH_URL,
   APP_SPLASH_BACKGROUND_COLOR,
 } from "~/lib/constants";
+import { getFrameEmbedMetadata } from "~/lib/utils";
 
 export const metadata: Metadata = {
   title: APP_NAME,
@@ -30,20 +31,7 @@ export default async function RootLayout({
 }>) {
   const session = await getSession();
 
-  const frameMeta = JSON.stringify({
-    version: "next",
-    imageUrl: APP_OG_IMAGE_URL,
-    button: {
-      title: APP_BUTTON_TEXT ?? "Open Monport",
-      action: {
-        type: "launch_frame",
-        url: `${APP_URL}/?tab=welcome`,
-        name: APP_NAME,
-        splashImageUrl: APP_SPLASH_URL,
-        splashBackgroundColor: APP_SPLASH_BACKGROUND_COLOR ?? "#ffffff",
-      },
-    },
-  });
+  const frameMeta = JSON.stringify(getFrameEmbedMetadata());
 
   return (
     <html lang="en">
