@@ -13,6 +13,7 @@ const VIDEO_URL =
   'https://zxmqva22v53mlvaeypxc7nyw7ucxf5dat53l2ngf2umq6kiftn3a.arweave.net/zdkKg1qvdsXUBMPuL7cW_QVy9GCfdr00xdUZDykFm3Y'
 const IMAGE_PREVIEW_URL =
   'https://mhz5j3u6p57zkqjpwsz5kixyp37p7vkwqoetwxbtzgjof6fyysgq.arweave.net/YfPU7p5_f5VBL7Sz1SL4fv7_1VaDiTtcM8mS4vi4xI0'
+const MINI_APP_URL = 'https://monport-three.vercel.app/?tab=welcome'
 
 const MONAD_TESTNET_CHAIN_ID = 10143
 
@@ -43,11 +44,11 @@ export default function WelcomeTab() {
 
     try {
       setIsMinting(true)
-      const totalPriceEth = (NFT_PRICE * selectedAmount).toFixed(2)
-      const totalPrice = parseEther(totalPriceEth)
+      const totalPriceMon = (NFT_PRICE * selectedAmount).toFixed(2)
+      const totalPrice = parseEther(totalPriceMon)
 
-      const confirmMint = confirm(
-        `🪙 You are about to mint ${selectedAmount} NFT(s) for ${totalPriceEth} ETH. Do you want to proceed?`
+      const confirmMint = window.confirm(
+        `🪙 You are about to mint ${selectedAmount} NFT(s) for ${totalPriceMon} MON. Do you want to proceed?`
       )
       if (!confirmMint) {
         setIsMinting(false)
@@ -72,8 +73,8 @@ export default function WelcomeTab() {
   }
 
   const shareToWarpcast = () => {
-    const shareUrl = `https://warpcast.com/~/compose?text=I%20just%20minted%20a%20Welcome%20NFT%20on%20Monad%20via%20@overo.eth!&embeds[]=${encodeURIComponent(
-      IMAGE_PREVIEW_URL
+    const shareUrl = `https://warpcast.com/~/compose?text=Check%20out%20this%20Mini%20App!&embeds[]=${encodeURIComponent(
+      MINI_APP_URL
     )}`
     window.open(shareUrl, '_blank')
   }
