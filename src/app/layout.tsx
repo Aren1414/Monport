@@ -1,38 +1,20 @@
 import type { Metadata } from "next";
-import { headers } from "next/headers";
 import Script from "next/script";
 import { getSession } from "~/auth";
 import "~/app/globals.css";
 import { Providers } from "~/app/providers";
 import { APP_NAME, APP_DESCRIPTION, APP_OG_IMAGE_URL } from "~/lib/constants";
 
-// ✅ generateMetadata با await 
-export async function generateMetadata(): Promise<Metadata> {
-  const headersList = await headers(); 
-  const pathname = headersList.get("x-next-url") || "";
-
-  const isFrame = pathname.startsWith("/frame");
-
-  return {
+export const metadata: Metadata = {
+  title: APP_NAME,
+  description: APP_DESCRIPTION,
+  openGraph: {
     title: APP_NAME,
     description: APP_DESCRIPTION,
-    openGraph: {
-      title: APP_NAME,
-      description: APP_DESCRIPTION,
-      images: [APP_OG_IMAGE_URL],
-    },
-    ...(isFrame && {
-      other: {
-        "fc:frame": "vNext",
-        "fc:frame:image": APP_OG_IMAGE_URL,
-        "fc:frame:button:1": "Open",
-        "fc:frame:post_url": "https://monport-three.vercel.app/api/frame-handler",
-      },
-    }),
-  };
-}
+    images: [APP_OG_IMAGE_URL],
+  },
+};
 
-// ✅ RootLayout 
 export default async function RootLayout({
   children,
 }: Readonly<{
