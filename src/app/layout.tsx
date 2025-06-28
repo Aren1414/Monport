@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
-import Script from "next/script"; 
+import Script from "next/script";
 import { getSession } from "~/auth";
 import "~/app/globals.css";
 import { Providers } from "~/app/providers";
 import { APP_NAME, APP_DESCRIPTION, APP_OG_IMAGE_URL } from "~/lib/constants";
-import { getFrameEmbedMetadata } from "~/lib/utils";
 
 export const metadata: Metadata = {
   title: APP_NAME,
@@ -15,7 +14,10 @@ export const metadata: Metadata = {
     images: [APP_OG_IMAGE_URL],
   },
   other: {
-    "fc:frame": JSON.stringify(getFrameEmbedMetadata()),
+    "fc:frame": "vNext",
+    "fc:frame:image": APP_OG_IMAGE_URL,
+    "fc:frame:button:1": "Open",
+    "fc:frame:post_url": "https://monport-three.vercel.app/api/frame-handler"
   },
 };
 
@@ -35,7 +37,7 @@ export default async function RootLayout({
         <meta name="theme-color" content="#2266ee" />
         <title>{APP_NAME}</title>
 
-       <Script
+        <Script
           src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"
           strategy="beforeInteractive"
         />
