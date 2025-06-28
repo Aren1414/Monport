@@ -24,6 +24,8 @@ export default function WelcomeTab() {
   const [selectedAmount, setSelectedAmount] = useState(1)
   const [isMinting, setIsMinting] = useState(false)
 
+  const totalPriceMon = (NFT_PRICE * selectedAmount).toFixed(2)
+
   useEffect(() => {
     if (isConnected && chainId !== MONAD_TESTNET_CHAIN_ID) {
       switchChain({ chainId: MONAD_TESTNET_CHAIN_ID })
@@ -42,10 +44,8 @@ export default function WelcomeTab() {
 
     try {
       setIsMinting(true)
-      const totalPriceMon = (NFT_PRICE * selectedAmount).toFixed(2)
       const totalPrice = parseEther(totalPriceMon)
 
-      // ✅ Removed confirmation step — go straight to wallet
       await writeContract(walletClient, {
         address: WELCOME_CONTRACT_ADDRESS,
         abi: welcomeAbi,
@@ -111,6 +111,18 @@ export default function WelcomeTab() {
             {amt}
           </button>
         ))}
+      </div>
+
+      <div
+        style={{
+          marginBottom: 16,
+          fontSize: 16,
+          fontWeight: 'bold',
+          textAlign: 'center',
+          color: '#333',
+        }}
+      >
+        Total Price: {totalPriceMon} MON
       </div>
 
       <button
