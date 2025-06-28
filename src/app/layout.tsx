@@ -7,8 +7,9 @@ import {
   APP_NAME,
   APP_DESCRIPTION,
   APP_OG_IMAGE_URL,
+  APP_URL,
+  APP_BUTTON_TEXT,
 } from "~/lib/constants";
-import { getFrameEmbedMetadata } from "~/lib/utils";
 
 export const metadata: Metadata = {
   title: APP_NAME,
@@ -17,9 +18,8 @@ export const metadata: Metadata = {
     title: APP_NAME,
     description: APP_DESCRIPTION,
     images: [APP_OG_IMAGE_URL],
-  },
-  other: {
-    "fc:frame": JSON.stringify(getFrameEmbedMetadata()),
+    url: APP_URL,
+    type: "website",
   },
 };
 
@@ -38,6 +38,19 @@ export default async function RootLayout({
         <meta name="description" content={APP_DESCRIPTION} />
         <meta name="theme-color" content="#2266ee" />
         <title>{APP_NAME}</title>
+
+        {/* Open Graph */}
+        <meta property="og:title" content={APP_NAME} />
+        <meta property="og:description" content={APP_DESCRIPTION} />
+        <meta property="og:image" content={APP_OG_IMAGE_URL} />
+        <meta property="og:url" content={APP_URL} />
+        <meta property="og:type" content="website" />
+
+        {/* Farcaster Frame Metadata */}
+        <meta property="fc:frame" content="vNext" />
+        <meta property="fc:frame:image" content={APP_OG_IMAGE_URL} />
+        <meta property="fc:frame:button:1" content={APP_BUTTON_TEXT ?? "Open MonPort"} />
+        <meta property="fc:frame:url" content={APP_URL} />
 
         <Script
           src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"
