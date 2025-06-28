@@ -7,9 +7,8 @@ import {
   APP_NAME,
   APP_DESCRIPTION,
   APP_OG_IMAGE_URL,
-  APP_BUTTON_TEXT,
-  APP_URL,
 } from "~/lib/constants";
+import { getFlatFrameMetadata } from "~/lib/utils";
 
 export const metadata: Metadata = {
   title: APP_NAME,
@@ -18,6 +17,9 @@ export const metadata: Metadata = {
     title: APP_NAME,
     description: APP_DESCRIPTION,
     images: [APP_OG_IMAGE_URL],
+  },
+  other: {
+    ...getFlatFrameMetadata(), 
   },
 };
 
@@ -36,11 +38,6 @@ export default async function RootLayout({
         <meta name="description" content={APP_DESCRIPTION} />
         <meta name="theme-color" content="#2266ee" />
         <title>{APP_NAME}</title>
-
-        <meta property="fc:frame" content="vNext" />
-        <meta property="fc:frame:image" content={APP_OG_IMAGE_URL} />
-        <meta property="fc:frame:button:1" content={APP_BUTTON_TEXT ?? "Open Monport"} />
-        <meta property="fc:frame:post_url" content={`${APP_URL}/`} />
 
         <Script
           src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"
