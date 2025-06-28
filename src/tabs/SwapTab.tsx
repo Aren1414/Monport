@@ -20,7 +20,12 @@ export default function SwapTab() {
   const [loading, setLoading] = useState(false);
 
   const getQuote = async () => {
-    if (!fromToken || !toToken || !amountIn) return;
+    const parsedAmount = Number(amountIn);
+    if (!fromToken || !toToken || !parsedAmount || isNaN(parsedAmount)) {
+      alert("Please enter a valid amount.");
+      return;
+    }
+
     setLoading(true);
     const provider = getKuruProvider();
     try {
@@ -28,11 +33,12 @@ export default function SwapTab() {
         provider,
         fromToken,
         toToken,
-        Number(amountIn),
+        parsedAmount,
         "amountIn"
       );
       setQuote(path.output.toString());
-    } catch {
+    } catch (err) {
+      console.error("Quote error:", err);
       alert("Error getting quote");
     } finally {
       setLoading(false);
@@ -80,7 +86,8 @@ export default function SwapTab() {
       alert("✅ Swap successful");
       setAmountIn("");
       setQuote(null);
-    } catch {
+    } catch (err) {
+      console.error("Swap error:", err);
       alert("Swap failed");
     } finally {
       setLoading(false);
@@ -170,7 +177,10 @@ export default function SwapTab() {
               borderRadius: 8,
               border: "1px solid #ccc",
               background: "#fafafa",
-              textAlign: "right"
+              textAlign: "right",
+              maxWidth: "100%",
+              overflow: "hidden",
+              textOverflow: "ellipsis"
             }}
           />
         </div>
