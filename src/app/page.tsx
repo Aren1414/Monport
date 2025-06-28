@@ -11,11 +11,11 @@ import "~/styles/App.css";
 
 export default function Home() {
   const router = useRouter();
-  const [tab, setTab] = useState<string | null>(null);
+  const [tab, setTab] = useState<string>("welcome");
 
   useEffect(() => {
     const currentTab = new URLSearchParams(window.location.search).get("tab");
-    setTab(currentTab);
+    if (currentTab) setTab(currentTab);
   }, []);
 
   const renderTab = () => {
