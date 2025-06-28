@@ -6,8 +6,9 @@ import "~/app/globals.css";
 import { Providers } from "~/app/providers";
 import { APP_NAME, APP_DESCRIPTION, APP_OG_IMAGE_URL } from "~/lib/constants";
 
+// ✅ generateMetadata با await 
 export async function generateMetadata(): Promise<Metadata> {
-  const headersList = headers(); // headers() در App Router نیازی به await نداره
+  const headersList = await headers(); 
   const pathname = headersList.get("x-next-url") || "";
 
   const isFrame = pathname.startsWith("/frame");
@@ -31,6 +32,7 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
+// ✅ RootLayout 
 export default async function RootLayout({
   children,
 }: Readonly<{
