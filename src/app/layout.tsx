@@ -1,17 +1,9 @@
 import type { Metadata } from "next";
-import Script from "next/script";
+import Script from "next/script"; 
 import { getSession } from "~/auth";
 import "~/app/globals.css";
 import { Providers } from "~/app/providers";
-import {
-  APP_NAME,
-  APP_DESCRIPTION,
-  APP_OG_IMAGE_URL,
-  APP_BUTTON_TEXT,
-  APP_URL,
-  APP_SPLASH_URL,
-  APP_SPLASH_BACKGROUND_COLOR,
-} from "~/lib/constants";
+import { APPNAME, APPDESCRIPTION, APPOGIMAGE_URL } from "~/lib/constants";
 import { getFrameEmbedMetadata } from "~/lib/utils";
 
 export const metadata: Metadata = {
@@ -20,7 +12,10 @@ export const metadata: Metadata = {
   openGraph: {
     title: APP_NAME,
     description: APP_DESCRIPTION,
-    images: [APP_OG_IMAGE_URL],
+    images: [APPOGIMAGE_URL],
+  },
+  other: {
+    "fc:frame": JSON.stringify(getFrameEmbedMetadata()),
   },
 };
 
@@ -31,8 +26,6 @@ export default async function RootLayout({
 }>) {
   const session = await getSession();
 
-  const frameMeta = JSON.stringify(getFrameEmbedMetadata());
-
   return (
     <html lang="en">
       <head>
@@ -42,9 +35,7 @@ export default async function RootLayout({
         <meta name="theme-color" content="#2266ee" />
         <title>{APP_NAME}</title>
 
-        <meta property="fc:frame" content={frameMeta} />
-
-        <Script
+       <Script
           src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"
           strategy="beforeInteractive"
         />
