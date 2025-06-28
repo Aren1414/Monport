@@ -4,6 +4,7 @@ import { getSession } from "~/auth";
 import "~/app/globals.css";
 import { Providers } from "~/app/providers";
 import { APP_NAME, APP_DESCRIPTION, APP_OG_IMAGE_URL } from "~/lib/constants";
+import { getFrameEmbedMetadata } from "~/lib/utils";
 
 export const metadata: Metadata = {
   title: APP_NAME,
@@ -12,6 +13,9 @@ export const metadata: Metadata = {
     title: APP_NAME,
     description: APP_DESCRIPTION,
     images: [APP_OG_IMAGE_URL],
+  },
+  other: {
+    ...getFrameEmbedMetadata(), 
   },
 };
 
