@@ -20,8 +20,8 @@ export default function SwapTab() {
   const [loading, setLoading] = useState(false);
 
   const getQuote = async () => {
-    const parsedAmount = Number(amountIn);
-    if (!fromToken || !toToken || !parsedAmount || isNaN(parsedAmount)) {
+    const parsedAmount = parseFloat(amountIn);
+    if (!fromToken || !toToken || isNaN(parsedAmount) || parsedAmount <= 0) {
       alert("Please enter a valid amount.");
       return;
     }
@@ -126,7 +126,7 @@ export default function SwapTab() {
             value={amountIn}
             onChange={(e) => setAmountIn(e.target.value)}
             style={{
-              flex: 1,
+              width: "120px",
               padding: 8,
               borderRadius: 8,
               border: "1px solid #ccc",
@@ -172,13 +172,12 @@ export default function SwapTab() {
             readOnly
             placeholder="0.0"
             style={{
-              flex: 1,
+              width: "120px",
               padding: 8,
               borderRadius: 8,
               border: "1px solid #ccc",
               background: "#fafafa",
               textAlign: "right",
-              maxWidth: "100%",
               overflow: "hidden",
               textOverflow: "ellipsis"
             }}
