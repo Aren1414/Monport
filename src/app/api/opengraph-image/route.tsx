@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET() {
   const imageUrl =
-    "https://gv5vt5azz4e7rtxhmmhtrzqnx5q3f7yockked6bazjvmrr5rqgta.arweave.net/NXtZ9BnPCfjO52MPOOYNv2Gy_w4SlEH4IMpqyMexgaY";
+  "https://mhz5j3u6p57zkqjpwsz5kixyp37p7vkwqoetwxbtzgjof6fyysgq.arweave.net/YfPU7p5_f5VBL7Sz1SL4fv7_1VaDiTtcM8mS4vi4xI0";
 
   return new ImageResponse(
     (
