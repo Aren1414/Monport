@@ -11,6 +11,8 @@ const WELCOME_CONTRACT_ADDRESS = '0x40649af9dEE8bDB94Dc21BA2175AE8f5181f14AE'
 const NFT_PRICE = 0.3
 const VIDEO_URL =
   'https://zxmqva22v53mlvaeypxc7nyw7ucxf5dat53l2ngf2umq6kiftn3a.arweave.net/zdkKg1qvdsXUBMPuL7cW_QVy9GCfdr00xdUZDykFm3Y'
+const IMAGE_PREVIEW_URL =
+  'https://mhz5j3u6p57zkqjpwsz5kixyp37p7vkwqoetwxbtzgjof6fyysgq.arweave.net/YfPU7p5_f5VBL7Sz1SL4fv7_1VaDiTtcM8mS4vi4xI0'
 
 const MONAD_TESTNET_CHAIN_ID = 10143
 
@@ -35,15 +37,24 @@ export default function WelcomeTab() {
 
   const mintNFT = async () => {
     if (!walletClient || !address || chainId !== MONAD_TESTNET_CHAIN_ID) {
-      alert('Please connect wallet and switch to Monad Testnet.')
+      alert('❌ Please connect your wallet and switch to the Monad Testnet.')
       return
     }
 
     try {
       setIsMinting(true)
-      const totalPrice = parseEther((NFT_PRICE * selectedAmount).toFixed(2))
+      const totalPriceEth = (NFT_PRICE * selectedAmount).toFixed(2)
+      const totalPrice = parseEther(totalPriceEth)
 
-      const txHash = await writeContract(walletClient, {
+      const confirmMint = confirm(
+        `🪙 You are about to mint ${selectedAmount} NFT(s) for ${totalPriceEth} ETH. Do you want to proceed?`
+      )
+      if (!confirmMint) {
+        setIsMinting(false)
+        return
+      }
+
+      await writeContract(walletClient, {
         address: WELCOME_CONTRACT_ADDRESS,
         abi: welcomeAbi,
         functionName: 'mint',
@@ -51,10 +62,10 @@ export default function WelcomeTab() {
         value: totalPrice,
       })
 
-      alert('Mint submitted! Tx hash: ' + txHash)
+      alert(`🎉 Success! Your NFT has been minted.`)
     } catch (error) {
       console.error('Mint error:', error)
-      alert('Mint failed. See console for details.')
+      alert('❌ Mint failed. Please check your wallet balance or network status.')
     } finally {
       setIsMinting(false)
     }
@@ -62,7 +73,7 @@ export default function WelcomeTab() {
 
   const shareToWarpcast = () => {
     const shareUrl = `https://warpcast.com/~/compose?text=I%20just%20minted%20a%20Welcome%20NFT%20on%20Monad%20via%20@overo.eth!&embeds[]=${encodeURIComponent(
-      VIDEO_URL
+      IMAGE_PREVIEW_URL
     )}`
     window.open(shareUrl, '_blank')
   }
@@ -124,7 +135,7 @@ export default function WelcomeTab() {
         }}
         type="button"
       >
-        {isMinting ? 'Minting...' : `Mint (${selectedAmount})`}
+        {isMinting ? '⏳ Minting...' : `Mint (${selectedAmount})`}
       </button>
 
       <button
