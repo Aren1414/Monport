@@ -14,6 +14,7 @@ export default function Home() {
   const [tab, setTab] = useState<string>("welcome");
 
   useEffect(() => {
+    if (typeof window === "undefined") return; 
     const currentTab = new URLSearchParams(window.location.search).get("tab");
     if (currentTab) setTab(currentTab);
   }, []);
