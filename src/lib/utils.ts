@@ -15,6 +15,8 @@ import {
   APP_SPLASH_BACKGROUND_COLOR,
 } from "./constants";
 
+// ---------- Types ----------
+
 interface FrameMetadata {
   version: string;
   name: string;
@@ -39,6 +41,8 @@ interface FrameManifest {
   frame: FrameMetadata;
 }
 
+// ---------- Utility ----------
+
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
@@ -52,9 +56,19 @@ export function getSecretEnvVars() {
   return { seedPhrase, fid };
 }
 
-/**
- * ✅ Frame V2 metadata for Warpcast preview (new standard)
- */
+// ---------- Frame Metadata for <head> (for Warpcast) ----------
+
+export function getFlatFrameMetadata(): Record<string, string> {
+  return {
+    "fc:frame": "vNext",
+    "fc:frame:image": APP_OG_IMAGE_URL,
+    "fc:frame:button:1": APP_BUTTON_TEXT ?? "Open Monport",
+    "fc:frame:post_url": `${APP_URL}/?tab=welcome`,
+  };
+}
+
+// ---------- Frame Embed Metadata (for internal use or legacy) ----------
+
 export function getFrameEmbedMetadata(imageUrl?: string) {
   return {
     version: "next",
@@ -72,20 +86,8 @@ export function getFrameEmbedMetadata(imageUrl?: string) {
   };
 }
 
-/**
- */
-export function getFlatFrameMetadata(): Record<string, string> {
-  return {
-    "fc:frame": "vNext",
-    "fc:frame:image": APP_OG_IMAGE_URL,
-    "fc:frame:button:1": APP_BUTTON_TEXT ?? "Open Monport",
-    "fc:frame:post_url": `${APP_URL}/?tab=welcome`,
-  };
-}
+// ---------- Frame Manifest (signed if available) ----------
 
-/**
- * ✅ Frame Manifest (signed if available)
- */
 export async function getFarcasterMetadata(): Promise<FrameManifest> {
   if (process.env.FRAME_METADATA) {
     try {
