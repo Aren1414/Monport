@@ -45,14 +45,7 @@ export default function WelcomeTab() {
       const totalPriceMon = (NFT_PRICE * selectedAmount).toFixed(2)
       const totalPrice = parseEther(totalPriceMon)
 
-      const confirmMint = window.confirm(
-        `🪙 You are about to mint ${selectedAmount} NFT(s) for ${totalPriceMon} MON. Do you want to proceed?`
-      )
-      if (!confirmMint) {
-        setIsMinting(false)
-        return
-      }
-
+      // ✅ Removed confirmation step — go straight to wallet
       await writeContract(walletClient, {
         address: WELCOME_CONTRACT_ADDRESS,
         abi: welcomeAbi,
@@ -61,7 +54,7 @@ export default function WelcomeTab() {
         value: totalPrice,
       })
 
-      alert(`🎉 Success! Your NFT has been minted.`)
+      alert(`🎉 Success! You minted ${selectedAmount} NFT(s) for ${totalPriceMon} MON.`)
     } catch (error) {
       console.error('Mint error:', error)
       alert('❌ Mint failed. Please check your wallet balance or network status.')
@@ -71,9 +64,10 @@ export default function WelcomeTab() {
   }
 
   const shareToWarpcast = () => {
-    const shareUrl = `https://warpcast.com/~/compose?text=Check%20out%20this%20Mini%20App!&embeds[]=${encodeURIComponent(
-      MINI_APP_URL
-    )}`
+    const message = `🚀 Just minted a Welcome NFT on Monad!\n\nJoin the Mini App and mint yours now 👇\n\nCreated by @overo.eth`
+    const shareUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(
+      message
+    )}&embeds[]=${encodeURIComponent(MINI_APP_URL)}`
     window.open(shareUrl, '_blank')
   }
 
