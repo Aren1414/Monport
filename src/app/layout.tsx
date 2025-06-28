@@ -7,7 +7,8 @@ import { Providers } from "~/app/providers";
 import { APP_NAME, APP_DESCRIPTION, APP_OG_IMAGE_URL } from "~/lib/constants";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const pathname = headers().get("x-next-url") || "";
+  const headersList = headers(); // headers() در App Router نیازی به await نداره
+  const pathname = headersList.get("x-next-url") || "";
 
   const isFrame = pathname.startsWith("/frame");
 
