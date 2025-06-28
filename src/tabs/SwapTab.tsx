@@ -87,41 +87,128 @@ export default function SwapTab() {
     }
   };
 
+  const swapTokens = () => {
+    const temp = fromToken;
+    setFromToken(toToken);
+    setToToken(temp);
+    setQuote(null);
+    setAmountIn("");
+  };
+
   return (
-    <div className="tab swap-tab">
-      <h2>🔄 Swap</h2>
+    <div className="tab swap-tab" style={{ maxWidth: 400, margin: "0 auto", padding: 16 }}>
+      <h2 style={{ textAlign: "center", marginBottom: 24 }}>🔄 Swap</h2>
 
-      <label>From Token:</label>
-      <select value={fromToken} onChange={(e) => setFromToken(e.target.value)}>
-        {Object.entries(TOKENS).map(([sym, addr]) => (
-          <option key={sym} value={addr}>
-            {sym}
-          </option>
-        ))}
-      </select>
+      {/* From Token */}
+      <div style={{ background: "#f5f5f5", padding: 12, borderRadius: 12, marginBottom: 12 }}>
+        <label style={{ fontWeight: "bold" }}>From</label>
+        <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 8 }}>
+          <select
+            value={fromToken}
+            onChange={(e) => setFromToken(e.target.value)}
+            style={{ flex: 1, padding: 8, borderRadius: 8 }}
+          >
+            {Object.entries(TOKENS).map(([sym, addr]) => (
+              <option key={sym} value={addr}>
+                {sym}
+              </option>
+            ))}
+          </select>
+          <input
+            placeholder="0.0"
+            value={amountIn}
+            onChange={(e) => setAmountIn(e.target.value)}
+            style={{
+              flex: 1,
+              padding: 8,
+              borderRadius: 8,
+              border: "1px solid #ccc",
+              textAlign: "right"
+            }}
+          />
+        </div>
+      </div>
 
-      <label>To Token:</label>
-      <select value={toToken} onChange={(e) => setToToken(e.target.value)}>
-        {Object.entries(TOKENS).map(([sym, addr]) => (
-          <option key={sym} value={addr}>
-            {sym}
-          </option>
-        ))}
-      </select>
+      {/* Switch Button */}
+      <div style={{ textAlign: "center", margin: "8px 0" }}>
+        <button
+          onClick={swapTokens}
+          style={{
+            background: "#eee",
+            border: "none",
+            borderRadius: "50%",
+            padding: 8,
+            cursor: "pointer"
+          }}
+        >
+          ⬇️
+        </button>
+      </div>
 
-      <input
-        placeholder="Amount In"
-        value={amountIn}
-        onChange={(e) => setAmountIn(e.target.value)}
-      />
+      {/* To Token */}
+      <div style={{ background: "#f5f5f5", padding: 12, borderRadius: 12, marginBottom: 12 }}>
+        <label style={{ fontWeight: "bold" }}>To</label>
+        <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 8 }}>
+          <select
+            value={toToken}
+            onChange={(e) => setToToken(e.target.value)}
+            style={{ flex: 1, padding: 8, borderRadius: 8 }}
+          >
+            {Object.entries(TOKENS).map(([sym, addr]) => (
+              <option key={sym} value={addr}>
+                {sym}
+              </option>
+            ))}
+          </select>
+          <input
+            value={quote ?? ""}
+            readOnly
+            placeholder="0.0"
+            style={{
+              flex: 1,
+              padding: 8,
+              borderRadius: 8,
+              border: "1px solid #ccc",
+              background: "#fafafa",
+              textAlign: "right"
+            }}
+          />
+        </div>
+      </div>
 
-      <button onClick={getQuote} disabled={loading}>
+      {/* Buttons */}
+      <button
+        onClick={getQuote}
+        disabled={loading}
+        style={{
+          width: "100%",
+          padding: 12,
+          background: "#1d9bf0",
+          color: "white",
+          fontWeight: "bold",
+          border: "none",
+          borderRadius: 8,
+          marginBottom: 8,
+          cursor: loading ? "not-allowed" : "pointer"
+        }}
+      >
         {loading ? "Fetching…" : "Get Quote"}
       </button>
 
-      {quote && <div>Estimated Out: {quote}</div>}
-
-      <button onClick={doSwap} disabled={!quote || loading}>
+      <button
+        onClick={doSwap}
+        disabled={!quote || loading}
+        style={{
+          width: "100%",
+          padding: 12,
+          background: "#28a745",
+          color: "white",
+          fontWeight: "bold",
+          border: "none",
+          borderRadius: 8,
+          cursor: !quote || loading ? "not-allowed" : "pointer"
+        }}
+      >
         {loading ? "Processing…" : "Swap Now"}
       </button>
     </div>
