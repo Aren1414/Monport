@@ -3,9 +3,15 @@
 import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
+interface FileData {
+  name: string;
+  description: string;
+  url: string;
+}
+
 export default function SharePage() {
   const params = useParams();
-  const [fileData, setFileData] = useState<any>(null);
+  const [fileData, setFileData] = useState<FileData | null>(null);
 
   useEffect(() => {
     const fetchFile = async () => {
@@ -14,7 +20,7 @@ export default function SharePage() {
       try {
         const response = await fetch(`/api/files/${params.fid}`);
         const data = await response.json();
-        setFileData(data);
+        setFileData(data as FileData); // Type assertion
       } catch (error) {
         console.error('Failed to fetch file:', error);
       }
