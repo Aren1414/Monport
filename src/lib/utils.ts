@@ -73,6 +73,17 @@ export function getFrameEmbedMetadata(imageUrl?: string) {
 }
 
 /**
+ */
+export function getFlatFrameMetadata(): Record<string, string> {
+  return {
+    "fc:frame": "vNext",
+    "fc:frame:image": APP_OG_IMAGE_URL,
+    "fc:frame:button:1": APP_BUTTON_TEXT ?? "Open Monport",
+    "fc:frame:post_url": `${APP_URL}/?tab=welcome`,
+  };
+}
+
+/**
  * ✅ Frame Manifest (signed if available)
  */
 export async function getFarcasterMetadata(): Promise<FrameManifest> {
