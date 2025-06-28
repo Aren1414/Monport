@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react'
 import { useAccount, useChainId, useSwitchChain, useWalletClient } from 'wagmi'
 import { writeContract } from 'viem/actions'
 import { parseEther } from 'viem'
+import { sdk } from '@farcaster/frame-sdk'
 import welcomeAbi from '~/abis/WelcomeNFT.json'
 
 const WELCOME_CONTRACT_ADDRESS = '0x40649af9dEE8bDB94Dc21BA2175AE8f5181f14AE'
@@ -27,6 +28,10 @@ export default function WelcomeTab() {
       switchChain({ chainId: MONAD_TESTNET_CHAIN_ID })
     }
   }, [isConnected, chainId, switchChain])
+
+  useEffect(() => {
+    sdk.actions.ready()
+  }, [])
 
   const mintNFT = async () => {
     if (!walletClient || !address || chainId !== MONAD_TESTNET_CHAIN_ID) {
