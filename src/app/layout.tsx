@@ -15,7 +15,7 @@ export const metadata: Metadata = {
     images: [APP_OG_IMAGE_URL],
   },
   other: {
-    ...getFrameEmbedMetadata(), 
+    ...getFrameEmbedMetadata(),
   },
 };
 
