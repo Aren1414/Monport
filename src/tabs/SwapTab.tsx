@@ -13,6 +13,12 @@ import { getKuruProvider } from "~/lib/kuru/getKuruProvider";
 
 const KURU_API_URL = "https://api.testnet.kuru.io";
 
+// Base tokens to help pathfinding (e.g. MON and USDC)
+const BASE_TOKENS = [
+  { symbol: "MON", address: TOKENS.MON },
+  { symbol: "USDC", address: TOKENS.USDC }
+];
+
 export default function SwapTab() {
   const { isConnected } = useAccount();
   const [fromToken, setFromToken] = useState(TOKENS.USDC);
@@ -20,11 +26,13 @@ export default function SwapTab() {
   const [amountIn, setAmountIn] = useState("");
   const [quote, setQuote] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [bestPath, setBestPath] = useState<KuruSdk.RouteOutput | null>(null);
 
   const getQuote = async () => {
     const parsedAmount = parseFloat(amountIn);
     if (!fromToken || !toToken || isNaN(parsedAmount) || parsedAmount <= 0) {
       setQuote(null);
+      setBestPath(null);
       return;
     }
 
@@ -33,18 +41,22 @@ export default function SwapTab() {
     const poolFetcher = new KuruSdk.PoolFetcher(KURU_API_URL);
 
     try {
+      const pools = await poolFetcher.getAllPools(fromToken, toToken, BASE_TOKENS);
       const path = await KuruSdk.PathFinder.findBestPath(
         provider,
         fromToken,
         toToken,
         parsedAmount,
         "amountIn",
-        poolFetcher
+        poolFetcher,
+        pools
       );
       setQuote(path.output.toString());
+      setBestPath(path);
     } catch (err) {
       console.error("Quote error:", err);
       setQuote(null);
+      setBestPath(null);
     } finally {
       setLoading(false);
     }
@@ -55,23 +67,13 @@ export default function SwapTab() {
   }, [fromToken, toToken, amountIn]);
 
   const doSwap = async () => {
-    if (!isConnected || !quote) return alert("Connect wallet & get quote");
+    if (!isConnected || !quote || !bestPath) return alert("Connect wallet & get quote");
     setLoading(true);
     try {
       const provider = new ethers.providers.Web3Provider(
         (window as Window & typeof globalThis & { ethereum?: unknown }).ethereum!
       );
       const signer = await provider.getSigner();
-      const poolFetcher = new KuruSdk.PoolFetcher(KURU_API_URL);
-
-      const path = await KuruSdk.PathFinder.findBestPath(
-        provider,
-        fromToken,
-        toToken,
-        parseFloat(amountIn),
-        "amountIn",
-        poolFetcher
-      );
 
       const inputDecimals = TOKEN_METADATA[fromToken]?.decimals;
       const outputDecimals = TOKEN_METADATA[toToken]?.decimals;
@@ -86,11 +88,10 @@ export default function SwapTab() {
       await KuruSdk.TokenSwap.swap(
         signer,
         ROUTER_ADDRESS,
-        path,
-        Number(rawAmountIn.toString()), 
+        bestPath,
+        Number(rawAmountIn.toString()),
         inputDecimals,
         outputDecimals,
-        30,
         true,
         (txHash: string | null) => {
           if (txHash) {
@@ -98,6 +99,7 @@ export default function SwapTab() {
             alert("✅ Swap successful");
             setAmountIn("");
             setQuote(null);
+            setBestPath(null);
           }
         }
       );
@@ -115,6 +117,7 @@ export default function SwapTab() {
     setToToken(temp);
     setQuote(null);
     setAmountIn("");
+    setBestPath(null);
   };
 
   return (
