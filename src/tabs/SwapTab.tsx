@@ -66,7 +66,11 @@ export default function SwapTab() {
         return;
       }
 
-      if (path.route?.path?.some(p => p.orderbook === "0x0000000000000000000000000000000000000000")) {
+      const hasInvalidOrderbook =
+        Array.isArray(path.route?.path) &&
+        path.route.path.some((p: any) => p?.orderbook === "0x0000000000000000000000000000000000000000");
+
+      if (hasInvalidOrderbook) {
         alert("❌ Invalid route: missing orderbook address.");
         setQuote(null);
         setBestPath(null);
@@ -95,7 +99,11 @@ export default function SwapTab() {
       return;
     }
 
-    if (bestPath.route?.path?.some(p => p.orderbook === "0x0000000000000000000000000000000000000000")) {
+    const hasInvalidOrderbook =
+      Array.isArray(bestPath.route?.path) &&
+      bestPath.route.path.some((p: any) => p?.orderbook === "0x0000000000000000000000000000000000000000");
+
+    if (hasInvalidOrderbook) {
       alert("❌ Invalid route: missing orderbook address.");
       return;
     }
@@ -113,16 +121,6 @@ export default function SwapTab() {
       const amount = parseFloat(amountIn);
       const isNative = fromToken === NATIVE_TOKEN_ADDRESS;
       const approveTokens = !isNative;
-
-      console.log("🧪 SWAP DEBUG");
-      console.log("fromToken:", fromToken);
-      console.log("toToken:", toToken);
-      console.log("isNative:", isNative);
-      console.log("approveTokens:", approveTokens);
-      console.log("inputDecimals:", inputDecimals);
-      console.log("outputDecimals:", outputDecimals);
-      console.log("amount:", amount);
-      console.log("bestPath:", bestPath);
 
       await TokenSwap.swap(
         signer,
