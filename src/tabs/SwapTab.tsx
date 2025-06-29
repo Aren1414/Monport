@@ -41,6 +41,8 @@ export default function SwapTab() {
 
     try {
       const pools = await poolFetcher.getAllPools(fromToken, toToken, BASE_TOKENS);
+      console.log("Pools:", pools);
+
       const path = await KuruSdk.PathFinder.findBestPath(
         provider,
         fromToken,
@@ -50,6 +52,16 @@ export default function SwapTab() {
         poolFetcher,
         pools
       );
+
+      console.log("Best path:", path);
+
+      if (!path || path.output <= 0) {
+        alert("❌ No valid swap path found.");
+        setQuote(null);
+        setBestPath(null);
+        return;
+      }
+
       setQuote(path.output.toString());
       setBestPath(path);
     } catch (err) {
@@ -86,7 +98,7 @@ export default function SwapTab() {
         return;
       }
 
-      const amount = parseFloat(amountIn); 
+      const amount = parseFloat(amountIn);
 
       await KuruSdk.TokenSwap.swap(
         signer,
