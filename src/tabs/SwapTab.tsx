@@ -66,6 +66,13 @@ export default function SwapTab() {
         return;
       }
 
+      if (path.route?.path?.some(p => p.orderbook === "0x0000000000000000000000000000000000000000")) {
+        alert("❌ Invalid route: missing orderbook address.");
+        setQuote(null);
+        setBestPath(null);
+        return;
+      }
+
       console.log("✅ bestPath:", path);
       setQuote(path.output.toString());
       setBestPath(path);
@@ -85,6 +92,11 @@ export default function SwapTab() {
   const doSwap = async () => {
     if (!isConnected || !quote || !bestPath || bestPath.output <= 0) {
       alert("Connect wallet & get valid quote");
+      return;
+    }
+
+    if (bestPath.route?.path?.some(p => p.orderbook === "0x0000000000000000000000000000000000000000")) {
+      alert("❌ Invalid route: missing orderbook address.");
       return;
     }
 
