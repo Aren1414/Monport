@@ -88,7 +88,7 @@ export default function SwapTab() {
         signer,
         ROUTER_ADDRESS,
         path,
-        rawAmountIn,
+        Number(rawAmountIn.toString()), 
         inputDecimals,
         outputDecimals,
         30,
@@ -101,7 +101,7 @@ export default function SwapTab() {
             setQuote(null);
           }
         },
-        isNative ? { value: rawAmountIn } : undefined
+        isNative ? { value: rawAmountIn } : undefined 
       );
     } catch (err) {
       console.error("Swap error:", err);
