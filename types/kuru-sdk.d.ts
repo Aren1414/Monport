@@ -15,8 +15,7 @@ declare module "@kuru-labs/kuru-sdk" {
       amount: number,
       inputDecimals: number,
       outputDecimals: number,
-      slippage: number,
-      deadline: number,
+      approveTokens: boolean,
       callback: (txHash: string | null) => void
     ): Promise<any>;
   }
