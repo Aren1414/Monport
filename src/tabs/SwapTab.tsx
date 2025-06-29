@@ -84,7 +84,7 @@ export default function SwapTab() {
 
       const rawAmountIn = ethers.utils.parseUnits(amountIn, inputDecimals);
       const slippage = 30; // 3%
-      const deadline = Math.floor(Date.now() / 1000) + 600; 
+      const deadline = Math.floor(Date.now() / 1000) + 600; // 10 minutes
 
       await KuruSdk.TokenSwap.swap(
         signer,
