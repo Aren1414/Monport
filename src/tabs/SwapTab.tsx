@@ -66,7 +66,11 @@ export default function SwapTab() {
   }, [fromToken, toToken, amountIn]);
 
   const doSwap = async () => {
-    if (!isConnected || !quote || !bestPath) return alert("Connect wallet & get quote");
+    if (!isConnected || !quote || !bestPath || bestPath.output <= 0) {
+      alert("Connect wallet & get valid quote");
+      return;
+    }
+
     setLoading(true);
     try {
       const provider = new ethers.providers.Web3Provider(
@@ -82,13 +86,13 @@ export default function SwapTab() {
         return;
       }
 
-      const rawAmountIn = ethers.utils.parseUnits(amountIn, inputDecimals);
+      const amount = parseFloat(amountIn); 
 
       await KuruSdk.TokenSwap.swap(
         signer,
         ROUTER_ADDRESS,
         bestPath,
-        Number(rawAmountIn.toString()),
+        amount,
         inputDecimals,
         outputDecimals,
         true,
