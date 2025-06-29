@@ -4,7 +4,7 @@ import React, { useEffect } from 'react'
 import { WagmiProvider, createConfig, http } from 'wagmi'
 import { base, optimism, mainnet, degen, unichain, celo } from 'wagmi/chains'
 import { farcasterFrame as miniAppConnector } from '@farcaster/frame-wagmi-connector'
-import { coinbaseWallet, metaMask } from 'wagmi/connectors'
+import { coinbaseWallet, metaMask, injected } from 'wagmi/connectors'
 import { useConnect, useAccount } from 'wagmi'
 import { APP_NAME, APP_ICON_URL, APP_URL } from '~/lib/constants'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -46,6 +46,7 @@ export const config = createConfig({
     [monadTestnet.id]: http(),
   },
   connectors: [
+    injected(), 
     miniAppConnector(),
     coinbaseWallet({
       appName: APP_NAME,
