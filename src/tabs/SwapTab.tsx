@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useAccount, useConnect, useDisconnect } from "wagmi";
+import { useAccount, useConnect } from "wagmi";
 import { injected } from "wagmi/connectors";
 import { ethers } from "ethers";
 import * as KuruSdk from "@kuru-labs/kuru-sdk";
@@ -22,7 +22,6 @@ const BASE_TOKENS = [
 export default function SwapTab() {
   const { isConnected, address } = useAccount();
   const { connect } = useConnect({ connector: injected() });
-  const { disconnect } = useDisconnect();
 
   const [fromToken, setFromToken] = useState(TOKENS.USDC);
   const [toToken, setToToken] = useState(TOKENS.MON);
@@ -73,6 +72,7 @@ export default function SwapTab() {
     }
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     getQuote();
   }, [fromToken, toToken, amountIn]);
@@ -118,11 +118,12 @@ export default function SwapTab() {
           }
         }
       );
-    } catch (err: any) {
-      console.error("Swap error:", err);
-      if (err?.error?.message) console.error("Revert reason:", err.error.message);
-      if (err?.reason) console.error("Reason:", err.reason);
-      if (err?.code) console.error("Error code:", err.code);
+    } catch (err: unknown) {
+      const error = err as { error?: { message?: string }; reason?: string; code?: string };
+      console.error("Swap error:", error);
+      if (error?.error?.message) console.error("Revert reason:", error.error.message);
+      if (error?.reason) console.error("Reason:", error.reason);
+      if (error?.code) console.error("Error code:", error.code);
       alert("Swap failed");
     } finally {
       setLoading(false);
