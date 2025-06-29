@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useAccount, useConnect } from "wagmi";
 import { ethers } from "ethers";
 import * as KuruSdk from "@kuru-labs/kuru-sdk";
@@ -29,7 +29,7 @@ export default function SwapTab() {
   const [loading, setLoading] = useState(false);
   const [bestPath, setBestPath] = useState<KuruSdk.RouteOutput | null>(null);
 
-  const getQuote = async () => {
+  const getQuote = useCallback(async () => {
     const parsedAmount = parseFloat(amountIn);
     if (!fromToken || !toToken || isNaN(parsedAmount) || parsedAmount <= 0) {
       setQuote(null);
@@ -69,11 +69,11 @@ export default function SwapTab() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [fromToken, toToken, amountIn]);
 
   useEffect(() => {
     getQuote();
-  }, [fromToken, toToken, amountIn]);
+  }, [getQuote]);
 
   const doSwap = async () => {
     if (!isConnected || !quote || !bestPath || bestPath.output <= 0) {
@@ -83,10 +83,6 @@ export default function SwapTab() {
 
     setLoading(true);
     try {
-      console.log("fromToken:", fromToken);
-      console.log("toToken:", toToken);
-      console.log("amountIn:", amountIn);
-      console.log("bestPath:", bestPath);
       const provider = new ethers.providers.Web3Provider(
         (window as Window & typeof globalThis & { ethereum?: unknown }).ethereum!
       );
@@ -102,7 +98,8 @@ export default function SwapTab() {
 
       const amount = parseFloat(amountIn);
       const isNative = fromToken === "0x0000000000000000000000000000000000000000";
-      const approveTokens = !isNative && (bestPath as any).nativeSend?.[0] === false;
+      const nativeSend = (bestPath as unknown as { nativeSend?: boolean[] })?.nativeSend?.[0];
+      const approveTokens = !isNative && nativeSend === false;
 
       await KuruSdk.TokenSwap.swap(
         signer,
