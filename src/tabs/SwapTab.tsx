@@ -7,7 +7,8 @@ import {
   PoolFetcher,
   PathFinder,
   TokenSwap,
-  RouteOutput
+  RouteOutput,
+  RoutePath
 } from "@kuru-labs/kuru-sdk";
 import {
   ROUTER_ADDRESS,
@@ -35,6 +36,13 @@ export default function SwapTab() {
   const [loading, setLoading] = useState(false);
   const [bestPath, setBestPath] = useState<RouteOutput | null>(null);
 
+  const hasInvalidOrderbook = (path: RouteOutput | null): boolean => {
+    return (
+      Array.isArray(path?.route?.path) &&
+      path!.route!.path.some((p: RoutePath) => p.orderbook === "0x0000000000000000000000000000000000000000")
+    );
+  };
+
   const getQuote = useCallback(async () => {
     const parsedAmount = parseFloat(amountIn);
     if (!fromToken || !toToken || isNaN(parsedAmount) || parsedAmount <= 0) {
@@ -59,19 +67,8 @@ export default function SwapTab() {
         pools
       );
 
-      if (!path || path.output <= 0) {
+      if (!path || path.output <= 0 || hasInvalidOrderbook(path)) {
         alert("❌ No valid swap path found.");
-        setQuote(null);
-        setBestPath(null);
-        return;
-      }
-
-      const hasInvalidOrderbook =
-        Array.isArray(path.route?.path) &&
-        path.route.path.some((p: any) => p?.orderbook === "0x0000000000000000000000000000000000000000");
-
-      if (hasInvalidOrderbook) {
-        alert("❌ Invalid route: missing orderbook address.");
         setQuote(null);
         setBestPath(null);
         return;
@@ -94,17 +91,8 @@ export default function SwapTab() {
   }, [getQuote]);
 
   const doSwap = async () => {
-    if (!isConnected || !quote || !bestPath || bestPath.output <= 0) {
+    if (!isConnected || !quote || !bestPath || bestPath.output <= 0 || hasInvalidOrderbook(bestPath)) {
       alert("Connect wallet & get valid quote");
-      return;
-    }
-
-    const hasInvalidOrderbook =
-      Array.isArray(bestPath.route?.path) &&
-      bestPath.route.path.some((p: any) => p?.orderbook === "0x0000000000000000000000000000000000000000");
-
-    if (hasInvalidOrderbook) {
-      alert("❌ Invalid route: missing orderbook address.");
       return;
     }
 
