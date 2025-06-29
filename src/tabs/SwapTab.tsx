@@ -7,7 +7,8 @@ import * as KuruSdk from "@kuru-labs/kuru-sdk";
 import {
   ROUTER_ADDRESS,
   TOKENS,
-  TOKEN_METADATA
+  TOKEN_METADATA,
+  NATIVE_TOKEN_ADDRESS
 } from "~/lib/constants";
 import { getKuruProvider } from "~/lib/kuru/getKuruProvider";
 
@@ -88,16 +89,11 @@ export default function SwapTab() {
       );
       const signer = await provider.getSigner();
 
-      const inputDecimals = TOKEN_METADATA[fromToken]?.decimals;
-      const outputDecimals = TOKEN_METADATA[toToken]?.decimals;
-
-      if (inputDecimals === undefined || outputDecimals === undefined) {
-        alert("Missing token decimal metadata.");
-        return;
-      }
+      const inputDecimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
+      const outputDecimals = TOKEN_METADATA[toToken]?.decimals ?? 18;
 
       const amount = parseFloat(amountIn);
-      const isNative = fromToken === "0x0000000000000000000000000000000000000000";
+      const isNative = fromToken === NATIVE_TOKEN_ADDRESS;
       const approveTokens = !isNative;
 
       await KuruSdk.TokenSwap.swap(
