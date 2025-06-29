@@ -91,7 +91,7 @@ export default function SwapTab() {
         Number(rawAmountIn.toString()),
         inputDecimals,
         outputDecimals,
-        true, // approveTokens
+        true,
         (txHash: string | null) => {
           if (txHash) {
             console.log("tx", txHash);
