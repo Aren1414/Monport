@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useAccount, useConnect, useDisconnect } from "wagmi";
-import { InjectedConnector } from "wagmi/connectors/injected";
+import { injected } from "wagmi/connectors";
 import { ethers } from "ethers";
 import * as KuruSdk from "@kuru-labs/kuru-sdk";
 import {
@@ -21,7 +21,7 @@ const BASE_TOKENS = [
 
 export default function SwapTab() {
   const { isConnected, address } = useAccount();
-  const { connect } = useConnect({ connector: new InjectedConnector() });
+  const { connect } = useConnect({ connector: injected() });
   const { disconnect } = useDisconnect();
 
   const [fromToken, setFromToken] = useState(TOKENS.USDC);
@@ -142,7 +142,6 @@ export default function SwapTab() {
     <div className="tab swap-tab" style={{ maxWidth: 400, margin: "0 auto", padding: 16 }}>
       <h2 style={{ textAlign: "center", marginBottom: 24 }}>🔄 Swap</h2>
 
-      {/* Connect Wallet */}
       {!isConnected ? (
         <button
           onClick={() => connect()}
