@@ -144,7 +144,14 @@ export default function SwapTab() {
 
       {!isConnected ? (
         <button
-          onClick={() => connect({ connector: connectors.find(c => c.id === "injected") })}
+          onClick={() => {
+            const injectedConnector = connectors.find(c => c.id === "injected");
+            if (injectedConnector) {
+              connect({ connector: injectedConnector });
+            } else {
+              alert("No injected wallet found.");
+            }
+          }}
           style={{
             width: "100%",
             padding: 12,
