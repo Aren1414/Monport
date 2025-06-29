@@ -28,13 +28,16 @@ export default function SwapTab() {
 
     setLoading(true);
     const provider = getKuruProvider();
+    const poolFetcher = new KuruSdk.PoolFetcher(provider);
+
     try {
       const path = await KuruSdk.PathFinder.findBestPath(
         provider,
         fromToken,
         toToken,
         parsedAmount,
-        "amountIn"
+        "amountIn",
+        { poolFetcher } 
       );
       setQuote(path.output.toString());
     } catch (err) {
@@ -53,12 +56,15 @@ export default function SwapTab() {
         (window as Window & typeof globalThis & { ethereum?: unknown }).ethereum!
       );
       const signer = await provider.getSigner();
+      const poolFetcher = new KuruSdk.PoolFetcher(provider); 
+
       const path = await KuruSdk.PathFinder.findBestPath(
         provider,
         fromToken,
         toToken,
         Number(amountIn),
-        "amountIn"
+        "amountIn",
+        { poolFetcher } 
       );
 
       const inputDecimals = TOKEN_METADATA[fromToken]?.decimals;
