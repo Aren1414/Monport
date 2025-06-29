@@ -98,6 +98,7 @@ export default function SwapTab() {
       }
 
       const amount = parseFloat(amountIn);
+      const isNative = fromToken === "0x0000000000000000000000000000000000000000";
 
       await KuruSdk.TokenSwap.swap(
         signer,
@@ -106,7 +107,7 @@ export default function SwapTab() {
         amount,
         inputDecimals,
         outputDecimals,
-        true,
+        !isNative,
         (txHash: string | null) => {
           if (txHash) {
             console.log("tx", txHash);
@@ -172,7 +173,6 @@ export default function SwapTab() {
         </div>
       )}
 
-      {/* From Token */}
       <div style={{ background: "#f5f5f5", padding: 12, borderRadius: 12, marginBottom: 12 }}>
         <label style={{ fontWeight: "bold" }}>From</label>
         <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 8 }}>
@@ -202,7 +202,6 @@ export default function SwapTab() {
         </div>
       </div>
 
-      {/* Switch Button */}
       <div style={{ textAlign: "center", margin: "8px 0" }}>
         <button
           onClick={swapTokens}
@@ -218,7 +217,6 @@ export default function SwapTab() {
         </button>
       </div>
 
-      {/* To Token */}
       <div style={{ background: "#f5f5f5", padding: 12, borderRadius: 12, marginBottom: 12 }}>
         <label style={{ fontWeight: "bold" }}>To</label>
         <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 8 }}>
@@ -251,7 +249,6 @@ export default function SwapTab() {
         </div>
       </div>
 
-      {/* Swap Button */}
       <button
         onClick={doSwap}
         disabled={!quote || loading || !isConnected}
