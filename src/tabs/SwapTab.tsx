@@ -21,7 +21,7 @@ const BASE_TOKENS = [
 
 export default function SwapTab() {
   const { isConnected, address } = useAccount();
-  const { connect } = useConnect({ connector: injected() });
+  const { connect, connectors } = useConnect();
 
   const [fromToken, setFromToken] = useState(TOKENS.USDC);
   const [toToken, setToToken] = useState(TOKENS.MON);
@@ -145,7 +145,7 @@ export default function SwapTab() {
 
       {!isConnected ? (
         <button
-          onClick={() => connect()}
+          onClick={() => connect({ connector: connectors.find(c => c.id === "injected") })}
           style={{
             width: "100%",
             padding: 12,
