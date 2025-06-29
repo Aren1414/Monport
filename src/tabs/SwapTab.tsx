@@ -36,11 +36,13 @@ export default function SwapTab() {
   const [bestPath, setBestPath] = useState<RouteOutput | null>(null);
 
   const hasInvalidOrderbook = (path: RouteOutput | null): boolean => {
-    return (
-      Array.isArray(path?.route?.path) &&
-      path.route.path.some((p) => {
-        return typeof p === "object" && "orderbook" in p && p.orderbook === "0x0000000000000000000000000000000000000000";
-      })
+    if (!path || !path.route || !Array.isArray(path.route.path)) return true;
+
+    return path.route.path.some(
+      (p) =>
+        typeof p === "object" &&
+        "orderbook" in p &&
+        p.orderbook === "0x0000000000000000000000000000000000000000"
     );
   };
 
@@ -270,6 +272,8 @@ export default function SwapTab() {
           color: "white",
           fontWeight: "bold",
           border: "none",
+          borderRadius: 8,
+          cursor: !quote
           borderRadius: 8,
           cursor: !quote || loading ? "not-allowed" : "pointer"
         }}
