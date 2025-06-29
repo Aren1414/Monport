@@ -7,8 +7,7 @@ import {
   PoolFetcher,
   PathFinder,
   TokenSwap,
-  RouteOutput,
-  RoutePath
+  RouteOutput
 } from "@kuru-labs/kuru-sdk";
 import {
   ROUTER_ADDRESS,
@@ -39,7 +38,9 @@ export default function SwapTab() {
   const hasInvalidOrderbook = (path: RouteOutput | null): boolean => {
     return (
       Array.isArray(path?.route?.path) &&
-      path!.route!.path.some((p: RoutePath) => p.orderbook === "0x0000000000000000000000000000000000000000")
+      path.route.path.some((p) => {
+        return typeof p === "object" && "orderbook" in p && p.orderbook === "0x0000000000000000000000000000000000000000";
+      })
     );
   };
 
