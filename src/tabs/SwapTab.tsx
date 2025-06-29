@@ -273,8 +273,6 @@ export default function SwapTab() {
           fontWeight: "bold",
           border: "none",
           borderRadius: 8,
-          cursor: !quote
-          borderRadius: 8,
           cursor: !quote || loading ? "not-allowed" : "pointer"
         }}
       >
