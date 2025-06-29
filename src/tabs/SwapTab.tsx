@@ -84,25 +84,35 @@ export default function SwapTab() {
       const rawAmountIn = ethers.utils.parseUnits(amountIn, inputDecimals);
       const isNative = fromToken === TOKENS.MON;
 
-      await KuruSdk.TokenSwap.swap(
-        signer,
-        ROUTER_ADDRESS,
-        path,
-        Number(rawAmountIn.toString()), 
-        inputDecimals,
-        outputDecimals,
-        30,
-        true,
-        (txHash: string | null) => {
-          if (txHash) {
-            console.log("tx", txHash);
-            alert("✅ Swap successful");
-            setAmountIn("");
-            setQuote(null);
+      if (isNative) {
+        const tx = await signer.sendTransaction({
+          to: ROUTER_ADDRESS,
+          value: rawAmountIn,
+          data: path.data
+        });
+        console.log("tx", tx.hash);
+        alert("✅ Swap successful");
+      } else {
+        await KuruSdk.TokenSwap.swap(
+          signer,
+          ROUTER_ADDRESS,
+          path,
+          Number(rawAmountIn.toString()),
+          inputDecimals,
+          outputDecimals,
+          30,
+          true,
+          (txHash: string | null) => {
+            if (txHash) {
+              console.log("tx", txHash);
+              alert("✅ Swap successful");
+            }
           }
-        },
-        isNative ? { value: rawAmountIn } : undefined 
-      );
+        );
+      }
+
+      setAmountIn("");
+      setQuote(null);
     } catch (err) {
       console.error("Swap error:", err);
       alert("Swap failed");
