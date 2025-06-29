@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from "react";
 import { useAccount, useConnect } from "wagmi";
-import { injected } from "wagmi/connectors";
 import { ethers } from "ethers";
 import * as KuruSdk from "@kuru-labs/kuru-sdk";
 import {
