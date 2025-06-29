@@ -3,7 +3,12 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useAccount, useConnect } from "wagmi";
 import { ethers } from "ethers";
-import * as KuruSdk from "@kuru-labs/kuru-sdk";
+import {
+  PoolFetcher,
+  PathFinder,
+  TokenSwap,
+  RouteOutput
+} from "@kuru-labs/kuru-sdk";
 import {
   ROUTER_ADDRESS,
   TOKENS,
@@ -28,7 +33,7 @@ export default function SwapTab() {
   const [amountIn, setAmountIn] = useState("");
   const [quote, setQuote] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [bestPath, setBestPath] = useState<KuruSdk.RouteOutput | null>(null);
+  const [bestPath, setBestPath] = useState<RouteOutput | null>(null);
 
   const getQuote = useCallback(async () => {
     const parsedAmount = parseFloat(amountIn);
@@ -40,11 +45,11 @@ export default function SwapTab() {
 
     setLoading(true);
     const provider = getKuruProvider();
-    const poolFetcher = new KuruSdk.PoolFetcher(KURU_API_URL);
+    const poolFetcher = new PoolFetcher(KURU_API_URL);
 
     try {
       const pools = await poolFetcher.getAllPools(fromToken, toToken, BASE_TOKENS);
-      const path = await KuruSdk.PathFinder.findBestPath(
+      const path = await PathFinder.findBestPath(
         provider,
         fromToken,
         toToken,
@@ -96,7 +101,7 @@ export default function SwapTab() {
       const isNative = fromToken === NATIVE_TOKEN_ADDRESS;
       const approveTokens = !isNative;
 
-      await KuruSdk.TokenSwap.swap(
+      await TokenSwap.swap(
         signer,
         ROUTER_ADDRESS,
         bestPath,
