@@ -22,8 +22,8 @@ export default function SwapTab() {
   const { isConnected, address } = useAccount();
   const { connect, connectors } = useConnect();
 
-  const [fromToken, setFromToken] = useState(TOKENS.USDC);
-  const [toToken, setToToken] = useState(TOKENS.MON);
+  const [fromToken, setFromToken] = useState(TOKENS.MON);
+  const [toToken, setToToken] = useState(TOKENS.USDC);
   const [amountIn, setAmountIn] = useState("");
   const [quote, setQuote] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -98,10 +98,7 @@ export default function SwapTab() {
 
       const amount = parseFloat(amountIn);
       const isNative = fromToken === "0x0000000000000000000000000000000000000000";
-
-      const approveTokens =
-        !isNative &&
-        bestPath.route.tokenIn !== "0x0000000000000000000000000000000000000000";
+      const approveTokens = !isNative;
 
       await KuruSdk.TokenSwap.swap(
         signer,
