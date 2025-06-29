@@ -83,6 +83,10 @@ export default function SwapTab() {
 
     setLoading(true);
     try {
+      console.log("fromToken:", fromToken);
+      console.log("toToken:", toToken);
+      console.log("amountIn:", amountIn);
+      console.log("bestPath:", bestPath);
       const provider = new ethers.providers.Web3Provider(
         (window as Window & typeof globalThis & { ethereum?: unknown }).ethereum!
       );
