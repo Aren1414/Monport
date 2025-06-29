@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useAccount } from "wagmi";
 import { ethers } from "ethers";
 import * as KuruSdk from "@kuru-labs/kuru-sdk";
@@ -11,7 +11,7 @@ import {
 } from "~/lib/constants";
 import { getKuruProvider } from "~/lib/kuru/getKuruProvider";
 
-const KURU_API_URL = "https://api.testnet.kuru.io"; 
+const KURU_API_URL = "https://api.testnet.kuru.io";
 
 export default function SwapTab() {
   const { isConnected } = useAccount();
@@ -24,13 +24,13 @@ export default function SwapTab() {
   const getQuote = async () => {
     const parsedAmount = parseFloat(amountIn);
     if (!fromToken || !toToken || isNaN(parsedAmount) || parsedAmount <= 0) {
-      alert("Please enter a valid amount.");
+      setQuote(null);
       return;
     }
 
     setLoading(true);
     const provider = getKuruProvider();
-    const poolFetcher = new KuruSdk.PoolFetcher(KURU_API_URL); 
+    const poolFetcher = new KuruSdk.PoolFetcher(KURU_API_URL);
 
     try {
       const path = await KuruSdk.PathFinder.findBestPath(
@@ -44,11 +44,15 @@ export default function SwapTab() {
       setQuote(path.output.toString());
     } catch (err) {
       console.error("Quote error:", err);
-      alert("Error getting quote");
+      setQuote(null);
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    getQuote();
+  }, [fromToken, toToken, amountIn]);
 
   const doSwap = async () => {
     if (!isConnected || !quote) return alert("Connect wallet & get quote");
@@ -58,13 +62,13 @@ export default function SwapTab() {
         (window as Window & typeof globalThis & { ethereum?: unknown }).ethereum!
       );
       const signer = await provider.getSigner();
-      const poolFetcher = new KuruSdk.PoolFetcher(KURU_API_URL); 
+      const poolFetcher = new KuruSdk.PoolFetcher(KURU_API_URL);
 
       const path = await KuruSdk.PathFinder.findBestPath(
         provider,
         fromToken,
         toToken,
-        Number(amountIn),
+        parseFloat(amountIn),
         "amountIn",
         poolFetcher
       );
@@ -77,23 +81,28 @@ export default function SwapTab() {
         return;
       }
 
+      const rawAmountIn = ethers.utils.parseUnits(amountIn, inputDecimals);
+      const isNative = fromToken === TOKENS.MON;
+
       await KuruSdk.TokenSwap.swap(
         signer,
         ROUTER_ADDRESS,
         path,
-        Number(amountIn),
+        rawAmountIn,
         inputDecimals,
         outputDecimals,
         30,
         true,
         (txHash: string | null) => {
-          if (txHash) console.log("tx", txHash);
-        }
+          if (txHash) {
+            console.log("tx", txHash);
+            alert("✅ Swap successful");
+            setAmountIn("");
+            setQuote(null);
+          }
+        },
+        isNative ? { value: rawAmountIn } : undefined
       );
-
-      alert("✅ Swap successful");
-      setAmountIn("");
-      setQuote(null);
     } catch (err) {
       console.error("Swap error:", err);
       alert("Swap failed");
@@ -193,25 +202,7 @@ export default function SwapTab() {
         </div>
       </div>
 
-      {/* Buttons */}
-      <button
-        onClick={getQuote}
-        disabled={loading}
-        style={{
-          width: "100%",
-          padding: 12,
-          background: "#1d9bf0",
-          color: "white",
-          fontWeight: "bold",
-          border: "none",
-          borderRadius: 8,
-          marginBottom: 8,
-          cursor: loading ? "not-allowed" : "pointer"
-        }}
-      >
-        {loading ? "Fetching…" : "Get Quote"}
-      </button>
-
+      {/* Swap Button */}
       <button
         onClick={doSwap}
         disabled={!quote || loading}
