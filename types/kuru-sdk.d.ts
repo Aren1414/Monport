@@ -1,9 +1,17 @@
 declare module "@kuru-labs/kuru-sdk" {
+  export type RouteOutput = {
+    output: number;
+    route: {
+      path: string[];
+      pools: string[];
+    };
+  };
+
   export namespace TokenSwap {
     function swap(
       signer: any,
       router: string,
-      path: any,
+      path: RouteOutput,
       amount: number,
       inputDecimals: number,
       outputDecimals: number,
@@ -30,7 +38,7 @@ declare module "@kuru-labs/kuru-sdk" {
       type: "amountIn" | "amountOut",
       poolFetcher: any,
       pools: any[]
-    ): Promise<any>;
+    ): Promise<RouteOutput>;
   }
 
   export class ParamCreator {
