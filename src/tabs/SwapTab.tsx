@@ -13,7 +13,6 @@ import { getKuruProvider } from "~/lib/kuru/getKuruProvider";
 
 const KURU_API_URL = "https://api.testnet.kuru.io";
 
-// Base tokens to help pathfinding (e.g. MON and USDC)
 const BASE_TOKENS = [
   { symbol: "MON", address: TOKENS.MON },
   { symbol: "USDC", address: TOKENS.USDC }
@@ -84,6 +83,8 @@ export default function SwapTab() {
       }
 
       const rawAmountIn = ethers.utils.parseUnits(amountIn, inputDecimals);
+      const slippage = 30; // 3%
+      const deadline = Math.floor(Date.now() / 1000) + 600; 
 
       await KuruSdk.TokenSwap.swap(
         signer,
@@ -101,7 +102,9 @@ export default function SwapTab() {
             setQuote(null);
             setBestPath(null);
           }
-        }
+        },
+        slippage,
+        deadline
       );
     } catch (err) {
       console.error("Swap error:", err);
