@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useAccount } from "wagmi";
+import { useAccount, useConnect, useDisconnect } from "wagmi";
+import { InjectedConnector } from "wagmi/connectors/injected";
 import { ethers } from "ethers";
 import * as KuruSdk from "@kuru-labs/kuru-sdk";
 import {
@@ -19,7 +20,10 @@ const BASE_TOKENS = [
 ];
 
 export default function SwapTab() {
-  const { isConnected } = useAccount();
+  const { isConnected, address } = useAccount();
+  const { connect } = useConnect({ connector: new InjectedConnector() });
+  const { disconnect } = useDisconnect();
+
   const [fromToken, setFromToken] = useState(TOKENS.USDC);
   const [toToken, setToToken] = useState(TOKENS.MON);
   const [amountIn, setAmountIn] = useState("");
@@ -41,8 +45,6 @@ export default function SwapTab() {
 
     try {
       const pools = await poolFetcher.getAllPools(fromToken, toToken, BASE_TOKENS);
-      console.log("Pools:", pools);
-
       const path = await KuruSdk.PathFinder.findBestPath(
         provider,
         fromToken,
@@ -52,8 +54,6 @@ export default function SwapTab() {
         poolFetcher,
         pools
       );
-
-      console.log("Best path:", path);
 
       if (!path || path.output <= 0) {
         alert("❌ No valid swap path found.");
@@ -118,8 +118,11 @@ export default function SwapTab() {
           }
         }
       );
-    } catch (err) {
+    } catch (err: any) {
       console.error("Swap error:", err);
+      if (err?.error?.message) console.error("Revert reason:", err.error.message);
+      if (err?.reason) console.error("Reason:", err.reason);
+      if (err?.code) console.error("Error code:", err.code);
       alert("Swap failed");
     } finally {
       setLoading(false);
@@ -138,6 +141,30 @@ export default function SwapTab() {
   return (
     <div className="tab swap-tab" style={{ maxWidth: 400, margin: "0 auto", padding: 16 }}>
       <h2 style={{ textAlign: "center", marginBottom: 24 }}>🔄 Swap</h2>
+
+      {/* Connect Wallet */}
+      {!isConnected ? (
+        <button
+          onClick={() => connect()}
+          style={{
+            width: "100%",
+            padding: 12,
+            marginBottom: 16,
+            background: "#0070f3",
+            color: "white",
+            fontWeight: "bold",
+            border: "none",
+            borderRadius: 8,
+            cursor: "pointer"
+          }}
+        >
+          🔌 Connect Wallet
+        </button>
+      ) : (
+        <div style={{ marginBottom: 16, textAlign: "center", fontSize: 14 }}>
+          ✅ Connected: {address?.slice(0, 6)}...{address?.slice(-4)}
+        </div>
+      )}
 
       {/* From Token */}
       <div style={{ background: "#f5f5f5", padding: 12, borderRadius: 12, marginBottom: 12 }}>
@@ -221,7 +248,7 @@ export default function SwapTab() {
       {/* Swap Button */}
       <button
         onClick={doSwap}
-        disabled={!quote || loading}
+        disabled={!quote || loading || !isConnected}
         style={{
           width: "100%",
           padding: 12,
