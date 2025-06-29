@@ -66,6 +66,7 @@ export default function SwapTab() {
         return;
       }
 
+      console.log("✅ bestPath:", path);
       setQuote(path.output.toString());
       setBestPath(path);
     } catch (err) {
@@ -100,6 +101,16 @@ export default function SwapTab() {
       const amount = parseFloat(amountIn);
       const isNative = fromToken === NATIVE_TOKEN_ADDRESS;
       const approveTokens = !isNative;
+
+      console.log("🧪 SWAP DEBUG");
+      console.log("fromToken:", fromToken);
+      console.log("toToken:", toToken);
+      console.log("isNative:", isNative);
+      console.log("approveTokens:", approveTokens);
+      console.log("inputDecimals:", inputDecimals);
+      console.log("outputDecimals:", outputDecimals);
+      console.log("amount:", amount);
+      console.log("bestPath:", bestPath);
 
       await TokenSwap.swap(
         signer,
