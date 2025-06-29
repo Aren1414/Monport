@@ -71,7 +71,6 @@ export default function SwapTab() {
     }
   };
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     getQuote();
   }, [fromToken, toToken, amountIn]);
@@ -100,6 +99,10 @@ export default function SwapTab() {
       const amount = parseFloat(amountIn);
       const isNative = fromToken === "0x0000000000000000000000000000000000000000";
 
+      const approveTokens =
+        !isNative &&
+        bestPath.route.tokenIn !== "0x0000000000000000000000000000000000000000";
+
       await KuruSdk.TokenSwap.swap(
         signer,
         ROUTER_ADDRESS,
@@ -107,7 +110,7 @@ export default function SwapTab() {
         amount,
         inputDecimals,
         outputDecimals,
-        !isNative,
+        approveTokens,
         (txHash: string | null) => {
           if (txHash) {
             console.log("tx", txHash);
