@@ -98,8 +98,7 @@ export default function SwapTab() {
 
       const amount = parseFloat(amountIn);
       const isNative = fromToken === "0x0000000000000000000000000000000000000000";
-      const nativeSend = (bestPath as unknown as { nativeSend?: boolean[] })?.nativeSend?.[0];
-      const approveTokens = !isNative && nativeSend === false;
+      const approveTokens = !isNative;
 
       await KuruSdk.TokenSwap.swap(
         signer,
