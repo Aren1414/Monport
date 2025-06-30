@@ -8,7 +8,6 @@ import {
   PathFinder,
   TokenSwap,
   RouteOutput,
-  ParamFetcher,
   CostEstimator
 } from "@kuru-labs/kuru-sdk";
 import {
@@ -77,11 +76,10 @@ export default function SwapTab() {
       setQuote(path.output.toString());
       setBestPath(path);
 
-      const marketParams = await ParamFetcher.getMarketParams(provider, path.market);
       const estimate = await CostEstimator.estimateMarketBuy(
         provider,
         path.market,
-        marketParams,
+        path.marketParams,
         parsedAmount
       );
 
