@@ -13,11 +13,10 @@ import {
   ROUTER_ADDRESS,
   TOKENS,
   TOKEN_METADATA,
-  NATIVE_TOKEN_ADDRESS
+  NATIVE_TOKEN_ADDRESS,
+  RPC_URL
 } from "~/lib/constants";
 import { getKuruProvider } from "~/lib/kuru/getKuruProvider";
-
-const KURU_API_URL = "https://api.testnet.kuru.io";
 
 const BASE_TOKENS = [
   { symbol: "MON", address: TOKENS.MON },
@@ -55,8 +54,8 @@ export default function SwapTab() {
       }
 
       setLoading(true);
-      const provider = getKuruProvider();
-      const poolFetcher = new PoolFetcher(KURU_API_URL);
+      const provider = new ethers.providers.JsonRpcProvider(RPC_URL);
+      const poolFetcher = new PoolFetcher(RPC_URL);
 
       try {
         const pools = await poolFetcher.getAllPools(fromToken, toToken, BASE_TOKENS);
