@@ -1,6 +1,6 @@
 import { providers } from "ethers";
-import { RPC_URL } from "~/lib/constants";
+import { KURU_RPC_URL } from "~/lib/constants";
 
 export const getKuruProvider = () => {
-  return new providers.JsonRpcProvider(RPC_URL);
+  return new providers.JsonRpcProvider(KURU_RPC_URL);
 };
