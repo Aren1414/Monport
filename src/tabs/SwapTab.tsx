@@ -44,50 +44,50 @@ export default function SwapTab() {
     });
   };
 
-  useEffect(() => {
-    const fetchQuote = async () => {
-      const parsedAmount = parseFloat(amountIn);
-      if (!fromToken || !toToken || isNaN(parsedAmount) || parsedAmount <= 0) {
+  const fetchQuote = async (inputAmount: string, inputToken: string, outputToken: string) => {
+    const parsedAmount = parseFloat(inputAmount);
+    if (!inputToken || !outputToken || isNaN(parsedAmount) || parsedAmount <= 0) {
+      setQuote(null);
+      setBestPath(null);
+      return;
+    }
+
+    setLoading(true);
+    const provider = getKuruProvider();
+    const poolFetcher = new PoolFetcher(RPC_URL);
+
+    try {
+      const pools = await poolFetcher.getAllPools(inputToken, outputToken, BASE_TOKENS);
+      const path = await PathFinder.findBestPath(
+        provider,
+        inputToken,
+        outputToken,
+        parsedAmount,
+        "amountIn",
+        poolFetcher,
+        pools
+      );
+
+      if (!path || path.output <= 0 || hasInvalidOrderbook(path)) {
         setQuote(null);
         setBestPath(null);
         return;
       }
 
-      setLoading(true);
-      const provider = getKuruProvider();
-      const poolFetcher = new PoolFetcher(RPC_URL);
+      setQuote(path.output.toString());
+      setBestPath(path);
+    } catch (err) {
+      console.error("Quote error:", err);
+      setQuote(null);
+      setBestPath(null);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-      try {
-        const pools = await poolFetcher.getAllPools(fromToken, toToken, BASE_TOKENS);
-        const path = await PathFinder.findBestPath(
-          provider,
-          fromToken,
-          toToken,
-          parsedAmount,
-          "amountIn",
-          poolFetcher,
-          pools
-        );
-
-        if (!path || path.output <= 0 || hasInvalidOrderbook(path)) {
-          setQuote(null);
-          setBestPath(null);
-          return;
-        }
-
-        setQuote(path.output.toString());
-        setBestPath(path);
-      } catch (err) {
-        console.error("Quote error:", err);
-        setQuote(null);
-        setBestPath(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchQuote();
-  }, [fromToken, toToken, amountIn]);
+  useEffect(() => {
+    fetchQuote(amountIn, fromToken, toToken);
+  }, [amountIn, fromToken, toToken]);
 
   const doSwap = async () => {
     if (!isConnected || !quote || !bestPath || bestPath.output <= 0 || hasInvalidOrderbook(bestPath)) {
