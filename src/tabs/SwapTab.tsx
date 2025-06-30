@@ -24,10 +24,6 @@ const BASE_TOKENS = [
   { symbol: "USDC", address: TOKENS.USDC }
 ];
 
-type RouteHop = {
-  orderbook: string;
-};
-
 export default function SwapTab() {
   const { isConnected, address } = useAccount();
   const { connect, connectors } = useConnect();
@@ -42,8 +38,11 @@ export default function SwapTab() {
   const hasInvalidOrderbook = (path: RouteOutput | null): boolean => {
     if (!path || !path.route || !Array.isArray(path.route.path)) return true;
 
-    return path.route.path.some((p: RouteHop) => {
-      return p.orderbook === "0x0000000000000000000000000000000000000000";
+    return path.route.path.some((p) => {
+      if (typeof p === "object" && p !== null && "orderbook" in p) {
+        return (p as { orderbook: string }).orderbook === "0x0000000000000000000000000000000000000000";
+      }
+      return false;
     });
   };
 
