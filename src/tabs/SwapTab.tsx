@@ -38,12 +38,10 @@ export default function SwapTab() {
   const hasInvalidOrderbook = (path: RouteOutput | null): boolean => {
     if (!path || !path.route || !Array.isArray(path.route.path)) return true;
 
-    return path.route.path.some(
-      (p) =>
-        typeof p === "object" &&
-        "orderbook" in p &&
-        p.orderbook === "0x0000000000000000000000000000000000000000"
-    );
+    return path.route.path.some((p: any) => {
+      const orderbook = (p as { orderbook?: string }).orderbook;
+      return orderbook === "0x0000000000000000000000000000000000000000";
+    });
   };
 
   const getQuote = useCallback(async () => {
