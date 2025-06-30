@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import { useAccount, useConnect } from "wagmi";
 import { ethers } from "ethers";
 import {
@@ -46,7 +46,7 @@ export default function SwapTab() {
     });
   };
 
-  const getQuote = useCallback(async () => {
+  const getQuote = async () => {
     const parsedAmount = parseFloat(amountIn);
     if (!fromToken || !toToken || isNaN(parsedAmount) || parsedAmount <= 0) {
       setQuote(null);
@@ -71,13 +71,11 @@ export default function SwapTab() {
       );
 
       if (!path || path.output <= 0 || hasInvalidOrderbook(path)) {
-        alert("❌ No valid swap path found.");
         setQuote(null);
         setBestPath(null);
         return;
       }
 
-      console.log("✅ bestPath:", path);
       setQuote(path.output.toString());
       setBestPath(path);
     } catch (err) {
@@ -87,11 +85,14 @@ export default function SwapTab() {
     } finally {
       setLoading(false);
     }
-  }, [fromToken, toToken, amountIn]);
+  };
 
   useEffect(() => {
-    getQuote();
-  }, [getQuote]);
+    const delay = setTimeout(() => {
+      getQuote();
+    }, 300);
+    return () => clearTimeout(delay);
+  }, [fromToken, toToken, amountIn]);
 
   const doSwap = async () => {
     if (!isConnected || !quote || !bestPath || bestPath.output <= 0 || hasInvalidOrderbook(bestPath)) {
@@ -123,7 +124,6 @@ export default function SwapTab() {
         approveTokens,
         (txHash: string | null) => {
           if (txHash) {
-            console.log("tx", txHash);
             alert("✅ Swap successful");
             setAmountIn("");
             setQuote(null);
@@ -134,9 +134,6 @@ export default function SwapTab() {
     } catch (err: unknown) {
       const error = err as { error?: { message?: string }; reason?: string; code?: string };
       console.error("Swap error:", error);
-      if (error?.error?.message) console.error("Revert reason:", error.error.message);
-      if (error?.reason) console.error("Reason:", error.reason);
-      if (error?.code) console.error("Error code:", error.code);
       alert("Swap failed");
     } finally {
       setLoading(false);
