@@ -7,7 +7,9 @@ import {
   PoolFetcher,
   PathFinder,
   TokenSwap,
-  RouteOutput
+  RouteOutput,
+  ParamFetcher,
+  CostEstimator
 } from "@kuru-labs/kuru-sdk";
 import {
   ROUTER_ADDRESS,
@@ -34,12 +36,14 @@ export default function SwapTab() {
   const [quote, setQuote] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [bestPath, setBestPath] = useState<RouteOutput | null>(null);
+  const [minAmountOut, setMinAmountOut] = useState<string | null>(null);
 
   const getQuote = useCallback(async () => {
     const parsedAmount = parseFloat(amountIn);
     if (!fromToken || !toToken || isNaN(parsedAmount) || parsedAmount <= 0) {
       setQuote(null);
       setBestPath(null);
+      setMinAmountOut(null);
       return;
     }
 
@@ -62,15 +66,28 @@ export default function SwapTab() {
       if (!path || path.output <= 0) {
         setQuote(null);
         setBestPath(null);
+        setMinAmountOut(null);
         return;
       }
 
       setQuote(path.output.toString());
       setBestPath(path);
+
+      // تخمین دقیق minAmountOut از SDK
+      const marketParams = await ParamFetcher.getMarketParams(provider, path.market);
+      const estimate = await CostEstimator.estimateMarketBuy(
+        provider,
+        path.market,
+        marketParams,
+        parsedAmount
+      );
+
+      setMinAmountOut(estimate.output.toString());
     } catch (err) {
       console.error("Quote error:", err);
       setQuote(null);
       setBestPath(null);
+      setMinAmountOut(null);
     } finally {
       setLoading(false);
     }
@@ -81,7 +98,7 @@ export default function SwapTab() {
   }, [getQuote]);
 
   const doSwap = async () => {
-    if (!isConnected || !quote || !bestPath || bestPath.output <= 0) {
+    if (!isConnected || !quote || !bestPath || bestPath.output <= 0 || !minAmountOut) {
       alert("Connect wallet & get valid quote");
       return;
     }
@@ -89,9 +106,9 @@ export default function SwapTab() {
     setLoading(true);
     try {
       const provider = new ethers.providers.Web3Provider(
-        (window as Window & typeof globalThis & { ethereum?: unknown }).ethereum!
+        (window as any).ethereum
       );
-      const signer = await provider.getSigner();
+      const signer = provider.getSigner();
 
       const inputDecimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
       const outputDecimals = TOKEN_METADATA[toToken]?.decimals ?? 18;
@@ -110,11 +127,16 @@ export default function SwapTab() {
         approveTokens,
         (txHash: string | null) => {
           if (txHash) {
-            alert("✅ Swap successful");
+            alert("✅ Swap submitted: " + txHash);
             setAmountIn("");
             setQuote(null);
             setBestPath(null);
+            setMinAmountOut(null);
           }
+        },
+        {
+          minAmountOut: minAmountOut,
+          fillOrKill: false
         }
       );
     } catch (err) {
@@ -132,6 +154,7 @@ export default function SwapTab() {
     setQuote(null);
     setAmountIn("");
     setBestPath(null);
+    setMinAmountOut(null);
   };
 
   return (
