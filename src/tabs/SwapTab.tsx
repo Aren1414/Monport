@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useAccount, useConnect } from "wagmi";
 import { ethers } from "ethers";
 import {
@@ -44,9 +44,9 @@ export default function SwapTab() {
     });
   };
 
-  const fetchQuote = async (inputAmount: string, inputToken: string, outputToken: string) => {
-    const parsedAmount = parseFloat(inputAmount);
-    if (!inputToken || !outputToken || isNaN(parsedAmount) || parsedAmount <= 0) {
+  const getQuote = useCallback(async () => {
+    const parsedAmount = parseFloat(amountIn);
+    if (!fromToken || !toToken || isNaN(parsedAmount) || parsedAmount <= 0) {
       setQuote(null);
       setBestPath(null);
       return;
@@ -57,11 +57,11 @@ export default function SwapTab() {
     const poolFetcher = new PoolFetcher(RPC_URL);
 
     try {
-      const pools = await poolFetcher.getAllPools(inputToken, outputToken, BASE_TOKENS);
+      const pools = await poolFetcher.getAllPools(fromToken, toToken, BASE_TOKENS);
       const path = await PathFinder.findBestPath(
         provider,
-        inputToken,
-        outputToken,
+        fromToken,
+        toToken,
         parsedAmount,
         "amountIn",
         poolFetcher,
@@ -83,11 +83,14 @@ export default function SwapTab() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [fromToken, toToken, amountIn]);
 
   useEffect(() => {
-    fetchQuote(amountIn, fromToken, toToken);
-  }, [amountIn, fromToken, toToken]);
+    const delay = setTimeout(() => {
+      getQuote();
+    }, 300);
+    return () => clearTimeout(delay);
+  }, [getQuote]);
 
   const doSwap = async () => {
     if (!isConnected || !quote || !bestPath || bestPath.output <= 0 || hasInvalidOrderbook(bestPath)) {
