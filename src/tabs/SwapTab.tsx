@@ -26,6 +26,10 @@ const BASE_TOKENS = [
   { symbol: "USDC", address: TOKENS.USDC }
 ];
 
+type EthereumWindow = typeof window & {
+  ethereum?: ethers.providers.ExternalProvider;
+};
+
 export default function SwapTab() {
   const { isConnected, address } = useAccount();
   const { connect, connectors } = useConnect();
@@ -73,7 +77,6 @@ export default function SwapTab() {
       setQuote(path.output.toString());
       setBestPath(path);
 
-      // تخمین دقیق minAmountOut از SDK
       const marketParams = await ParamFetcher.getMarketParams(provider, path.market);
       const estimate = await CostEstimator.estimateMarketBuy(
         provider,
@@ -106,7 +109,7 @@ export default function SwapTab() {
     setLoading(true);
     try {
       const provider = new ethers.providers.Web3Provider(
-        (window as any).ethereum
+        (window as EthereumWindow).ethereum!
       );
       const signer = provider.getSigner();
 
