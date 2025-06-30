@@ -17,6 +17,8 @@ import {
   RPC_URL
 } from "~/lib/constants";
 
+import ERC20_ABI from "~/abis/ERC20.json";
+
 const KURU_API_URL = "https://api.testnet.kuru.io";
 
 const BASE_TOKENS = [
@@ -38,6 +40,40 @@ export default function SwapTab() {
   const [quote, setQuote] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [bestPath, setBestPath] = useState<RouteOutput | null>(null);
+  const [balances, setBalances] = useState<Record<string, string>>({});
+
+  const fetchBalances = useCallback(async () => {
+    if (!isConnected || !address) return;
+
+    const provider = new ethers.providers.Web3Provider(
+      (window as EthereumWindow).ethereum!
+    );
+
+    const newBalances: Record<string, string> = {};
+
+    for (const [symbol, tokenAddress] of Object.entries(TOKENS)) {
+      try {
+        if (tokenAddress === NATIVE_TOKEN_ADDRESS) {
+          const balance = await provider.getBalance(address);
+          newBalances[tokenAddress] = ethers.utils.formatEther(balance);
+        } else {
+          const contract = new ethers.Contract(tokenAddress, ERC20_ABI, provider);
+          const decimals = TOKEN_METADATA[tokenAddress]?.decimals ?? 18;
+          const balance = await contract.balanceOf(address);
+          newBalances[tokenAddress] = ethers.utils.formatUnits(balance, decimals);
+        }
+      } catch (err) {
+        console.error(`Failed to fetch balance for ${symbol}:`, err);
+        newBalances[tokenAddress] = "0";
+      }
+    }
+
+    setBalances(newBalances);
+  }, [isConnected, address]);
+
+  useEffect(() => {
+    fetchBalances();
+  }, [fetchBalances]);
 
   const getQuote = useCallback(async () => {
     const parsedAmount = parseFloat(amountIn);
@@ -137,6 +173,7 @@ export default function SwapTab() {
             setAmountIn("");
             setQuote(null);
             setBestPath(null);
+            fetchBalances(); // refresh balances after swap
           } else {
             console.warn("⚠️ Swap callback returned null txHash");
             alert("⚠️ Swap failed or rejected");
@@ -151,7 +188,7 @@ export default function SwapTab() {
     }
   };
 
-  const swapTokens = () => {
+const swapTokens = () => {
     const temp = fromToken;
     setFromToken(toToken);
     setToToken(temp);
@@ -204,7 +241,7 @@ export default function SwapTab() {
           >
             {Object.entries(TOKENS).map(([sym, addr]) => (
               <option key={sym} value={addr}>
-                {sym}
+                {sym} ({balances[addr]?.slice(0, 8) ?? "0"} available)
               </option>
             ))}
           </select>
@@ -250,7 +287,7 @@ export default function SwapTab() {
           >
             {Object.entries(TOKENS).map(([sym, addr]) => (
               <option key={sym} value={addr}>
-                {sym}
+                {sym} ({balances[addr]?.slice(0, 8) ?? "0"} available)
               </option>
             ))}
           </select>
