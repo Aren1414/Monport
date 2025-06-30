@@ -16,7 +16,8 @@ import {
   NATIVE_TOKEN_ADDRESS,
   RPC_URL
 } from "~/lib/constants";
-import { getKuruProvider } from "~/lib/kuru/getKuruProvider";
+
+const KURU_API_URL = "https://api.testnet.kuru.io";
 
 const BASE_TOKENS = [
   { symbol: "MON", address: TOKENS.MON },
@@ -34,16 +35,6 @@ export default function SwapTab() {
   const [loading, setLoading] = useState(false);
   const [bestPath, setBestPath] = useState<RouteOutput | null>(null);
 
-  const hasInvalidOrderbook = (path: RouteOutput | null): boolean => {
-    if (!path || !path.route || !Array.isArray(path.route.path)) return true;
-    return path.route.path.some((p) => {
-      if (typeof p === "object" && p !== null && "orderbook" in p) {
-        return (p as { orderbook: string }).orderbook === "0x0000000000000000000000000000000000000000";
-      }
-      return false;
-    });
-  };
-
   const getQuote = useCallback(async () => {
     const parsedAmount = parseFloat(amountIn);
     if (!fromToken || !toToken || isNaN(parsedAmount) || parsedAmount <= 0) {
@@ -53,8 +44,8 @@ export default function SwapTab() {
     }
 
     setLoading(true);
-    const provider = getKuruProvider();
-    const poolFetcher = new PoolFetcher(RPC_URL);
+    const provider = new ethers.providers.JsonRpcProvider(RPC_URL);
+    const poolFetcher = new PoolFetcher(KURU_API_URL);
 
     try {
       const pools = await poolFetcher.getAllPools(fromToken, toToken, BASE_TOKENS);
@@ -68,7 +59,7 @@ export default function SwapTab() {
         pools
       );
 
-      if (!path || path.output <= 0 || hasInvalidOrderbook(path)) {
+      if (!path || path.output <= 0) {
         setQuote(null);
         setBestPath(null);
         return;
@@ -86,14 +77,11 @@ export default function SwapTab() {
   }, [fromToken, toToken, amountIn]);
 
   useEffect(() => {
-    const delay = setTimeout(() => {
-      getQuote();
-    }, 300);
-    return () => clearTimeout(delay);
+    getQuote();
   }, [getQuote]);
 
   const doSwap = async () => {
-    if (!isConnected || !quote || !bestPath || bestPath.output <= 0 || hasInvalidOrderbook(bestPath)) {
+    if (!isConnected || !quote || !bestPath || bestPath.output <= 0) {
       alert("Connect wallet & get valid quote");
       return;
     }
