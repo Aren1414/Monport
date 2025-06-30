@@ -37,7 +37,6 @@ export default function SwapTab() {
 
   const hasInvalidOrderbook = (path: RouteOutput | null): boolean => {
     if (!path || !path.route || !Array.isArray(path.route.path)) return true;
-
     return path.route.path.some((p) => {
       if (typeof p === "object" && p !== null && "orderbook" in p) {
         return (p as { orderbook: string }).orderbook === "0x0000000000000000000000000000000000000000";
@@ -46,50 +45,50 @@ export default function SwapTab() {
     });
   };
 
-  const getQuote = async (inputAmount: string, inputToken: string, outputToken: string) => {
-    const parsedAmount = parseFloat(inputAmount);
-    if (!inputToken || !outputToken || isNaN(parsedAmount) || parsedAmount <= 0) {
-      setQuote(null);
-      setBestPath(null);
-      return;
-    }
-
-    const provider = getKuruProvider();
-    const poolFetcher = new PoolFetcher(KURU_API_URL);
-
-    try {
-      const pools = await poolFetcher.getAllPools(inputToken, outputToken, BASE_TOKENS);
-      const path = await PathFinder.findBestPath(
-        provider,
-        inputToken,
-        outputToken,
-        parsedAmount,
-        "amountIn",
-        poolFetcher,
-        pools
-      );
-
-      if (!path || path.output <= 0 || hasInvalidOrderbook(path)) {
+  useEffect(() => {
+    const fetchQuote = async () => {
+      const parsedAmount = parseFloat(amountIn);
+      if (!fromToken || !toToken || isNaN(parsedAmount) || parsedAmount <= 0) {
         setQuote(null);
         setBestPath(null);
         return;
       }
 
-      setQuote(path.output.toString());
-      setBestPath(path);
-    } catch (err) {
-      console.error("Quote error:", err);
-      setQuote(null);
-      setBestPath(null);
-    }
-  };
+      setLoading(true);
+      const provider = getKuruProvider();
+      const poolFetcher = new PoolFetcher(KURU_API_URL);
 
-  useEffect(() => {
-    const delay = setTimeout(() => {
-      getQuote(amountIn, fromToken, toToken);
-    }, 300);
-    return () => clearTimeout(delay);
-  }, [amountIn, fromToken, toToken]);
+      try {
+        const pools = await poolFetcher.getAllPools(fromToken, toToken, BASE_TOKENS);
+        const path = await PathFinder.findBestPath(
+          provider,
+          fromToken,
+          toToken,
+          parsedAmount,
+          "amountIn",
+          poolFetcher,
+          pools
+        );
+
+        if (!path || path.output <= 0 || hasInvalidOrderbook(path)) {
+          setQuote(null);
+          setBestPath(null);
+          return;
+        }
+
+        setQuote(path.output.toString());
+        setBestPath(path);
+      } catch (err) {
+        console.error("Quote error:", err);
+        setQuote(null);
+        setBestPath(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchQuote();
+  }, [fromToken, toToken, amountIn]);
 
   const doSwap = async () => {
     if (!isConnected || !quote || !bestPath || bestPath.output <= 0 || hasInvalidOrderbook(bestPath)) {
@@ -128,9 +127,8 @@ export default function SwapTab() {
           }
         }
       );
-    } catch (err: unknown) {
-      const error = err as { error?: { message?: string }; reason?: string; code?: string };
-      console.error("Swap error:", error);
+    } catch (err) {
+      console.error("Swap error:", err);
       alert("Swap failed");
     } finally {
       setLoading(false);
