@@ -109,7 +109,7 @@ export default function SwapTab() {
       const outputDecimals = TOKEN_METADATA[toToken]?.decimals ?? 18;
 
       const amount = parseFloat(amountIn);
-      const isNative = fromToken === NATIVE_TOKEN_ADDRESS;
+      const isNative = fromToken.toLowerCase() === NATIVE_TOKEN_ADDRESS.toLowerCase();
       const approveTokens = !isNative;
 
       console.log("🚀 Calling TokenSwap.swap with:", {
