@@ -54,7 +54,7 @@ export default function SwapTab() {
       }
 
       setLoading(true);
-      const provider = new ethers.providers.JsonRpcProvider(RPC_URL);
+      const provider = getKuruProvider();
       const poolFetcher = new PoolFetcher(RPC_URL);
 
       try {
