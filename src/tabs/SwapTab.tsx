@@ -7,8 +7,7 @@ import {
   PoolFetcher,
   PathFinder,
   TokenSwap,
-  RouteOutput,
-  CostEstimator
+  RouteOutput
 } from "@kuru-labs/kuru-sdk";
 import {
   ROUTER_ADDRESS,
@@ -39,14 +38,12 @@ export default function SwapTab() {
   const [quote, setQuote] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [bestPath, setBestPath] = useState<RouteOutput | null>(null);
-  const [minAmountOut, setMinAmountOut] = useState<string | null>(null);
 
   const getQuote = useCallback(async () => {
     const parsedAmount = parseFloat(amountIn);
     if (!fromToken || !toToken || isNaN(parsedAmount) || parsedAmount <= 0) {
       setQuote(null);
       setBestPath(null);
-      setMinAmountOut(null);
       return;
     }
 
@@ -69,26 +66,15 @@ export default function SwapTab() {
       if (!path || path.output <= 0) {
         setQuote(null);
         setBestPath(null);
-        setMinAmountOut(null);
         return;
       }
 
       setQuote(path.output.toString());
       setBestPath(path);
-
-      const estimate = await CostEstimator.estimateMarketBuy(
-        provider,
-        path.market,
-        path.marketParams,
-        parsedAmount
-      );
-
-      setMinAmountOut(estimate.output.toString());
     } catch (err) {
       console.error("Quote error:", err);
       setQuote(null);
       setBestPath(null);
-      setMinAmountOut(null);
     } finally {
       setLoading(false);
     }
@@ -99,7 +85,7 @@ export default function SwapTab() {
   }, [getQuote]);
 
   const doSwap = async () => {
-    if (!isConnected || !quote || !bestPath || bestPath.output <= 0 || !minAmountOut) {
+    if (!isConnected || !quote || !bestPath || bestPath.output <= 0) {
       alert("Connect wallet & get valid quote");
       return;
     }
@@ -132,12 +118,7 @@ export default function SwapTab() {
             setAmountIn("");
             setQuote(null);
             setBestPath(null);
-            setMinAmountOut(null);
           }
-        },
-        {
-          minAmountOut: minAmountOut,
-          fillOrKill: false
         }
       );
     } catch (err) {
@@ -155,7 +136,6 @@ export default function SwapTab() {
     setQuote(null);
     setAmountIn("");
     setBestPath(null);
-    setMinAmountOut(null);
   };
 
   return (
