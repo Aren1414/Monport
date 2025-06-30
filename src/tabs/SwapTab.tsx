@@ -46,24 +46,23 @@ export default function SwapTab() {
     });
   };
 
-  const getQuote = async () => {
-    const parsedAmount = parseFloat(amountIn);
-    if (!fromToken || !toToken || isNaN(parsedAmount) || parsedAmount <= 0) {
+  const getQuote = async (inputAmount: string, inputToken: string, outputToken: string) => {
+    const parsedAmount = parseFloat(inputAmount);
+    if (!inputToken || !outputToken || isNaN(parsedAmount) || parsedAmount <= 0) {
       setQuote(null);
       setBestPath(null);
       return;
     }
 
-    setLoading(true);
     const provider = getKuruProvider();
     const poolFetcher = new PoolFetcher(KURU_API_URL);
 
     try {
-      const pools = await poolFetcher.getAllPools(fromToken, toToken, BASE_TOKENS);
+      const pools = await poolFetcher.getAllPools(inputToken, outputToken, BASE_TOKENS);
       const path = await PathFinder.findBestPath(
         provider,
-        fromToken,
-        toToken,
+        inputToken,
+        outputToken,
         parsedAmount,
         "amountIn",
         poolFetcher,
@@ -82,17 +81,15 @@ export default function SwapTab() {
       console.error("Quote error:", err);
       setQuote(null);
       setBestPath(null);
-    } finally {
-      setLoading(false);
     }
   };
 
   useEffect(() => {
     const delay = setTimeout(() => {
-      getQuote();
+      getQuote(amountIn, fromToken, toToken);
     }, 300);
     return () => clearTimeout(delay);
-  }, [fromToken, toToken, amountIn]);
+  }, [amountIn, fromToken, toToken]);
 
   const doSwap = async () => {
     if (!isConnected || !quote || !bestPath || bestPath.output <= 0 || hasInvalidOrderbook(bestPath)) {
