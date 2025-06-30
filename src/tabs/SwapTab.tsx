@@ -85,10 +85,18 @@ export default function SwapTab() {
   }, [getQuote]);
 
   const doSwap = async () => {
+    console.log("🧪 Swap Triggered");
+    console.log("🔍 isConnected:", isConnected);
+    console.log("🔍 amountIn:", amountIn);
+    console.log("🔍 quote:", quote);
+    console.log("🔍 bestPath:", bestPath);
+
     if (!isConnected || !quote || !bestPath || bestPath.output <= 0) {
-      alert("Connect wallet & get valid quote");
+      alert("⚠️ Connect wallet & get valid quote");
       return;
     }
+
+    console.log("✅ Passed validation, preparing to swap...");
 
     setLoading(true);
     try {
@@ -104,6 +112,16 @@ export default function SwapTab() {
       const isNative = fromToken === NATIVE_TOKEN_ADDRESS;
       const approveTokens = !isNative;
 
+      console.log("🚀 Calling TokenSwap.swap with:", {
+        signer,
+        router: ROUTER_ADDRESS,
+        path: bestPath,
+        amount,
+        inputDecimals,
+        outputDecimals,
+        approveTokens
+      });
+
       await TokenSwap.swap(
         signer,
         ROUTER_ADDRESS,
@@ -114,16 +132,20 @@ export default function SwapTab() {
         approveTokens,
         (txHash: string | null) => {
           if (txHash) {
+            console.log("✅ Swap submitted with txHash:", txHash);
             alert("✅ Swap submitted: " + txHash);
             setAmountIn("");
             setQuote(null);
             setBestPath(null);
+          } else {
+            console.warn("⚠️ Swap callback returned null txHash");
+            alert("⚠️ Swap failed or rejected");
           }
         }
       );
     } catch (err) {
-      console.error("Swap error:", err);
-      alert("Swap failed");
+      console.error("❌ Swap error:", err);
+      alert("❌ Swap failed: " + (err as Error).message);
     } finally {
       setLoading(false);
     }
@@ -187,6 +209,8 @@ export default function SwapTab() {
             ))}
           </select>
           <input
+            type="number"
+            step="any"
             placeholder="0.0"
             value={amountIn}
             onChange={(e) => setAmountIn(e.target.value)}
