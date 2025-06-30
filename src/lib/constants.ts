@@ -27,7 +27,9 @@ export const MONAD_CHAIN_PARAMS = {
   rpcUrls: ["https://testnet-rpc.monad.xyz/"],
   blockExplorerUrls: ["https://testnet.monadexplorer.com/"],
 };
-export const RPC_URL = MONAD_CHAIN_PARAMS.rpcUrls[0];
+
+// Kuru Testnet RPC (used by SDK)
+export const KURU_RPC_URL = "https://rpc.testnet.kuru.io";
 
 // Native Token Address (used as placeholder for native token in SDKs)
 export const NATIVE_TOKEN_ADDRESS = "0x0000000000000000000000000000000000000000";
