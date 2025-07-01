@@ -6,9 +6,10 @@ import { ethers } from "ethers";
 import {
   PoolFetcher,
   PathFinder,
-  TokenSwap,
-  RouteOutput
+  TokenSwap
 } from "@kuru-labs/kuru-sdk";
+import type { RouteOutput } from "@kuru-labs/kuru-sdk"; 
+
 import {
   ROUTER_ADDRESS,
   TOKENS,
@@ -28,6 +29,10 @@ const BASE_TOKENS = [
 
 type EthereumWindow = typeof window & {
   ethereum?: ethers.providers.ExternalProvider;
+};
+
+type ExtendedRouteOutput = RouteOutput & {
+  nativeSend?: boolean[];
 };
 
 export default function SwapTab() {
@@ -179,6 +184,24 @@ console.log("🚀 Calling TokenSwap.swap with:", {
   approveTokens
 });
 
+const extendedPath = bestPath as ExtendedRouteOutput;
+
+console.log("🧭 Swap Path:", bestPath.route.path);
+console.log("🧭 Pools:", bestPath.route.pools);
+console.log("💰 Output:", bestPath.output);
+console.log("🧾 approveTokens:", approveTokens);
+console.log("🧪 nativeSend:", extendedPath.nativeSend); 
+console.log("💸 txOverrides:", txOverrides);
+
+console.log("🚀 Calling TokenSwap.swap with:", {
+  signer,
+  router: ROUTER_ADDRESS,
+  path: bestPath,
+  amount,
+  inputDecimals,
+  outputDecimals,
+  approveTokens
+});
     await TokenSwap.swap(
   signer,
   ROUTER_ADDRESS,
