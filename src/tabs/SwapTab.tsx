@@ -179,28 +179,28 @@ export default function SwapTab() {
     });
 
     await TokenSwap.swap(
-      signer,
-      ROUTER_ADDRESS,
-      bestPath,
-      amount,
-      inputDecimals,
-      outputDecimals,
-      approveTokens,
-      (txHash: string | null) => {
-        if (txHash) {
-          console.log("✅ Swap submitted with txHash:", txHash);
-          alert("✅ Swap submitted: " + txHash);
-          setAmountIn("");
-          setQuote(null);
-          setBestPath(null);
-          fetchBalances();
-        } else {
-          console.warn("⚠️ Swap callback returned null txHash");
-          alert("⚠️ Swap failed or rejected");
-        }
-      },
-      txOverrides // 👈 فقط برای native token
-    );
+  signer,
+  ROUTER_ADDRESS,
+  bestPath,
+  amount,
+  inputDecimals,
+  outputDecimals,
+  approveTokens,
+  (txHash: string | null) => {
+    if (txHash) {
+      console.log("✅ Swap submitted with txHash:", txHash);
+      alert("✅ Swap submitted: " + txHash);
+      setAmountIn("");
+      setQuote(null);
+      setBestPath(null);
+      fetchBalances();
+    } else {
+      console.warn("⚠️ Swap callback returned null txHash");
+      alert("⚠️ Swap failed or rejected");
+    }
+  }
+);
+    
   } catch (err) {
     console.error("❌ Swap error:", err);
     alert("❌ Swap failed: " + (err as Error).message);
