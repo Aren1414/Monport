@@ -18,8 +18,10 @@
         "name": "next"
       }
     ],
+    "baseUrl": ".",
     "paths": {
-      "~/*": ["./src/*"]
+      "~/*": ["src/*"],
+      "@/*": ["src/*"]
     },
     "typeRoots": ["./types", "./node_modules/@types"]
   },
