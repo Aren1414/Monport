@@ -15,9 +15,9 @@ import {
   TOKEN_METADATA,
   NATIVE_TOKEN_ADDRESS,
   RPC_URL
-} from "~/lib/constants";
+} from "@/lib/constants";
 
-import ERC20_ABI from "~/abis/ERC20.json";
+import ERC20_ABI from "@/abis/ERC20.json";
 
 const KURU_API_URL = "https://api.testnet.kuru.io";
 
@@ -139,7 +139,11 @@ export default function SwapTab() {
       const provider = new ethers.providers.Web3Provider(
         (window as EthereumWindow).ethereum!
       );
+
+      await provider.send("eth_requestAccounts", []);
       const signer = provider.getSigner();
+      const signerAddress = await signer.getAddress();
+      console.log("🔐 Signer address:", signerAddress);
 
       const inputDecimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
       const outputDecimals = TOKEN_METADATA[toToken]?.decimals ?? 18;
@@ -173,7 +177,7 @@ export default function SwapTab() {
             setAmountIn("");
             setQuote(null);
             setBestPath(null);
-            fetchBalances(); // refresh balances after swap
+            fetchBalances();
           } else {
             console.warn("⚠️ Swap callback returned null txHash");
             alert("⚠️ Swap failed or rejected");
@@ -188,7 +192,7 @@ export default function SwapTab() {
     }
   };
 
-const swapTokens = () => {
+  const swapTokens = () => {
     const temp = fromToken;
     setFromToken(toToken);
     setToToken(temp);
