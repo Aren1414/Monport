@@ -145,7 +145,6 @@ export default function SwapTab() {
     const signerAddress = await signer.getAddress();
     console.log("🔐 Signer address:", signerAddress);
 
-    
     const routerCode = await provider.getCode(ROUTER_ADDRESS);
     console.log("📦 Router contract code:", routerCode);
     if (routerCode === "0x") {
@@ -161,13 +160,14 @@ export default function SwapTab() {
 
     
     console.log("🧭 Swap Path:", bestPath.route.path);
-    console.log("🔁 tokenIn:", bestPath.tokenIn);
-    console.log("🔁 tokenOut:", bestPath.tokenOut);
-    console.log("💰 output:", bestPath.output);
-    console.log("🧮 priceImpact:", bestPath.priceImpact);
+    console.log("🧭 Pools:", bestPath.route.pools);
+    console.log("💰 Output:", bestPath.output);
+    console.log("📉 Price Impact:", bestPath.priceImpact);
+    console.log("📦 Native Send:", bestPath.nativeSend);
+    console.log("🧾 Is Buy:", bestPath.isBuy);
+    console.log("💸 Fee in Base:", bestPath.feeInBase);
     console.log("🧾 approveTokens:", approveTokens);
 
-    
     console.log("🚀 Calling TokenSwap.swap with:", {
       signer,
       router: ROUTER_ADDRESS,
