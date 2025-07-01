@@ -173,8 +173,13 @@ export default function SwapTab() {
     console.log("🧭 Swap Path:", bestPath.route.path);
     console.log("🧭 Pools:", bestPath.route.pools);
     console.log("💰 Output:", bestPath.output);
+
+
+    console.log("🧪 fromToken:", fromToken);
+    console.log("🧪 isNativeToken:", isNativeToken(fromToken));
     console.log("🧾 approveTokens:", approveTokens);
-    console.log("🧪 nativeSend:", extendedPath.nativeSend); 
+    console.log("🧪 nativeSend:", extendedPath.nativeSend);
+
     console.log("💸 txOverrides:", txOverrides);
 
 console.log("🚀 Calling TokenSwap.swap with:", {
