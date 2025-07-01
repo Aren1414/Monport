@@ -3,12 +3,15 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useAccount, useConnect } from "wagmi";
 import { ethers } from "ethers";
+
 import {
   PoolFetcher,
   PathFinder,
-  TokenSwap
+  TokenSwap,
+  constructSwapTransaction
 } from "@kuru-labs/kuru-sdk";
-import type { RouteOutput } from "@kuru-labs/kuru-sdk"; 
+
+import type { RouteOutput } from "@kuru-labs/kuru-sdk";
 
 import {
   ROUTER_ADDRESS,
@@ -125,7 +128,7 @@ export default function SwapTab() {
     getQuote();
   }, [getQuote]);
 
-  const doSwap = async () => {
+  const doSwap = useCallback(async () => {
   console.log("🧪 Swap Triggered");
   console.log("🔍 isConnected:", isConnected);
   console.log("🔍 amountIn:", amountIn);
@@ -158,7 +161,6 @@ export default function SwapTab() {
 
     const inputDecimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
     const outputDecimals = TOKEN_METADATA[toToken]?.decimals ?? 18;
-    
 
     const isNativeToken = (address: string) =>
       address.toLowerCase() === NATIVE_TOKEN_ADDRESS.toLowerCase();
@@ -166,7 +168,6 @@ export default function SwapTab() {
     const approveTokens = !isNativeToken(fromToken);
 
     const extendedPath = bestPath as ExtendedRouteOutput;
-
     const tokenInAmount = ethers.utils.parseUnits(amountIn, inputDecimals);
 
     // Slippage: 0.5%
@@ -190,7 +191,7 @@ export default function SwapTab() {
     console.log("💸 txOverrides:", txOverrides);
     console.log("🎯 minTokenOut:", minTokenOut.toString());
 
-    const tx = await TokenSwap.constructSwapTransaction(
+    const tx = await constructSwapTransaction(
       signer,
       ROUTER_ADDRESS,
       bestPath,
@@ -219,7 +220,7 @@ export default function SwapTab() {
   } finally {
     setLoading(false);
   }
-};
+}, [isConnected, amountIn, quote, bestPath, fromToken, toToken]);
 
   const swapTokens = () => {
     const temp = fromToken;
