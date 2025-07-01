@@ -161,8 +161,8 @@ export default function SwapTab() {
 
     
     console.log("🧭 Swap Path:", bestPath.route.path);
-    console.log("🔁 tokenIn:", bestPath.route.tokenIn);
-    console.log("🔁 tokenOut:", bestPath.route.tokenOut);
+    console.log("🔁 tokenIn:", bestPath.tokenIn);
+    console.log("🔁 tokenOut:", bestPath.tokenOut);
     console.log("💰 output:", bestPath.output);
     console.log("🧮 priceImpact:", bestPath.priceImpact);
     console.log("🧾 approveTokens:", approveTokens);
