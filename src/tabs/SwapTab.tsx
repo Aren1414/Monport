@@ -167,31 +167,15 @@ export default function SwapTab() {
       ? { value: ethers.utils.parseUnits(amountIn, inputDecimals) }
       : {};
 
+
+    const extendedPath = bestPath as ExtendedRouteOutput;
+
     console.log("🧭 Swap Path:", bestPath.route.path);
     console.log("🧭 Pools:", bestPath.route.pools);
     console.log("💰 Output:", bestPath.output);
     console.log("🧾 approveTokens:", approveTokens);
-    console.log("🧪 nativeSend:", (bestPath as any)?.nativeSend);
+    console.log("🧪 nativeSend:", extendedPath.nativeSend); 
     console.log("💸 txOverrides:", txOverrides);
-
-console.log("🚀 Calling TokenSwap.swap with:", {
-  signer,
-  router: ROUTER_ADDRESS,
-  path: bestPath,
-  amount,
-  inputDecimals,
-  outputDecimals,
-  approveTokens
-});
-
-const extendedPath = bestPath as ExtendedRouteOutput;
-
-console.log("🧭 Swap Path:", bestPath.route.path);
-console.log("🧭 Pools:", bestPath.route.pools);
-console.log("💰 Output:", bestPath.output);
-console.log("🧾 approveTokens:", approveTokens);
-console.log("🧪 nativeSend:", extendedPath.nativeSend); 
-console.log("💸 txOverrides:", txOverrides);
 
 console.log("🚀 Calling TokenSwap.swap with:", {
   signer,
