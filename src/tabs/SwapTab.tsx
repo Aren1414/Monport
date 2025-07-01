@@ -158,62 +158,61 @@ export default function SwapTab() {
 
     const inputDecimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
     const outputDecimals = TOKEN_METADATA[toToken]?.decimals ?? 18;
-
     const amount = parseFloat(amountIn);
-    const isNativeToken = fromToken.toLowerCase() === NATIVE_TOKEN_ADDRESS.toLowerCase();
-    const approveTokens = !isNativeToken;
 
-    const txOverrides = isNativeToken
-      ? { value: ethers.utils.parseUnits(amountIn, inputDecimals) }
-      : {};
+    const isNativeToken = (address: string) =>
+      address.toLowerCase() === NATIVE_TOKEN_ADDRESS.toLowerCase();
 
+    const approveTokens = !isNativeToken(fromToken);
 
     const extendedPath = bestPath as ExtendedRouteOutput;
+
+    const tokenInAmount = ethers.utils.parseUnits(amountIn, inputDecimals);
+
+    // Slippage: 0.5%
+    const slippageBps = 50;
+    const minTokenOut = ethers.utils.parseUnits(
+      ((bestPath.output * (10000 - slippageBps)) / 10000).toFixed(outputDecimals),
+      outputDecimals
+    );
+
+    const txOverrides = isNativeToken(fromToken)
+      ? { value: tokenInAmount }
+      : {};
 
     console.log("🧭 Swap Path:", bestPath.route.path);
     console.log("🧭 Pools:", bestPath.route.pools);
     console.log("💰 Output:", bestPath.output);
-
-
     console.log("🧪 fromToken:", fromToken);
     console.log("🧪 isNativeToken:", isNativeToken(fromToken));
     console.log("🧾 approveTokens:", approveTokens);
     console.log("🧪 nativeSend:", extendedPath.nativeSend);
-
     console.log("💸 txOverrides:", txOverrides);
+    console.log("🎯 minTokenOut:", minTokenOut.toString());
 
-console.log("🚀 Calling TokenSwap.swap with:", {
-  signer,
-  router: ROUTER_ADDRESS,
-  path: bestPath,
-  amount,
-  inputDecimals,
-  outputDecimals,
-  approveTokens
-});
-    await TokenSwap.swap(
-  signer,
-  ROUTER_ADDRESS,
-  bestPath,
-  amount,
-  inputDecimals,
-  outputDecimals,
-  approveTokens,
-  (txHash: string | null) => {
-    if (txHash) {
-      console.log("✅ Swap submitted with txHash:", txHash);
-      alert("✅ Swap submitted: " + txHash);
-      setAmountIn("");
-      setQuote(null);
-      setBestPath(null);
-      fetchBalances();
-    } else {
-      console.warn("⚠️ Swap callback returned null txHash");
-      alert("⚠️ Swap failed or rejected");
-    }
-  }
-);
-    
+    const tx = await TokenSwap.constructSwapTransaction(
+      signer,
+      ROUTER_ADDRESS,
+      bestPath,
+      tokenInAmount,
+      minTokenOut,
+      txOverrides
+    );
+
+    console.log("🚀 Sending transaction:", tx);
+    const sentTx = await signer.sendTransaction(tx);
+    console.log("✅ Swap submitted:", sentTx.hash);
+    alert("✅ Swap submitted: " + sentTx.hash);
+
+    await sentTx.wait();
+    console.log("🎉 Swap confirmed!");
+    alert("✅ Swap successful!");
+
+    // Reset state
+    setAmountIn("");
+    setQuote(null);
+    setBestPath(null);
+    fetchBalances();
   } catch (err) {
     console.error("❌ Swap error:", err);
     alert("❌ Swap failed: " + (err as Error).message);
