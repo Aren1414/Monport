@@ -155,14 +155,18 @@ export default function SwapTab() {
     const outputDecimals = TOKEN_METADATA[toToken]?.decimals ?? 18;
 
     const amount = parseFloat(amountIn);
-    const isNative = fromToken.toLowerCase() === NATIVE_TOKEN_ADDRESS.toLowerCase();
-    const approveTokens = !isNative;
+    const isNativeToken = fromToken.toLowerCase() === NATIVE_TOKEN_ADDRESS.toLowerCase();
+    const approveTokens = !isNativeToken;
 
-    
+    const txOverrides = isNativeToken
+      ? { value: ethers.utils.parseUnits(amountIn, inputDecimals) }
+      : {};
+
     console.log("🧭 Swap Path:", bestPath.route.path);
     console.log("🧭 Pools:", bestPath.route.pools);
     console.log("💰 Output:", bestPath.output);
     console.log("🧾 approveTokens:", approveTokens);
+    console.log("💸 txOverrides:", txOverrides);
 
     console.log("🚀 Calling TokenSwap.swap with:", {
       signer,
@@ -194,7 +198,8 @@ export default function SwapTab() {
           console.warn("⚠️ Swap callback returned null txHash");
           alert("⚠️ Swap failed or rejected");
         }
-      }
+      },
+      txOverrides // 👈 فقط برای native token
     );
   } catch (err) {
     console.error("❌ Swap error:", err);
