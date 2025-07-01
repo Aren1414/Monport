@@ -121,76 +121,92 @@ export default function SwapTab() {
   }, [getQuote]);
 
   const doSwap = async () => {
-    console.log("🧪 Swap Triggered");
-    console.log("🔍 isConnected:", isConnected);
-    console.log("🔍 amountIn:", amountIn);
-    console.log("🔍 quote:", quote);
-    console.log("🔍 bestPath:", bestPath);
+  console.log("🧪 Swap Triggered");
+  console.log("🔍 isConnected:", isConnected);
+  console.log("🔍 amountIn:", amountIn);
+  console.log("🔍 quote:", quote);
+  console.log("🔍 bestPath:", bestPath);
 
-    if (!isConnected || !quote || !bestPath || bestPath.output <= 0) {
-      alert("⚠️ Connect wallet & get valid quote");
-      return;
+  if (!isConnected || !quote || !bestPath || bestPath.output <= 0) {
+    alert("⚠️ Connect wallet & get valid quote");
+    return;
+  }
+
+  console.log("✅ Passed validation, preparing to swap...");
+
+  setLoading(true);
+  try {
+    const provider = new ethers.providers.Web3Provider(
+      (window as EthereumWindow).ethereum!
+    );
+
+    await provider.send("eth_requestAccounts", []);
+    const signer = provider.getSigner();
+    const signerAddress = await signer.getAddress();
+    console.log("🔐 Signer address:", signerAddress);
+
+    
+    const routerCode = await provider.getCode(ROUTER_ADDRESS);
+    console.log("📦 Router contract code:", routerCode);
+    if (routerCode === "0x") {
+      throw new Error("❌ Router contract not found on this network");
     }
 
-    console.log("✅ Passed validation, preparing to swap...");
+    const inputDecimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
+    const outputDecimals = TOKEN_METADATA[toToken]?.decimals ?? 18;
 
-    setLoading(true);
-    try {
-      const provider = new ethers.providers.Web3Provider(
-        (window as EthereumWindow).ethereum!
-      );
+    const amount = parseFloat(amountIn);
+    const isNative = fromToken.toLowerCase() === NATIVE_TOKEN_ADDRESS.toLowerCase();
+    const approveTokens = !isNative;
 
-      await provider.send("eth_requestAccounts", []);
-      const signer = provider.getSigner();
-      const signerAddress = await signer.getAddress();
-      console.log("🔐 Signer address:", signerAddress);
+    
+    console.log("🧭 Swap Path:", bestPath.route.path);
+    console.log("🔁 tokenIn:", bestPath.route.tokenIn);
+    console.log("🔁 tokenOut:", bestPath.route.tokenOut);
+    console.log("💰 output:", bestPath.output);
+    console.log("🧮 priceImpact:", bestPath.priceImpact);
+    console.log("🧾 approveTokens:", approveTokens);
 
-      const inputDecimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
-      const outputDecimals = TOKEN_METADATA[toToken]?.decimals ?? 18;
+    
+    console.log("🚀 Calling TokenSwap.swap with:", {
+      signer,
+      router: ROUTER_ADDRESS,
+      path: bestPath,
+      amount,
+      inputDecimals,
+      outputDecimals,
+      approveTokens
+    });
 
-      const amount = parseFloat(amountIn);
-      const isNative = fromToken.toLowerCase() === NATIVE_TOKEN_ADDRESS.toLowerCase();
-      const approveTokens = !isNative;
-
-      console.log("🚀 Calling TokenSwap.swap with:", {
-        signer,
-        router: ROUTER_ADDRESS,
-        path: bestPath,
-        amount,
-        inputDecimals,
-        outputDecimals,
-        approveTokens
-      });
-
-      await TokenSwap.swap(
-        signer,
-        ROUTER_ADDRESS,
-        bestPath,
-        amount,
-        inputDecimals,
-        outputDecimals,
-        approveTokens,
-        (txHash: string | null) => {
-          if (txHash) {
-            console.log("✅ Swap submitted with txHash:", txHash);
-            alert("✅ Swap submitted: " + txHash);
-            setAmountIn("");
-            setQuote(null);
-            setBestPath(null);
-            fetchBalances();
-          } else {
-            console.warn("⚠️ Swap callback returned null txHash");
-            alert("⚠️ Swap failed or rejected");
-          }
+    await TokenSwap.swap(
+      signer,
+      ROUTER_ADDRESS,
+      bestPath,
+      amount,
+      inputDecimals,
+      outputDecimals,
+      approveTokens,
+      (txHash: string | null) => {
+        if (txHash) {
+          console.log("✅ Swap submitted with txHash:", txHash);
+          alert("✅ Swap submitted: " + txHash);
+          setAmountIn("");
+          setQuote(null);
+          setBestPath(null);
+          fetchBalances();
+        } else {
+          console.warn("⚠️ Swap callback returned null txHash");
+          alert("⚠️ Swap failed or rejected");
         }
-      );
-    } catch (err) {
-      console.error("❌ Swap error:", err);
-      alert("❌ Swap failed: " + (err as Error).message);
-    } finally {
-      setLoading(false);
-    }
-  };
+      }
+    );
+  } catch (err) {
+    console.error("❌ Swap error:", err);
+    alert("❌ Swap failed: " + (err as Error).message);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const swapTokens = () => {
     const temp = fromToken;
