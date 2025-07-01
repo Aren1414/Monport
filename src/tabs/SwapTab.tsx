@@ -7,7 +7,6 @@ import { ethers } from "ethers";
 import {
   PoolFetcher,
   PathFinder,
-  TokenSwap,
   constructSwapTransaction
 } from "@kuru-labs/kuru-sdk";
 
@@ -220,7 +219,7 @@ export default function SwapTab() {
   } finally {
     setLoading(false);
   }
-}, [isConnected, amountIn, quote, bestPath, fromToken, toToken]);
+}, [isConnected, amountIn, quote, bestPath, fromToken, toToken, fetchBalances]);
 
   const swapTokens = () => {
     const temp = fromToken;
