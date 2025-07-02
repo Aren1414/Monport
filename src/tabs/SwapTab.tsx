@@ -31,10 +31,6 @@ type EthereumWindow = typeof window & {
   ethereum?: ethers.providers.ExternalProvider;
 };
 
-type ExtendedRouteOutput = RouteOutput & {
-  nativeSend?: boolean[];
-};
-
 
 const normalizeAddress = (addr: string) => {
   try {
