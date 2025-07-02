@@ -23,16 +23,35 @@ export async function customSwap({
   const outputDecimals = TOKEN_METADATA[toToken]?.decimals ?? 18;
 
   try {
-    await TokenSwap.swap(
-      signer,
-      ROUTER_ADDRESS,
-      path,
-      amountIn,
-      inputDecimals,
-      outputDecimals,
-      true,
-      onTx
-    );
+    if (isNative) {
+      // اگر path.tx.data وجود داره، از sendTransaction استفاده کن
+      const txData = (path as any)?.tx?.data;
+      if (!txData) {
+        alert("⚠️ Swap for native token is not supported without tx.data");
+        onTx(null);
+        return;
+      }
+
+      const tx = await signer.sendTransaction({
+        to: ROUTER_ADDRESS,
+        value: ethers.utils.parseUnits(amountIn.toString(), inputDecimals),
+        data: txData
+      });
+
+      onTx(tx.hash);
+    } else {
+      // برای ERC20 از TokenSwap.swap استفاده کن
+      await TokenSwap.swap(
+        signer,
+        ROUTER_ADDRESS,
+        path,
+        amountIn,
+        inputDecimals,
+        outputDecimals,
+        true,
+        onTx
+      );
+    }
   } catch (err) {
     console.error("❌ Swap failed:", err);
     onTx(null);
