@@ -32,10 +32,6 @@ type EthereumWindow = typeof window & {
   ethereum?: ethers.providers.ExternalProvider;
 };
 
-type SwapPath = RouteOutput & {
-  tx: { data: string };
-};
-
 export default function SwapTab() {
   const { isConnected, address } = useAccount();
   const { connect, connectors } = useConnect();
@@ -141,13 +137,7 @@ export default function SwapTab() {
       await provider.send("eth_requestAccounts", []);
       const signer = provider.getSigner();
 
-      const routerCode = await provider.getCode(ROUTER_ADDRESS);
-      if (routerCode === "0x") {
-        throw new Error("❌ Router contract not found on this network");
-      }
-
       const inputDecimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
-      const outputDecimals = TOKEN_METADATA[toToken]?.decimals ?? 18;
       const isNative = fromToken.toLowerCase() === NATIVE_TOKEN_ADDRESS.toLowerCase();
 
       if (!isNative) {
@@ -161,23 +151,9 @@ export default function SwapTab() {
         }
       }
 
-      const tx = await TokenSwap.buildSwapTx(
-        signer,
-        ROUTER_ADDRESS,
-        bestPath,
-        parseFloat(amountIn),
-        inputDecimals,
-        outputDecimals
-      );
-
-      const swapPath: SwapPath = {
-        ...bestPath,
-        tx
-      };
-
       await customSwap({
         signer,
-        path: swapPath,
+        path: bestPath,
         amountIn: parseFloat(amountIn),
         fromToken,
         toToken,
