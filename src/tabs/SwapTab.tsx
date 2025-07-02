@@ -128,12 +128,16 @@ export default function SwapTab() {
   }
 
   const isNative = fromToken.toLowerCase() === NATIVE_TOKEN_ADDRESS.toLowerCase();
-  const txData = (bestPath as any)?.tx?.data;
 
-  if (isNative && !txData) {
-    alert("⚠️ Native token swap is not supported without tx data.");
-    return;
-  }
+const txData =
+  "tx" in bestPath && typeof (bestPath as { tx: { data: string } }).tx?.data === "string"
+    ? (bestPath as { tx: { data: string } }).tx.data
+    : undefined;
+
+if (isNative && !txData) {
+  alert("⚠️ Native token swap is not supported without tx data.");
+  return;
+}
 
   setLoading(true);
   try {
