@@ -6,7 +6,7 @@ import { ethers } from "ethers";
 import {
   PoolFetcher,
   PathFinder,
-  TokenSwap
+  TokenSwap,
 } from "@kuru-labs/kuru-sdk";
 import type { RouteOutput } from "@kuru-labs/kuru-sdk";
 
@@ -15,31 +15,18 @@ import {
   TOKENS,
   TOKEN_METADATA,
   NATIVE_TOKEN_ADDRESS,
-  RPC_URL
+  RPC_URL,
 } from "@/lib/constants";
-
 import ERC20_ABI from "@/abis/ERC20.json";
 
 const KURU_API_URL = "https://api.testnet.kuru.io";
-
 const BASE_TOKENS = [
   { symbol: "MON", address: TOKENS.MON },
-  { symbol: "USDC", address: TOKENS.USDC }
+  { symbol: "USDC", address: TOKENS.USDC },
 ];
 
-type EthereumWindow = typeof window & {
-  ethereum?: ethers.providers.ExternalProvider;
-};
-
-type ExtendedRouteOutput = RouteOutput & {
-  nativeSend?: boolean[];
-};
-
-const normalizeAddress = (addr: string) =>
-  addr.toLowerCase().replace(/^0x/, "");
-
 const isNativeToken = (address: string) =>
-  normalizeAddress(address) === normalizeAddress(NATIVE_TOKEN_ADDRESS);
+  address.toLowerCase() === NATIVE_TOKEN_ADDRESS.toLowerCase();
 
 export default function SwapTab() {
   const { isConnected, address } = useAccount();
@@ -55,30 +42,24 @@ export default function SwapTab() {
 
   const fetchBalances = useCallback(async () => {
     if (!isConnected || !address) return;
-
-    const provider = new ethers.providers.Web3Provider(
-      (window as EthereumWindow).ethereum!
-    );
-
+    const provider = new ethers.providers.Web3Provider(window.ethereum!);
     const newBalances: Record<string, string> = {};
 
-    for (const [symbol, tokenAddress] of Object.entries(TOKENS)) {
+    for (const addr of Object.values(TOKENS)) {
       try {
-        if (tokenAddress === NATIVE_TOKEN_ADDRESS) {
-          const balance = await provider.getBalance(address);
-          newBalances[tokenAddress] = ethers.utils.formatEther(balance);
+        if (isNativeToken(addr)) {
+          const bal = await provider.getBalance(address);
+          newBalances[addr] = ethers.utils.formatEther(bal);
         } else {
-          const contract = new ethers.Contract(tokenAddress, ERC20_ABI, provider);
-          const decimals = TOKEN_METADATA[tokenAddress]?.decimals ?? 18;
-          const balance = await contract.balanceOf(address);
-          newBalances[tokenAddress] = ethers.utils.formatUnits(balance, decimals);
+          const contract = new ethers.Contract(addr, ERC20_ABI, provider);
+          const bal = await contract.balanceOf(address);
+          const dec = TOKEN_METADATA[addr]?.decimals ?? 18;
+          newBalances[addr] = ethers.utils.formatUnits(bal, dec);
         }
-      } catch (err) {
-        console.error(`Failed to fetch balance for ${symbol}:`, err);
-        newBalances[tokenAddress] = "0";
+      } catch {
+        newBalances[addr] = "0";
       }
     }
-
     setBalances(newBalances);
   }, [isConnected, address]);
 
@@ -87,39 +68,34 @@ export default function SwapTab() {
   }, [fetchBalances]);
 
   const getQuote = useCallback(async () => {
-    const parsedAmount = parseFloat(amountIn);
-    if (!fromToken || !toToken || isNaN(parsedAmount) || parsedAmount <= 0) {
+    const amt = parseFloat(amountIn);
+    if (!fromToken || !toToken || isNaN(amt) || amt <= 0 || fromToken === toToken) {
       setQuote(null);
       setBestPath(null);
       return;
     }
 
     setLoading(true);
-    const provider = new ethers.providers.JsonRpcProvider(RPC_URL);
-    const poolFetcher = new PoolFetcher(KURU_API_URL);
-
     try {
-      const pools = await poolFetcher.getAllPools(fromToken, toToken, BASE_TOKENS);
+      const provider = new ethers.providers.JsonRpcProvider(RPC_URL);
+      const pools = await new PoolFetcher(KURU_API_URL).getAllPools(fromToken, toToken, BASE_TOKENS);
       const path = await PathFinder.findBestPath(
         provider,
         fromToken,
         toToken,
-        parsedAmount,
+        amt,
         "amountIn",
-        poolFetcher,
+        new PoolFetcher(KURU_API_URL),
         pools
       );
-
       if (!path || path.output <= 0) {
         setQuote(null);
-        setBestPath(null);
-        return;
+      } else {
+        setQuote(path.output.toString());
+        setBestPath(path);
       }
-
-      setQuote(path.output.toString());
-      setBestPath(path);
-    } catch (err) {
-      console.error("Quote error:", err);
+    } catch (e) {
+      console.error("Quote error:", e);
       setQuote(null);
       setBestPath(null);
     } finally {
@@ -132,147 +108,100 @@ export default function SwapTab() {
   }, [getQuote]);
 
   const doSwap = useCallback(async () => {
-  console.log("🧪 Swap Triggered");
-  console.log("🔍 isConnected:", isConnected);
-  console.log("🔍 amountIn:", amountIn);
-  console.log("🔍 quote:", quote);
-  console.log("🔍 bestPath:", bestPath);
-
-  if (!isConnected || !quote || !bestPath || bestPath.output <= 0) {
-    alert("⚠️ Connect wallet & get valid quote");
-    return;
-  }
-
-  console.log("✅ Passed validation, preparing to swap...");
-
-  setLoading(true);
-  try {
-    const provider = new ethers.providers.Web3Provider(
-      (window as EthereumWindow).ethereum!
-    );
-
-    await provider.send("eth_requestAccounts", []);
-    const signer = provider.getSigner();
-    const signerAddress = await signer.getAddress();
-    console.log("🔐 Signer address:", signerAddress);
-
-    const routerCode = await provider.getCode(ROUTER_ADDRESS);
-    console.log("📦 Router contract code:", routerCode);
-    if (routerCode === "0x") {
-      throw new Error("❌ Router contract not found on this network");
-    }
-
-    const inputDecimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
-    const outputDecimals = TOKEN_METADATA[toToken]?.decimals ?? 18;
-
-    const isNative = isNativeToken(fromToken);
-    const approveTokens = !isNative;
-    const extendedPath = bestPath as ExtendedRouteOutput;
-    const slippageBps = 50;
-
-    console.log("🧭 Swap Path:", bestPath.route.path);
-    console.log("🧭 Pools:", bestPath.route.pools);
-    console.log("💰 Output:", bestPath.output);
-    console.log("🧪 fromToken:", fromToken);
-    console.log("🧪 isNativeToken:", isNative);
-    console.log("🧾 approveTokens:", approveTokens);
-    console.log("🧪 nativeSend:", extendedPath.nativeSend);
-    console.log("🎯 slippageBps:", slippageBps);
-
-    if (isNative && approveTokens) {
-      console.warn("❌ Invalid state: native token cannot require approval");
-      alert("⚠️ Native token doesn't need approval. Check logic.");
+    if (!isConnected || !quote || !bestPath || parseFloat(quote) <= 0) {
+      alert("Connect wallet & get valid quote");
       return;
     }
 
-    const onTxHash = (txHash: string | null) => {
-      if (txHash) {
-        console.log("✅ Swap submitted with txHash:", txHash);
-        alert("✅ Swap submitted: " + txHash);
-        setAmountIn("");
-        setQuote(null);
-        setBestPath(null);
-        fetchBalances();
-      } else {
-        console.warn("⚠️ Swap callback returned null txHash");
-        alert("⚠️ Swap failed or rejected");
-      }
-    };
+    if (fromToken === toToken) {
+      alert("Cannot swap same token");
+      return;
+    }
 
-    // ✅ Use standard swap for both native and ERC20, with correct approveTokens
-    await TokenSwap.swap(
-      signer,
-      ROUTER_ADDRESS,
-      bestPath,
-      parseFloat(amountIn),
-      inputDecimals,
-      outputDecimals,
-      approveTokens,
-      onTxHash
-    );
-  } catch (err) {
-    console.error("❌ Swap error:", err);
-    alert("❌ Swap failed: " + (err as Error).message);
-  } finally {
-    setLoading(false);
-  }
-}, [isConnected, amountIn, quote, bestPath, fromToken, toToken, fetchBalances]);
+    setLoading(true);
+    try {
+      const provider = new ethers.providers.Web3Provider(window.ethereum!);
+      await provider.send("eth_requestAccounts", []);
+      const signer = provider.getSigner();
+
+      const approveTokens = !isNativeToken(fromToken);
+
+      await TokenSwap.swap(
+        signer,
+        ROUTER_ADDRESS,
+        bestPath,
+        parseFloat(amountIn),
+        TOKEN_METADATA[fromToken]?.decimals ?? 18,
+        TOKEN_METADATA[toToken]?.decimals ?? 18,
+        approveTokens,
+        (txHash) => {
+          if (txHash) {
+            alert("Swap submitted: " + txHash);
+            setAmountIn("");
+            setQuote(null);
+            setBestPath(null);
+            fetchBalances();
+          } else {
+            alert("Swap rejected");
+          }
+        }
+      );
+    } catch (err) {
+      console.error("Swap error:", err);
+      alert("Swap failed: " + (err as any).message);
+    } finally {
+      setLoading(false);
+    }
+  }, [isConnected, amountIn, quote, bestPath, fromToken, toToken, fetchBalances]);
 
   const swapTokens = () => {
-    const temp = fromToken;
+    const tmp = fromToken;
     setFromToken(toToken);
-    setToToken(temp);
-    setQuote(null);
+    setToToken(tmp);
     setAmountIn("");
+    setQuote(null);
     setBestPath(null);
   };
 
   return (
-    <div className="tab swap-tab" style={{ maxWidth: 400, margin: "0 auto", padding: 16 }}>
-      <h2 style={{ textAlign: "center", marginBottom: 24 }}>🔄 Swap</h2>
+    <div style={{ maxWidth: 400, margin: "0 auto", padding: 16 }}>
+      <h2 style={{ textAlign: "center", marginBottom: 24 }}>Swap</h2>
 
       {!isConnected ? (
         <button
           onClick={() => {
-            const injectedConnector = connectors.find(c => c.id === "injected");
-            if (injectedConnector) {
-              connect({ connector: injectedConnector });
-            } else {
-              alert("No injected wallet found.");
-            }
+            const inj = connectors.find((c) => c.id === "injected");
+            inj ? connect({ connector: inj }) : alert("No wallet found");
           }}
           style={{
             width: "100%",
             padding: 12,
-            marginBottom: 16,
             background: "#0070f3",
-            color: "white",
-            fontWeight: "bold",
+            color: "#fff",
             border: "none",
             borderRadius: 8,
-            cursor: "pointer"
           }}
         >
-          🔌 Connect Wallet
+          Connect Wallet
         </button>
       ) : (
-        <div style={{ marginBottom: 16, textAlign: "center", fontSize: 14 }}>
-          ✅ Connected: {address?.slice(0, 6)}...{address?.slice(-4)}
+        <div style={{ textAlign: "center", marginBottom: 16 }}>
+          Connected: {address?.slice(0, 6)}...{address?.slice(-4)}
         </div>
       )}
 
-      <div style={{ background: "#f5f5f5", padding: 12, borderRadius: 12, marginBottom: 12 }}>
+      {/* From Token */}
+      <div style={{ marginBottom: 12, background: "#f5f5f5", padding: 12, borderRadius: 12 }}>
         <label style={{ fontWeight: "bold" }}>From</label>
         <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 8 }}>
-
           <select
             value={fromToken}
             onChange={(e) => setFromToken(e.target.value)}
             style={{ flex: 1, padding: 8, borderRadius: 8 }}
           >
-            {Object.entries(TOKENS).map(([sym, addr]) => (
-              <option key={sym} value={addr}>
-                {sym} ({balances[addr]?.slice(0, 8) ?? "0"} available)
+            {Object.entries(TOKENS).map(([symbol, addr]) => (
+              <option key={addr} value={addr}>
+                {symbol} ({parseFloat(balances[addr] || "0").toFixed(6)})
               </option>
             ))}
           </select>
@@ -283,32 +212,30 @@ export default function SwapTab() {
             value={amountIn}
             onChange={(e) => setAmountIn(e.target.value)}
             style={{
-              width: "120px",
+              width: 120,
               padding: 8,
-              borderRadius: 8,
               border: "1px solid #ccc",
-              textAlign: "right"
+              borderRadius: 8,
+              textAlign: "right",
             }}
           />
+          <button
+            onClick={() => setAmountIn(balances[fromToken] || "")}
+            style={{
+              padding: "4px 8px",
+              background: "#ccc",
+              border: "none",
+              borderRadius: 6,
+              cursor: "pointer",
+            }}
+          >
+            Max
+          </button>
         </div>
       </div>
 
-      <div style={{ textAlign: "center", margin: "8px 0" }}>
-        <button
-          onClick={swapTokens}
-          style={{
-            background: "#eee",
-            border: "none",
-            borderRadius: "50%",
-            padding: 8,
-            cursor: "pointer"
-          }}
-        >
-          ⬇️
-        </button>
-      </div>
-
-      <div style={{ background: "#f5f5f5", padding: 12, borderRadius: 12, marginBottom: 12 }}>
+      {/* To Token */}
+      <div style={{ marginBottom: 12, background: "#f5f5f5", padding: 12, borderRadius: 12 }}>
         <label style={{ fontWeight: "bold" }}>To</label>
         <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 8 }}>
           <select
@@ -316,42 +243,43 @@ export default function SwapTab() {
             onChange={(e) => setToToken(e.target.value)}
             style={{ flex: 1, padding: 8, borderRadius: 8 }}
           >
-            {Object.entries(TOKENS).map(([sym, addr]) => (
-              <option key={sym} value={addr}>
-                {sym} ({balances[addr]?.slice(0, 8) ?? "0"} available)
+            {Object.entries(TOKENS).map(([symbol, addr]) => (
+              <option key={addr} value={addr}>
+                {symbol} ({parseFloat(balances[addr] || "0").toFixed(6)})
               </option>
             ))}
           </select>
           <input
-            value={quote ?? ""}
             readOnly
             placeholder="0.0"
+            value={quote || ""}
             style={{
-              width: "120px",
+              width: 120,
               padding: 8,
-              borderRadius: 8,
               border: "1px solid #ccc",
+              borderRadius: 8,
               background: "#fafafa",
               textAlign: "right",
-              overflow: "hidden",
-              textOverflow: "ellipsis"
             }}
           />
         </div>
+        <div style={{ marginTop: 4, fontSize: 13, color: "#666" }}>
+          Estimated received: {quote ? parseFloat(quote).toFixed(6) : "–"}
+        </div>
       </div>
 
+      {/* Swap Button */}
       <button
         onClick={doSwap}
         disabled={!quote || loading || !isConnected}
         style={{
           width: "100%",
           padding: 12,
-          background: "#28a745",
-          color: "white",
-          fontWeight: "bold",
+          background: !quote || loading || !isConnected ? "#aaa" : "#28a745",
+          color: "#fff",
           border: "none",
           borderRadius: 8,
-          cursor: !quote || loading ? "not-allowed" : "pointer"
+          cursor: !quote || loading || !isConnected ? "not-allowed" : "pointer",
         }}
       >
         {loading ? "Processing…" : "Swap Now"}
