@@ -1,6 +1,6 @@
 import { ethers } from "ethers";
 import { TokenSwap, Path } from "@kuru-labs/kuru-sdk";
-import { NATIVE_TOKEN_ADDRESS, ROUTER_ADDRESS, TOKEN_METADATA } from "../constants";
+import { NATIVE_TOKEN_ADDRESS, ROUTER_ADDRESS, TOKEN_METADATA } from "./constants";
 
 export async function customSwap({
   signer,
