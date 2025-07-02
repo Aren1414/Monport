@@ -4,7 +4,10 @@ import { NATIVE_TOKEN_ADDRESS, ROUTER_ADDRESS, TOKEN_METADATA } from "./constant
 
 type SwapPath = {
   tx: { data: string };
-  route: unknown;
+  route: {
+    path: string[];
+    pools: string[];
+  };
   output: number;
 };
 
