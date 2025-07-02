@@ -40,10 +40,9 @@ const normalizeAddress = (addr: string) => {
   try {
     return ethers.utils.getAddress(addr.trim()).toLowerCase();
   } catch {
-    return addr.trim().toLowerCase(); 
+    return addr.trim().toLowerCase();
   }
 };
-
 
 const isNativeToken = (address: string) =>
   normalizeAddress(address) === normalizeAddress(NATIVE_TOKEN_ADDRESS);
@@ -139,90 +138,70 @@ export default function SwapTab() {
   }, [getQuote]);
 
   const doSwap = useCallback(async () => {
-  console.log("🧪 Swap Triggered");
-  console.log("🔍 isConnected:", isConnected);
-  console.log("🔍 amountIn:", amountIn);
-  console.log("🔍 quote:", quote);
-  console.log("🔍 bestPath:", bestPath);
-
-  if (!isConnected || !quote || !bestPath || bestPath.output <= 0) {
-    alert("⚠️ Connect wallet & get valid quote");
-    return;
-  }
-
-  console.log("✅ Passed validation, preparing to swap...");
-
-  setLoading(true);
-  try {
-    const provider = new ethers.providers.Web3Provider(
-      (window as EthereumWindow).ethereum!
-    );
-
-    await provider.send("eth_requestAccounts", []);
-    const signer = provider.getSigner();
-    const signerAddress = await signer.getAddress();
-    console.log("🔐 Signer address:", signerAddress);
-
-    const routerCode = await provider.getCode(ROUTER_ADDRESS);
-    console.log("📦 Router contract code:", routerCode);
-    if (routerCode === "0x") {
-      throw new Error("❌ Router contract not found on this network");
-    }
-
-    const inputDecimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
-    const outputDecimals = TOKEN_METADATA[toToken]?.decimals ?? 18;
-
-    const isNative = isNativeToken(fromToken);
-    const approveTokens = !isNative;
-    const extendedPath = bestPath as ExtendedRouteOutput;
-    const slippageBps = 50;
-
-    console.log("🧭 Swap Path:", bestPath.route.path);
-    console.log("🧭 Pools:", bestPath.route.pools);
-    console.log("💰 Output:", bestPath.output);
-    console.log("🧪 fromToken:", fromToken);
-    console.log("🧪 isNativeToken:", isNative);
-    console.log("🧾 approveTokens:", approveTokens);
-    console.log("🧪 nativeSend:", extendedPath.nativeSend);
-    console.log("🎯 slippageBps:", slippageBps);
-
-    if (isNative && approveTokens) {
-      console.warn("❌ Invalid state: native token cannot require approval");
-      alert("⚠️ Native token doesn't need approval. Check logic.");
+    console.log("🧪 Swap Triggered");
+    if (!isConnected || !quote || !bestPath || bestPath.output <= 0) {
+      alert("⚠️ Connect wallet & get valid quote");
       return;
     }
 
-    const onTxHash = (txHash: string | null) => {
-      if (txHash) {
-        console.log("✅ Swap submitted with txHash:", txHash);
-        alert("✅ Swap submitted: " + txHash);
-        setAmountIn("");
-        setQuote(null);
-        setBestPath(null);
-        fetchBalances();
-      } else {
-        console.warn("⚠️ Swap callback returned null txHash");
-        alert("⚠️ Swap failed or rejected");
-      }
-    };
+    setLoading(true);
+    try {
+      const provider = new ethers.providers.Web3Provider(
+        (window as EthereumWindow).ethereum!
+      );
 
-    await TokenSwap.swap(
-      signer,
-      ROUTER_ADDRESS,
-      bestPath,
-      parseFloat(amountIn),
-      inputDecimals,
-      outputDecimals,
-      approveTokens,
-      onTxHash
-    );
-  } catch (err) {
-    console.error("❌ Swap error:", err);
-    alert("❌ Swap failed: " + (err as Error).message);
-  } finally {
-    setLoading(false);
-  }
-}, [isConnected, amountIn, quote, bestPath, fromToken, toToken, fetchBalances]);
+      await provider.send("eth_requestAccounts", []);
+      const signer = provider.getSigner();
+      const signerAddress = await signer.getAddress();
+
+      const routerCode = await provider.getCode(ROUTER_ADDRESS);
+      if (routerCode === "0x") {
+        throw new Error("❌ Router contract not found on this network");
+      }
+
+      const inputDecimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
+      const outputDecimals = TOKEN_METADATA[toToken]?.decimals ?? 18;
+
+      const isNative = isNativeToken(fromToken);
+      const approveTokens = !isNative;
+      const extendedPath = bestPath as ExtendedRouteOutput;
+      const slippageBps = 50;
+
+      if (isNative && approveTokens) {
+        console.warn("❌ Invalid state: native token cannot require approval");
+        alert("⚠️ Native token doesn't need approval. Check logic.");
+        return;
+      }
+
+      const onTxHash = (txHash: string | null) => {
+        if (txHash) {
+          alert("✅ Swap submitted: " + txHash);
+          setAmountIn("");
+          setQuote(null);
+          setBestPath(null);
+          fetchBalances();
+        } else {
+          alert("⚠️ Swap failed or rejected");
+        }
+      };
+
+      await TokenSwap.swap(
+        signer,
+        ROUTER_ADDRESS,
+        bestPath,
+        parseFloat(amountIn),
+        inputDecimals,
+        outputDecimals,
+        approveTokens,
+        onTxHash
+      );
+    } catch (err) {
+      console.error("❌ Swap error:", err);
+      alert("❌ Swap failed: " + (err as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  }, [isConnected, amountIn, quote, bestPath, fromToken, toToken, fetchBalances]);
 
   const swapTokens = () => {
     const temp = fromToken;
@@ -270,7 +249,6 @@ export default function SwapTab() {
       <div style={{ background: "#f5f5f5", padding: 12, borderRadius: 12, marginBottom: 12 }}>
         <label style={{ fontWeight: "bold" }}>From</label>
         <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 8 }}>
-
           <select
             value={fromToken}
             onChange={(e) => setFromToken(e.target.value)}
