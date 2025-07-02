@@ -31,6 +31,10 @@ type EthereumWindow = typeof window & {
   ethereum?: ethers.providers.ExternalProvider;
 };
 
+type SwapPath = RouteOutput & {
+  tx: { data: string };
+};
+
 export default function SwapTab() {
   const { isConnected, address } = useAccount();
   const { connect, connectors } = useConnect();
@@ -122,7 +126,6 @@ export default function SwapTab() {
   }, [getQuote]);
 
   const doSwap = useCallback(async () => {
-    console.log("🧪 Swap Triggered");
     if (!isConnected || !quote || !bestPath || bestPath.output <= 0) {
       alert("⚠️ Connect wallet & get valid quote");
       return;
@@ -142,9 +145,11 @@ export default function SwapTab() {
         throw new Error("❌ Router contract not found on this network");
       }
 
+      const swapPath = bestPath as SwapPath;
+
       await customSwap({
         signer,
-        path: bestPath,
+        path: swapPath,
         amountIn: parseFloat(amountIn),
         fromToken,
         toToken,
@@ -258,54 +263,55 @@ export default function SwapTab() {
       </div>
 
       <div style={{ background: "#f5f5f5", padding: 12, borderRadius: 12, marginBottom: 12 }}>
-
         <label style={{ fontWeight: "bold" }}>To</label>
         <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 8 }}>
           <select
             value={toToken}
             onChange={(e) => setToToken(e.target.value)}
-            style={{ flex: 1, padding: 8, borderRadius: 8 }}
-          >
-            {Object.entries(TOKENS).map(([sym, addr]) => (
-              <option key={sym} value={addr}>
-                {sym} ({balances[addr]?.slice(0, 8) ?? "0"} available)
-              </option>
-            ))}
-          </select>
-          <input
-            value={quote ?? ""}
-            readOnly
-            placeholder="0.0"
-            style={{
-              width: "120px",
-              padding: 8,
-              borderRadius: 8,
-              border: "1px solid #ccc",
-              background: "#fafafa",
-              textAlign: "right",
-              overflow: "hidden",
-              textOverflow: "ellipsis"
-            }}
-          />
-        </div>
+            style={{ flex: 1, padding: 8,
+            borderRadius: 8
+          }}
+        >
+          {Object.entries(TOKENS).map(([sym, addr]) => (
+            <option key={sym} value={addr}>
+              {sym} ({balances[addr]?.slice(0, 8) ?? "0"} available)
+            </option>
+          ))}
+        </select>
+        <input
+          value={quote ?? ""}
+          readOnly
+          placeholder="0.0"
+          style={{
+            width: "120px",
+            padding: 8,
+            borderRadius: 8,
+            border: "1px solid #ccc",
+            background: "#fafafa",
+            textAlign: "right",
+            overflow: "hidden",
+            textOverflow: "ellipsis"
+          }}
+        />
       </div>
-
-      <button
-        onClick={doSwap}
-        disabled={!quote || loading || !isConnected}
-        style={{
-          width: "100%",
-          padding: 12,
-          background: "#28a745",
-          color: "white",
-          fontWeight: "bold",
-          border: "none",
-          borderRadius: 8,
-          cursor: !quote || loading ? "not-allowed" : "pointer"
-        }}
-      >
-        {loading ? "Processing…" : "Swap Now"}
-      </button>
     </div>
-  );
+
+    <button
+      onClick={doSwap}
+      disabled={!quote || loading || !isConnected}
+      style={{
+        width: "100%",
+        padding: 12,
+        background: "#28a745",
+        color: "white",
+        fontWeight: "bold",
+        border: "none",
+        borderRadius: 8,
+        cursor: !quote || loading ? "not-allowed" : "pointer"
+      }}
+    >
+      {loading ? "Processing…" : "Swap Now"}
+    </button>
+  </div>
+);
 }
