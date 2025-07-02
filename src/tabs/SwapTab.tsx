@@ -5,8 +5,7 @@ import { useAccount, useConnect } from "wagmi";
 import { ethers } from "ethers";
 import {
   PoolFetcher,
-  PathFinder,
-  TokenSwap
+  PathFinder
 } from "@kuru-labs/kuru-sdk";
 import type { RouteOutput } from "@kuru-labs/kuru-sdk";
 
@@ -18,6 +17,7 @@ import {
   RPC_URL
 } from "@/lib/constants";
 
+import { customSwap } from "@/lib/customSwap";
 import ERC20_ABI from "@/abis/ERC20.json";
 
 const KURU_API_URL = "https://api.testnet.kuru.io";
@@ -30,7 +30,6 @@ const BASE_TOKENS = [
 type EthereumWindow = typeof window & {
   ethereum?: ethers.providers.ExternalProvider;
 };
-
 
 const normalizeAddress = (addr: string) => {
   try {
@@ -141,53 +140,37 @@ export default function SwapTab() {
     }
 
     setLoading(true);
-try {
-  const provider = new ethers.providers.Web3Provider(
-    (window as EthereumWindow).ethereum!
-  );
-
-  await provider.send("eth_requestAccounts", []);
-  const signer = provider.getSigner();
-
-  const routerCode = await provider.getCode(ROUTER_ADDRESS);
-  if (routerCode === "0x") {
-    throw new Error("❌ Router contract not found on this network");
-  }
-
-  const inputDecimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
-  const outputDecimals = TOKEN_METADATA[toToken]?.decimals ?? 18;
-
-  const isNative = isNativeToken(fromToken);
-  const approveTokens = !isNative;
-
-  if (isNative && approveTokens) {
-    console.warn("❌ Invalid state: native token cannot require approval");
-    alert("⚠️ Native token doesn't need approval. Check logic.");
-    return;
-  }
-
-      const onTxHash = (txHash: string | null) => {
-        if (txHash) {
-          alert("✅ Swap submitted: " + txHash);
-          setAmountIn("");
-          setQuote(null);
-          setBestPath(null);
-          fetchBalances();
-        } else {
-          alert("⚠️ Swap failed or rejected");
-        }
-      };
-
-      await TokenSwap.swap(
-        signer,
-        ROUTER_ADDRESS,
-        bestPath,
-        parseFloat(amountIn),
-        inputDecimals,
-        outputDecimals,
-        approveTokens,
-        onTxHash
+    try {
+      const provider = new ethers.providers.Web3Provider(
+        (window as EthereumWindow).ethereum!
       );
+
+      await provider.send("eth_requestAccounts", []);
+      const signer = provider.getSigner();
+
+      const routerCode = await provider.getCode(ROUTER_ADDRESS);
+      if (routerCode === "0x") {
+        throw new Error("❌ Router contract not found on this network");
+      }
+
+      await customSwap({
+        signer,
+        path: bestPath,
+        amountIn: parseFloat(amountIn),
+        fromToken,
+        toToken,
+        onTx: (txHash) => {
+          if (txHash) {
+            alert("✅ Swap submitted: " + txHash);
+            setAmountIn("");
+            setQuote(null);
+            setBestPath(null);
+            fetchBalances();
+          } else {
+            alert("⚠️ Swap failed or rejected");
+          }
+        }
+      });
     } catch (err) {
       console.error("❌ Swap error:", err);
       alert("❌ Swap failed: " + (err as Error).message);
@@ -286,6 +269,7 @@ try {
       </div>
 
       <div style={{ background: "#f5f5f5", padding: 12, borderRadius: 12, marginBottom: 12 }}>
+
         <label style={{ fontWeight: "bold" }}>To</label>
         <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 8 }}>
           <select
