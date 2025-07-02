@@ -122,103 +122,109 @@ export default function SwapTab() {
   }, [getQuote]);
 
   const doSwap = useCallback(async () => {
-    if (!isConnected || !quote || !bestPath || bestPath.output <= 0) {
-      alert("⚠️ Connect wallet & get valid quote");
-      return;
+  if (!isConnected || !quote || !bestPath || bestPath.output <= 0) {
+    alert("⚠️ Connect wallet & get valid quote");
+    return;
+  }
+
+  const isNative = fromToken.toLowerCase() === NATIVE_TOKEN_ADDRESS.toLowerCase();
+  const txData = (bestPath as any)?.tx?.data;
+
+  if (isNative && !txData) {
+    alert("⚠️ Native token swap is not supported without tx data.");
+    return;
+  }
+
+  setLoading(true);
+  try {
+    const provider = new ethers.providers.Web3Provider(
+      (window as EthereumWindow).ethereum!
+    );
+
+    await provider.send("eth_requestAccounts", []);
+    const signer = provider.getSigner();
+
+    const inputDecimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
+
+    if (!isNative) {
+      const contract = new ethers.Contract(fromToken, ERC20_ABI, signer);
+      const allowance = await contract.allowance(await signer.getAddress(), ROUTER_ADDRESS);
+      const required = ethers.utils.parseUnits(amountIn, inputDecimals);
+
+      if (allowance.lt(required)) {
+        const approveTx = await contract.approve(ROUTER_ADDRESS, ethers.constants.MaxUint256);
+        await approveTx.wait();
+      }
     }
 
-    setLoading(true);
-    try {
-      const provider = new ethers.providers.Web3Provider(
-        (window as EthereumWindow).ethereum!
-      );
-
-      await provider.send("eth_requestAccounts", []);
-      const signer = provider.getSigner();
-
-      const inputDecimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
-      const isNative = fromToken.toLowerCase() === NATIVE_TOKEN_ADDRESS.toLowerCase();
-
-      if (!isNative) {
-        const contract = new ethers.Contract(fromToken, ERC20_ABI, signer);
-        const allowance = await contract.allowance(await signer.getAddress(), ROUTER_ADDRESS);
-        const required = ethers.utils.parseUnits(amountIn, inputDecimals);
-
-        if (allowance.lt(required)) {
-          const approveTx = await contract.approve(ROUTER_ADDRESS, ethers.constants.MaxUint256);
-          await approveTx.wait();
+    await customSwap({
+      signer,
+      path: bestPath,
+      amountIn: parseFloat(amountIn),
+      fromToken,
+      toToken,
+      onTx: (txHash) => {
+        if (txHash) {
+          alert("✅ Swap submitted: " + txHash);
+          setAmountIn("");
+          setQuote(null);
+          setBestPath(null);
+          fetchBalances();
+        } else {
+          alert("⚠️ Swap failed or rejected");
         }
       }
+    });
+  } catch (err) {
+    console.error("❌ Swap error:", err);
+    alert("❌ Swap failed: " + (err as Error).message);
+  } finally {
+    setLoading(false);
+  }
+}, [isConnected, amountIn, quote, bestPath, fromToken, toToken, fetchBalances]);
 
-      await customSwap({
-        signer,
-        path: bestPath,
-        amountIn: parseFloat(amountIn),
-        fromToken,
-        toToken,
-        onTx: (txHash) => {
-          if (txHash) {
-            alert("✅ Swap submitted: " + txHash);
-            setAmountIn("");
-            setQuote(null);
-            setBestPath(null);
-            fetchBalances();
+const swapTokens = () => {
+  const temp = fromToken;
+  setFromToken(toToken);
+  setToToken(temp);
+  setQuote(null);
+  setAmountIn("");
+  setBestPath(null);
+};
+
+return (
+  <div className="tab swap-tab" style={{ maxWidth: 400, margin: "0 auto", padding: 16 }}>
+    <h2 style={{ textAlign: "center", marginBottom: 24 }}>🔄 Swap</h2>
+
+    {!isConnected ? (
+      <button
+        onClick={() => {
+          const injectedConnector = connectors.find(c => c.id === "injected");
+          if (injectedConnector) {
+            connect({ connector: injectedConnector });
           } else {
-            alert("⚠️ Swap failed or rejected");
+            alert("No injected wallet found.");
           }
-        }
-      });
-    } catch (err) {
-      console.error("❌ Swap error:", err);
-      alert("❌ Swap failed: " + (err as Error).message);
-    } finally {
-      setLoading(false);
-    }
-  }, [isConnected, amountIn, quote, bestPath, fromToken, toToken, fetchBalances]);
-
-  const swapTokens = () => {
-    const temp = fromToken;
-    setFromToken(toToken);
-    setToToken(temp);
-    setQuote(null);
-    setAmountIn("");
-    setBestPath(null);
-  };
-
-  return (
-    <div className="tab swap-tab" style={{ maxWidth: 400, margin: "0 auto", padding: 16 }}>
-      <h2 style={{ textAlign: "center", marginBottom: 24 }}>🔄 Swap</h2>
-
-      {!isConnected ? (
-        <button
-          onClick={() => {
-            const injectedConnector = connectors.find(c => c.id === "injected");
-            if (injectedConnector) {
-              connect({ connector: injectedConnector });
-            } else {
-              alert("No injected wallet found.");
-            }
-          }}
-          style={{
-            width: "100%",
-            padding: 12,
-            marginBottom: 16,
-            background: "#0070f3",
-            color: "white",
-            fontWeight: "bold",
-            border: "none",
-            borderRadius: 8,
-            cursor: "pointer"
-          }}
-        >
-          🔌 Connect Wallet
-        </button>
-      ) : (
-        <div style={{ marginBottom: 16, textAlign: "center", fontSize: 14 }}>
-          ✅ Connected: {address?.slice(0, 6)}...{address?.slice(-4)}
-        </div>
-      )}
-
+        }}
+        style={{
+          width: "100%",
+          padding: 12,
+          marginBottom: 16,
+          background: "#0070f3",
+          color: "white",
+          fontWeight: "bold",
+          border: "none",
+          borderRadius: 8,
+          cursor: "pointer"
+        }}
+      >
+        🔌 Connect Wallet
+      </button>
+    ) : (
+      <div style={{ marginBottom: 16, textAlign: "center", fontSize: 14 }}>
+        ✅ Connected: {address?.slice(0, 6)}...{address?.slice(-4)}
+      </div>
+    )}
       <div style={{ background: "#f5f5f5", padding: 12, borderRadius: 12, marginBottom: 12 }}>
         <label style={{ fontWeight: "bold" }}>From</label>
         <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 8 }}>
