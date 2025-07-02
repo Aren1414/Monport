@@ -199,29 +199,17 @@ export default function SwapTab() {
       }
     };
 
-    if (isNative) {
-      // ✅ Use swapNative for native token
-      await TokenSwap.swapNative(
-        signer,
-        ROUTER_ADDRESS,
-        bestPath,
-        parseFloat(amountIn),
-        outputDecimals,
-        onTxHash
-      );
-    } else {
-      // ✅ Use standard swap for ERC20 tokens
-      await TokenSwap.swap(
-        signer,
-        ROUTER_ADDRESS,
-        bestPath,
-        parseFloat(amountIn),
-        inputDecimals,
-        outputDecimals,
-        approveTokens,
-        onTxHash
-      );
-    }
+    // ✅ Use standard swap for both native and ERC20, with correct approveTokens
+    await TokenSwap.swap(
+      signer,
+      ROUTER_ADDRESS,
+      bestPath,
+      parseFloat(amountIn),
+      inputDecimals,
+      outputDecimals,
+      approveTokens,
+      onTxHash
+    );
   } catch (err) {
     console.error("❌ Swap error:", err);
     alert("❌ Swap failed: " + (err as Error).message);
