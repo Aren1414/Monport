@@ -41,6 +41,10 @@ const normalizeAddress = (addr: string) =>
 const isNativeToken = (address: string) =>
   normalizeAddress(address) === normalizeAddress(NATIVE_TOKEN_ADDRESS);
 
+function hasTxData(path: RouteOutput): path is ExtendedRouteOutput {
+  return !!(path as ExtendedRouteOutput).tx;
+}
+
 export default function SwapTab() {
   const { isConnected, address } = useAccount();
   const { connect, connectors } = useConnect();
@@ -178,12 +182,7 @@ export default function SwapTab() {
     console.log("🎯 slippageBps:", slippageBps);
 
     if (isNative) {
-  const txData =
-    extendedPath.tx && typeof extendedPath.tx.data === "string"
-      ? extendedPath.tx.data
-      : undefined;
-
-  if (!txData) {
+  if (!hasTxData(bestPath) || typeof bestPath.tx?.data !== "string") {
     alert("⚠️ Native token swap is not supported without tx data.");
     return;
   }
@@ -191,7 +190,7 @@ export default function SwapTab() {
   const tx = await signer.sendTransaction({
     to: ROUTER_ADDRESS,
     value: ethers.utils.parseUnits(amountIn, inputDecimals),
-    data: txData
+    data: bestPath.tx.data
   });
 
   console.log("✅ Native swap submitted:", tx.hash);
