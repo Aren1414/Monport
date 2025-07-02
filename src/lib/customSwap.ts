@@ -25,12 +25,16 @@ export async function customSwap({
   try {
     if (isNative) {
       // اگر path.tx.data وجود داره، از sendTransaction استفاده کن
-      const txData = (path as any)?.tx?.data;
-      if (!txData) {
-        alert("⚠️ Swap for native token is not supported without tx.data");
-        onTx(null);
-        return;
-      }
+      const txData =
+  "tx" in path && typeof (path as { tx: { data: string } }).tx?.data === "string"
+    ? (path as { tx: { data: string } }).tx.data
+    : undefined;
+
+if (!txData) {
+  alert("⚠️ Swap for native token is not supported without tx.data");
+  onTx(null);
+  return;
+}
 
       const tx = await signer.sendTransaction({
         to: ROUTER_ADDRESS,
