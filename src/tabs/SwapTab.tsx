@@ -6,9 +6,9 @@ import { ethers } from "ethers";
 import {
   PoolFetcher,
   PathFinder,
-  TokenSwap,
-  type RouteOutput
+  TokenSwap
 } from "@kuru-labs/kuru-sdk";
+import type { RouteOutput } from "@kuru-labs/kuru-sdk";
 
 import {
   ROUTER_ADDRESS,
@@ -32,7 +32,6 @@ type EthereumWindow = typeof window & {
 };
 
 type ExtendedRouteOutput = RouteOutput & {
-  tx?: { data: string };
   nativeSend?: boolean[];
 };
 
@@ -133,89 +132,91 @@ export default function SwapTab() {
   }, [getQuote]);
 
   const doSwap = useCallback(async () => {
-    if (!isConnected || !quote || !bestPath || bestPath.output <= 0) {
-      alert("⚠️ Connect wallet & get valid quote");
+  console.log("🧪 Swap Triggered");
+  console.log("🔍 isConnected:", isConnected);
+  console.log("🔍 amountIn:", amountIn);
+  console.log("🔍 quote:", quote);
+  console.log("🔍 bestPath:", bestPath);
+
+  if (!isConnected || !quote || !bestPath || bestPath.output <= 0) {
+    alert("⚠️ Connect wallet & get valid quote");
+    return;
+  }
+
+  console.log("✅ Passed validation, preparing to swap...");
+
+  setLoading(true);
+  try {
+    const provider = new ethers.providers.Web3Provider(
+      (window as EthereumWindow).ethereum!
+    );
+
+    await provider.send("eth_requestAccounts", []);
+    const signer = provider.getSigner();
+    const signerAddress = await signer.getAddress();
+    console.log("🔐 Signer address:", signerAddress);
+
+    const routerCode = await provider.getCode(ROUTER_ADDRESS);
+    console.log("📦 Router contract code:", routerCode);
+    if (routerCode === "0x") {
+      throw new Error("❌ Router contract not found on this network");
+    }
+
+    const inputDecimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
+    const outputDecimals = TOKEN_METADATA[toToken]?.decimals ?? 18;
+
+    const isNative = isNativeToken(fromToken);
+    const approveTokens = !isNative;
+    const extendedPath = bestPath as ExtendedRouteOutput;
+    const slippageBps = 50;
+
+    console.log("🧭 Swap Path:", bestPath.route.path);
+    console.log("🧭 Pools:", bestPath.route.pools);
+    console.log("💰 Output:", bestPath.output);
+    console.log("🧪 fromToken:", fromToken);
+    console.log("🧪 isNativeToken:", isNative);
+    console.log("🧾 approveTokens:", approveTokens);
+    console.log("🧪 nativeSend:", extendedPath.nativeSend);
+    console.log("🎯 slippageBps:", slippageBps);
+
+    if (isNative && approveTokens) {
+      console.warn("❌ Invalid state: native token cannot require approval");
+      alert("⚠️ Native token doesn't need approval. Check logic.");
       return;
     }
 
-    setLoading(true);
-    try {
-      const provider = new ethers.providers.Web3Provider(
-        (window as EthereumWindow).ethereum!
-      );
-
-      await provider.send("eth_requestAccounts", []);
-      const signer = provider.getSigner();
-      const signerAddress = await signer.getAddress();
-
-      const inputDecimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
-      const outputDecimals = TOKEN_METADATA[toToken]?.decimals ?? 18;
-
-      const isNative = isNativeToken(fromToken);
-      const extendedPath = bestPath as ExtendedRouteOutput;
-
-      if (isNative) {
-        const txData =
-          "tx" in extendedPath && typeof extendedPath.tx?.data === "string"
-            ? extendedPath.tx.data
-            : undefined;
-
-        if (!txData) {
-          alert("⚠️ Native token swap is not supported without tx data.");
-          return;
-        }
-
-        const tx = await signer.sendTransaction({
-          to: ROUTER_ADDRESS,
-          value: ethers.utils.parseUnits(amountIn, inputDecimals),
-          data: txData
-        });
-
-        alert("✅ Swap submitted: " + tx.hash);
+    const onTxHash = (txHash: string | null) => {
+      if (txHash) {
+        console.log("✅ Swap submitted with txHash:", txHash);
+        alert("✅ Swap submitted: " + txHash);
         setAmountIn("");
         setQuote(null);
         setBestPath(null);
         fetchBalances();
-        return;
+      } else {
+        console.warn("⚠️ Swap callback returned null txHash");
+        alert("⚠️ Swap failed or rejected");
       }
+    };
 
-      // ERC20: check and approve if needed
-      const contract = new ethers.Contract(fromToken, ERC20_ABI, signer);
-      const allowance = await contract.allowance(signerAddress, ROUTER_ADDRESS);
-      const required = ethers.utils.parseUnits(amountIn, inputDecimals);
-
-      if (allowance.lt(required)) {
-        const approveTx = await contract.approve(ROUTER_ADDRESS, ethers.constants.MaxUint256);
-        await approveTx.wait();
-      }
-
-      await TokenSwap.swap(
-        signer,
-        ROUTER_ADDRESS,
-        bestPath,
-        parseFloat(amountIn),
-        inputDecimals,
-        outputDecimals,
-        false,
-        (txHash) => {
-          if (txHash) {
-            alert("✅ Swap submitted: " + txHash);
-            setAmountIn("");
-            setQuote(null);
-            setBestPath(null);
-            fetchBalances();
-          } else {
-            alert("⚠️ Swap failed or rejected");
-          }
-        }
-      );
-    } catch (err) {
-      console.error("❌ Swap error:", err);
-      alert("❌ Swap failed: " + (err as Error).message);
-    } finally {
-      setLoading(false);
-    }
-  }, [isConnected, amountIn, quote, bestPath, fromToken, toToken, fetchBalances]);
+    // ✅ Use standard swap for both native and ERC20, with correct approveTokens
+    await TokenSwap.swap(
+      signer,
+      ROUTER_ADDRESS,
+      bestPath,
+      parseFloat(amountIn),
+      inputDecimals,
+      outputDecimals,
+      approveTokens,
+      onTxHash
+    );
+  } catch (err) {
+    console.error("❌ Swap error:", err);
+    alert("❌ Swap failed: " + (err as Error).message);
+  } finally {
+    setLoading(false);
+  }
+}, [isConnected, amountIn, quote, bestPath, fromToken, toToken, fetchBalances]);
 
   const swapTokens = () => {
     const temp = fromToken;
@@ -263,6 +264,7 @@ export default function SwapTab() {
       <div style={{ background: "#f5f5f5", padding: 12, borderRadius: 12, marginBottom: 12 }}>
         <label style={{ fontWeight: "bold" }}>From</label>
         <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 8 }}>
+
           <select
             value={fromToken}
             onChange={(e) => setFromToken(e.target.value)}
