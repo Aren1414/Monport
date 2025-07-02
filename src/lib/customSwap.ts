@@ -1,5 +1,5 @@
 import { ethers } from "ethers";
-import { TokenSwap, Path } from "@kuru-labs/kuru-sdk";
+import { TokenSwap } from "@kuru-labs/kuru-sdk";
 import { NATIVE_TOKEN_ADDRESS, ROUTER_ADDRESS, TOKEN_METADATA } from "./constants";
 
 export async function customSwap({
@@ -11,7 +11,7 @@ export async function customSwap({
   onTx
 }: {
   signer: ethers.Signer;
-  path: Path;
+  path: any; 
   amountIn: number;
   fromToken: string;
   toToken: string;
