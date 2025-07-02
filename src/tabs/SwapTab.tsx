@@ -145,33 +145,30 @@ export default function SwapTab() {
     }
 
     setLoading(true);
-    try {
-      const provider = new ethers.providers.Web3Provider(
-        (window as EthereumWindow).ethereum!
-      );
+try {
+  const provider = new ethers.providers.Web3Provider(
+    (window as EthereumWindow).ethereum!
+  );
 
-      await provider.send("eth_requestAccounts", []);
-      const signer = provider.getSigner();
-      const signerAddress = await signer.getAddress();
+  await provider.send("eth_requestAccounts", []);
+  const signer = provider.getSigner();
 
-      const routerCode = await provider.getCode(ROUTER_ADDRESS);
-      if (routerCode === "0x") {
-        throw new Error("❌ Router contract not found on this network");
-      }
+  const routerCode = await provider.getCode(ROUTER_ADDRESS);
+  if (routerCode === "0x") {
+    throw new Error("❌ Router contract not found on this network");
+  }
 
-      const inputDecimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
-      const outputDecimals = TOKEN_METADATA[toToken]?.decimals ?? 18;
+  const inputDecimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
+  const outputDecimals = TOKEN_METADATA[toToken]?.decimals ?? 18;
 
-      const isNative = isNativeToken(fromToken);
-      const approveTokens = !isNative;
-      const extendedPath = bestPath as ExtendedRouteOutput;
-      const slippageBps = 50;
+  const isNative = isNativeToken(fromToken);
+  const approveTokens = !isNative;
 
-      if (isNative && approveTokens) {
-        console.warn("❌ Invalid state: native token cannot require approval");
-        alert("⚠️ Native token doesn't need approval. Check logic.");
-        return;
-      }
+  if (isNative && approveTokens) {
+    console.warn("❌ Invalid state: native token cannot require approval");
+    alert("⚠️ Native token doesn't need approval. Check logic.");
+    return;
+  }
 
       const onTxHash = (txHash: string | null) => {
         if (txHash) {
