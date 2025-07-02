@@ -1,14 +1,10 @@
 import { ethers } from "ethers";
 import { TokenSwap } from "@kuru-labs/kuru-sdk";
+import type { RouteOutput } from "@kuru-labs/kuru-sdk";
 import { NATIVE_TOKEN_ADDRESS, ROUTER_ADDRESS, TOKEN_METADATA } from "./constants";
 
-type SwapPath = {
+type SwapPath = RouteOutput & {
   tx: { data: string };
-  route: {
-    path: string[];
-    pools: string[];
-  };
-  output: number;
 };
 
 export async function customSwap({
