@@ -35,8 +35,15 @@ type ExtendedRouteOutput = RouteOutput & {
   nativeSend?: boolean[];
 };
 
-const normalizeAddress = (addr: string) =>
-  addr.toLowerCase().replace(/^0x/, "");
+
+const normalizeAddress = (addr: string) => {
+  try {
+    return ethers.utils.getAddress(addr.trim()).toLowerCase();
+  } catch {
+    return addr.trim().toLowerCase(); 
+  }
+};
+
 
 const isNativeToken = (address: string) =>
   normalizeAddress(address) === normalizeAddress(NATIVE_TOKEN_ADDRESS);
@@ -199,7 +206,6 @@ export default function SwapTab() {
       }
     };
 
-    // ✅ Use standard swap for both native and ERC20, with correct approveTokens
     await TokenSwap.swap(
       signer,
       ROUTER_ADDRESS,
