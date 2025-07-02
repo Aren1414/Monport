@@ -39,9 +39,6 @@ const normalizeAddress = (addr: string) => {
   }
 };
 
-const isNativeToken = (address: string) =>
-  normalizeAddress(address) === normalizeAddress(NATIVE_TOKEN_ADDRESS);
-
 export default function SwapTab() {
   const { isConnected, address } = useAccount();
   const { connect, connectors } = useConnect();
