@@ -6,7 +6,7 @@ import { ethers } from "ethers";
 import {
   PoolFetcher,
   PathFinder,
-  TransactionBuilder
+  TokenSwap
 } from "@kuru-labs/kuru-sdk";
 import type { RouteOutput } from "@kuru-labs/kuru-sdk";
 
@@ -161,7 +161,7 @@ export default function SwapTab() {
         }
       }
 
-      const tx = await TransactionBuilder.buildSwapTx(
+      const tx = await TokenSwap.buildSwapTx(
         signer,
         ROUTER_ADDRESS,
         bestPath,
