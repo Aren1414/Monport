@@ -31,14 +31,6 @@ type EthereumWindow = typeof window & {
   ethereum?: ethers.providers.ExternalProvider;
 };
 
-const normalizeAddress = (addr: string) => {
-  try {
-    return ethers.utils.getAddress(addr.trim()).toLowerCase();
-  } catch {
-    return addr.trim().toLowerCase();
-  }
-};
-
 export default function SwapTab() {
   const { isConnected, address } = useAccount();
   const { connect, connectors } = useConnect();
