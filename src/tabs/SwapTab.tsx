@@ -5,7 +5,8 @@ import { useAccount, useConnect } from "wagmi";
 import { ethers } from "ethers";
 import {
   PoolFetcher,
-  PathFinder
+  PathFinder,
+  TransactionBuilder
 } from "@kuru-labs/kuru-sdk";
 import type { RouteOutput } from "@kuru-labs/kuru-sdk";
 
@@ -145,7 +146,34 @@ export default function SwapTab() {
         throw new Error("❌ Router contract not found on this network");
       }
 
-      const swapPath = bestPath as SwapPath;
+      const inputDecimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
+      const outputDecimals = TOKEN_METADATA[toToken]?.decimals ?? 18;
+      const isNative = fromToken.toLowerCase() === NATIVE_TOKEN_ADDRESS.toLowerCase();
+
+      if (!isNative) {
+        const contract = new ethers.Contract(fromToken, ERC20_ABI, signer);
+        const allowance = await contract.allowance(await signer.getAddress(), ROUTER_ADDRESS);
+        const required = ethers.utils.parseUnits(amountIn, inputDecimals);
+
+        if (allowance.lt(required)) {
+          const approveTx = await contract.approve(ROUTER_ADDRESS, ethers.constants.MaxUint256);
+          await approveTx.wait();
+        }
+      }
+
+      const tx = await TransactionBuilder.buildSwapTx(
+        signer,
+        ROUTER_ADDRESS,
+        bestPath,
+        parseFloat(amountIn),
+        inputDecimals,
+        outputDecimals
+      );
+
+      const swapPath: SwapPath = {
+        ...bestPath,
+        tx
+      };
 
       await customSwap({
         signer,
@@ -268,50 +296,48 @@ export default function SwapTab() {
           <select
             value={toToken}
             onChange={(e) => setToToken(e.target.value)}
-            style={{ flex: 1, padding: 8,
-            borderRadius: 8
-          }}
-        >
-          {Object.entries(TOKENS).map(([sym, addr]) => (
-            <option key={sym} value={addr}>
-              {sym} ({balances[addr]?.slice(0, 8) ?? "0"} available)
-            </option>
-          ))}
-        </select>
-        <input
-          value={quote ?? ""}
-          readOnly
-          placeholder="0.0"
-          style={{
-            width: "120px",
-            padding: 8,
-            borderRadius: 8,
-            border: "1px solid #ccc",
-            background: "#fafafa",
-            textAlign: "right",
-            overflow: "hidden",
-            textOverflow: "ellipsis"
-          }}
-        />
+            style={{ flex: 1, padding: 8, borderRadius: 8 }}
+          >
+            {Object.entries(TOKENS).map(([sym, addr]) => (
+              <option key={sym} value={addr}>
+                {sym} ({balances[addr]?.slice(0, 8) ?? "0"} available)
+              </option>
+            ))}
+          </select>
+          <input
+            value={quote ?? ""}
+            readOnly
+            placeholder="0.0"
+            style={{
+              width: "120px",
+              padding: 8,
+              borderRadius: 8,
+              border: "1px solid #ccc",
+              background: "#fafafa",
+              textAlign: "right",
+              overflow: "hidden",
+              textOverflow: "ellipsis"
+            }}
+          />
+        </div>
       </div>
-    </div>
 
-    <button
-      onClick={doSwap}
-      disabled={!quote || loading || !isConnected}
-      style={{
-        width: "100%",
-        padding: 12,
-        background: "#28a745",
-        color: "white",
-        fontWeight: "bold",
-        border: "none",
-        borderRadius: 8,
-        cursor: !quote || loading ? "not-allowed" : "pointer"
-      }}
-    >
-      {loading ? "Processing…" : "Swap Now"}
-    </button>
-  </div>
-);
+      <button
+        onClick={doSwap}
+        disabled={!quote || loading || !isConnected}
+        style={{
+          width: "100%",
+          padding: 12,
+          background: "#28a745",
+          color: "white",
+          fontWeight: "bold",
+          border: "none",
+          borderRadius: 8,
+          cursor: !quote || loading ? "not-allowed" : "pointer"
+        }}
+      >
+        {loading ? "Processing…" : "Swap Now"}
+      </button>
+    </div>
+  );
 }
