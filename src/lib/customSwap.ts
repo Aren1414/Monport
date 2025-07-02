@@ -5,7 +5,7 @@ import { NATIVE_TOKEN_ADDRESS, ROUTER_ADDRESS, TOKEN_METADATA } from "./constant
 type SwapPath = {
   tx: { data: string };
   route: unknown;
-  output: unknown;
+  output: number;
 };
 
 export async function customSwap({
