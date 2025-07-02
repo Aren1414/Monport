@@ -35,6 +35,12 @@ type ExtendedRouteOutput = RouteOutput & {
   nativeSend?: boolean[];
 };
 
+const normalizeAddress = (addr: string) =>
+  addr.toLowerCase().replace(/^0x/, "");
+
+const isNativeToken = (address: string) =>
+  normalizeAddress(address) === normalizeAddress(NATIVE_TOKEN_ADDRESS);
+
 export default function SwapTab() {
   const { isConnected, address } = useAccount();
   const { connect, connectors } = useConnect();
@@ -46,9 +52,6 @@ export default function SwapTab() {
   const [loading, setLoading] = useState(false);
   const [bestPath, setBestPath] = useState<RouteOutput | null>(null);
   const [balances, setBalances] = useState<Record<string, string>>({});
-
-  const isNativeToken = (address: string) =>
-    address.toLowerCase() === NATIVE_TOKEN_ADDRESS.toLowerCase();
 
   const fetchBalances = useCallback(async () => {
     if (!isConnected || !address) return;
@@ -257,6 +260,7 @@ export default function SwapTab() {
       <div style={{ background: "#f5f5f5", padding: 12, borderRadius: 12, marginBottom: 12 }}>
         <label style={{ fontWeight: "bold" }}>From</label>
         <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 8 }}>
+
           <select
             value={fromToken}
             onChange={(e) => setFromToken(e.target.value)}
