@@ -24,7 +24,7 @@ export async function customSwap({
   amountIn: number;
   fromToken: string;
   toToken: string;
-  onTx: (txHash?: string) => void;
+  onTx: (txHash: string | null) => void;
 }) {
   const isNative = fromToken.toLowerCase() === NATIVE_TOKEN_ADDRESS.toLowerCase();
   const inputDecimals = isNative ? 18 : TOKEN_METADATA[fromToken]?.decimals ?? 18;
@@ -40,7 +40,7 @@ export async function customSwap({
       onTx(tx.hash);
     } catch (err) {
       console.error("❌ Native token swap failed:", err);
-      onTx(undefined);
+      onTx(null);
     }
   } else {
     try {
@@ -56,7 +56,7 @@ export async function customSwap({
       );
     } catch (err) {
       console.error("❌ ERC20 swap failed:", err);
-      onTx(undefined);
+      onTx(null);
     }
   }
 }
