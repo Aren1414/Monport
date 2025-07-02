@@ -5,8 +5,7 @@ import { useAccount, useConnect } from "wagmi";
 import { ethers } from "ethers";
 import {
   PoolFetcher,
-  PathFinder,
-  TokenSwap
+  PathFinder
 } from "@kuru-labs/kuru-sdk";
 import type { RouteOutput } from "@kuru-labs/kuru-sdk";
 
