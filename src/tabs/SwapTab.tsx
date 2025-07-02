@@ -5,9 +5,10 @@ import { useAccount, useConnect } from "wagmi";
 import { ethers } from "ethers";
 import {
   PoolFetcher,
-  PathFinder
+  PathFinder,
+  TokenSwap,
+  type RouteOutput
 } from "@kuru-labs/kuru-sdk";
-import type { RouteOutput } from "@kuru-labs/kuru-sdk";
 
 import {
   ROUTER_ADDRESS,
@@ -17,7 +18,6 @@ import {
   RPC_URL
 } from "@/lib/constants";
 
-import { customSwap } from "@/lib/customSwap";
 import ERC20_ABI from "@/abis/ERC20.json";
 
 const KURU_API_URL = "https://api.testnet.kuru.io";
@@ -30,6 +30,17 @@ const BASE_TOKENS = [
 type EthereumWindow = typeof window & {
   ethereum?: ethers.providers.ExternalProvider;
 };
+
+type ExtendedRouteOutput = RouteOutput & {
+  tx?: { data: string };
+  nativeSend?: boolean[];
+};
+
+const normalizeAddress = (addr: string) =>
+  addr.toLowerCase().replace(/^0x/, "");
+
+const isNativeToken = (address: string) =>
+  normalizeAddress(address) === normalizeAddress(NATIVE_TOKEN_ADDRESS);
 
 export default function SwapTab() {
   const { isConnected, address } = useAccount();
@@ -122,113 +133,133 @@ export default function SwapTab() {
   }, [getQuote]);
 
   const doSwap = useCallback(async () => {
-  if (!isConnected || !quote || !bestPath || bestPath.output <= 0) {
-    alert("⚠️ Connect wallet & get valid quote");
-    return;
-  }
+    if (!isConnected || !quote || !bestPath || bestPath.output <= 0) {
+      alert("⚠️ Connect wallet & get valid quote");
+      return;
+    }
 
-  const isNative = fromToken.toLowerCase() === NATIVE_TOKEN_ADDRESS.toLowerCase();
+    setLoading(true);
+    try {
+      const provider = new ethers.providers.Web3Provider(
+        (window as EthereumWindow).ethereum!
+      );
 
-const txData =
-  "tx" in bestPath && typeof (bestPath as { tx: { data: string } }).tx?.data === "string"
-    ? (bestPath as { tx: { data: string } }).tx.data
-    : undefined;
+      await provider.send("eth_requestAccounts", []);
+      const signer = provider.getSigner();
+      const signerAddress = await signer.getAddress();
 
-if (isNative && !txData) {
-  alert("⚠️ Native token swap is not supported without tx data.");
-  return;
-}
+      const inputDecimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
+      const outputDecimals = TOKEN_METADATA[toToken]?.decimals ?? 18;
 
-  setLoading(true);
-  try {
-    const provider = new ethers.providers.Web3Provider(
-      (window as EthereumWindow).ethereum!
-    );
+      const isNative = isNativeToken(fromToken);
+      const extendedPath = bestPath as ExtendedRouteOutput;
 
-    await provider.send("eth_requestAccounts", []);
-    const signer = provider.getSigner();
+      if (isNative) {
+        const txData =
+          "tx" in extendedPath && typeof extendedPath.tx?.data === "string"
+            ? extendedPath.tx.data
+            : undefined;
 
-    const inputDecimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
+        if (!txData) {
+          alert("⚠️ Native token swap is not supported without tx data.");
+          return;
+        }
 
-    if (!isNative) {
+        const tx = await signer.sendTransaction({
+          to: ROUTER_ADDRESS,
+          value: ethers.utils.parseUnits(amountIn, inputDecimals),
+          data: txData
+        });
+
+        alert("✅ Swap submitted: " + tx.hash);
+        setAmountIn("");
+        setQuote(null);
+        setBestPath(null);
+        fetchBalances();
+        return;
+      }
+
+      // ERC20: check and approve if needed
       const contract = new ethers.Contract(fromToken, ERC20_ABI, signer);
-      const allowance = await contract.allowance(await signer.getAddress(), ROUTER_ADDRESS);
+      const allowance = await contract.allowance(signerAddress, ROUTER_ADDRESS);
       const required = ethers.utils.parseUnits(amountIn, inputDecimals);
 
       if (allowance.lt(required)) {
         const approveTx = await contract.approve(ROUTER_ADDRESS, ethers.constants.MaxUint256);
         await approveTx.wait();
       }
-    }
 
-    await customSwap({
-      signer,
-      path: bestPath,
-      amountIn: parseFloat(amountIn),
-      fromToken,
-      toToken,
-      onTx: (txHash) => {
-        if (txHash) {
-          alert("✅ Swap submitted: " + txHash);
-          setAmountIn("");
-          setQuote(null);
-          setBestPath(null);
-          fetchBalances();
-        } else {
-          alert("⚠️ Swap failed or rejected");
-        }
-      }
-    });
-  } catch (err) {
-    console.error("❌ Swap error:", err);
-    alert("❌ Swap failed: " + (err as Error).message);
-  } finally {
-    setLoading(false);
-  }
-}, [isConnected, amountIn, quote, bestPath, fromToken, toToken, fetchBalances]);
-
-const swapTokens = () => {
-  const temp = fromToken;
-  setFromToken(toToken);
-  setToToken(temp);
-  setQuote(null);
-  setAmountIn("");
-  setBestPath(null);
-};
-
-return (
-  <div className="tab swap-tab" style={{ maxWidth: 400, margin: "0 auto", padding: 16 }}>
-    <h2 style={{ textAlign: "center", marginBottom: 24 }}>🔄 Swap</h2>
-
-    {!isConnected ? (
-      <button
-        onClick={() => {
-          const injectedConnector = connectors.find(c => c.id === "injected");
-          if (injectedConnector) {
-            connect({ connector: injectedConnector });
+      await TokenSwap.swap(
+        signer,
+        ROUTER_ADDRESS,
+        bestPath,
+        parseFloat(amountIn),
+        inputDecimals,
+        outputDecimals,
+        false,
+        (txHash) => {
+          if (txHash) {
+            alert("✅ Swap submitted: " + txHash);
+            setAmountIn("");
+            setQuote(null);
+            setBestPath(null);
+            fetchBalances();
           } else {
-            alert("No injected wallet found.");
+            alert("⚠️ Swap failed or rejected");
           }
-        }}
-        style={{
-          width: "100%",
-          padding: 12,
-          marginBottom: 16,
-          background: "#0070f3",
-          color: "white",
-          fontWeight: "bold",
-          border: "none",
-          borderRadius: 8,
-          cursor: "pointer"
-        }}
-      >
-        🔌 Connect Wallet
-      </button>
-    ) : (
-      <div style={{ marginBottom: 16, textAlign: "center", fontSize: 14 }}>
-        ✅ Connected: {address?.slice(0, 6)}...{address?.slice(-4)}
-      </div>
-    )}
+        }
+      );
+    } catch (err) {
+      console.error("❌ Swap error:", err);
+      alert("❌ Swap failed: " + (err as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  }, [isConnected, amountIn, quote, bestPath, fromToken, toToken, fetchBalances]);
+
+  const swapTokens = () => {
+    const temp = fromToken;
+    setFromToken(toToken);
+    setToToken(temp);
+    setQuote(null);
+    setAmountIn("");
+    setBestPath(null);
+  };
+
+  return (
+    <div className="tab swap-tab" style={{ maxWidth: 400, margin: "0 auto", padding: 16 }}>
+      <h2 style={{ textAlign: "center", marginBottom: 24 }}>🔄 Swap</h2>
+
+      {!isConnected ? (
+        <button
+          onClick={() => {
+            const injectedConnector = connectors.find(c => c.id === "injected");
+            if (injectedConnector) {
+              connect({ connector: injectedConnector });
+            } else {
+              alert("No injected wallet found.");
+            }
+          }}
+          style={{
+            width: "100%",
+            padding: 12,
+            marginBottom: 16,
+            background: "#0070f3",
+            color: "white",
+            fontWeight: "bold",
+            border: "none",
+            borderRadius: 8,
+            cursor: "pointer"
+          }}
+        >
+          🔌 Connect Wallet
+        </button>
+      ) : (
+        <div style={{ marginBottom: 16, textAlign: "center", fontSize: 14 }}>
+          ✅ Connected: {address?.slice(0, 6)}...{address?.slice(-4)}
+        </div>
+      )}
+
       <div style={{ background: "#f5f5f5", padding: 12, borderRadius: 12, marginBottom: 12 }}>
         <label style={{ fontWeight: "bold" }}>From</label>
         <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 8 }}>
