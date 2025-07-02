@@ -178,29 +178,29 @@ export default function SwapTab() {
     console.log("🎯 slippageBps:", slippageBps);
 
     if (isNative) {
-      const txData =
-        "tx" in extendedPath && typeof extendedPath.tx?.data === "string"
-          ? extendedPath.tx.data
-          : undefined;
+  const txData =
+    extendedPath.tx && typeof extendedPath.tx.data === "string"
+      ? extendedPath.tx.data
+      : undefined;
 
-      if (!txData) {
-        alert("⚠️ Native token swap is not supported without tx data.");
-        return;
-      }
+  if (!txData) {
+    alert("⚠️ Native token swap is not supported without tx data.");
+    return;
+  }
 
-      const tx = await signer.sendTransaction({
-        to: ROUTER_ADDRESS,
-        value: ethers.utils.parseUnits(amountIn, inputDecimals),
-        data: txData
-      });
+  const tx = await signer.sendTransaction({
+    to: ROUTER_ADDRESS,
+    value: ethers.utils.parseUnits(amountIn, inputDecimals),
+    data: txData
+  });
 
-      console.log("✅ Native swap submitted:", tx.hash);
-      alert("✅ Swap submitted: " + tx.hash);
-      setAmountIn("");
-      setQuote(null);
-      setBestPath(null);
-      fetchBalances();
-      return;
+  console.log("✅ Native swap submitted:", tx.hash);
+  alert("✅ Swap submitted: " + tx.hash);
+  setAmountIn("");
+  setQuote(null);
+  setBestPath(null);
+  fetchBalances();
+  return;
     }
 
     const onTxHash = (txHash: string | null) => {
