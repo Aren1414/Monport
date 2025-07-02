@@ -3,10 +3,6 @@ import { TokenSwap } from "@kuru-labs/kuru-sdk";
 import type { RouteOutput } from "@kuru-labs/kuru-sdk";
 import { NATIVE_TOKEN_ADDRESS, ROUTER_ADDRESS, TOKEN_METADATA } from "./constants";
 
-type SwapPath = RouteOutput & {
-  tx: { data: string };
-};
-
 export async function customSwap({
   signer,
   path,
@@ -16,7 +12,7 @@ export async function customSwap({
   onTx
 }: {
   signer: ethers.Signer;
-  path: SwapPath;
+  path: RouteOutput;
   amountIn: number;
   fromToken: string;
   toToken: string;
@@ -26,33 +22,19 @@ export async function customSwap({
   const inputDecimals = isNative ? 18 : TOKEN_METADATA[fromToken]?.decimals ?? 18;
   const outputDecimals = TOKEN_METADATA[toToken]?.decimals ?? 18;
 
-  if (isNative) {
-    try {
-      const tx = await signer.sendTransaction({
-        to: ROUTER_ADDRESS,
-        value: ethers.utils.parseUnits(amountIn.toString(), inputDecimals),
-        data: path.tx.data
-      });
-      onTx(tx.hash);
-    } catch (err) {
-      console.error("❌ Native token swap failed:", err);
-      onTx(null);
-    }
-  } else {
-    try {
-      await TokenSwap.swap(
-        signer,
-        ROUTER_ADDRESS,
-        path,
-        amountIn,
-        inputDecimals,
-        outputDecimals,
-        true,
-        onTx
-      );
-    } catch (err) {
-      console.error("❌ ERC20 swap failed:", err);
-      onTx(null);
-    }
+  try {
+    await TokenSwap.swap(
+      signer,
+      ROUTER_ADDRESS,
+      path,
+      amountIn,
+      inputDecimals,
+      outputDecimals,
+      true,
+      onTx
+    );
+  } catch (err) {
+    console.error("❌ Swap failed:", err);
+    onTx(null);
   }
 }
