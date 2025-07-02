@@ -166,7 +166,6 @@ export default function SwapTab() {
     const outputDecimals = TOKEN_METADATA[toToken]?.decimals ?? 18;
 
     const isNative = isNativeToken(fromToken);
-    const approveTokens = !isNative;
     const extendedPath = bestPath as ExtendedRouteOutput;
     const slippageBps = 50;
 
@@ -175,13 +174,32 @@ export default function SwapTab() {
     console.log("💰 Output:", bestPath.output);
     console.log("🧪 fromToken:", fromToken);
     console.log("🧪 isNativeToken:", isNative);
-    console.log("🧾 approveTokens:", approveTokens);
     console.log("🧪 nativeSend:", extendedPath.nativeSend);
     console.log("🎯 slippageBps:", slippageBps);
 
-    if (isNative && approveTokens) {
-      console.warn("❌ Invalid state: native token cannot require approval");
-      alert("⚠️ Native token doesn't need approval. Check logic.");
+    if (isNative) {
+      const txData =
+        "tx" in extendedPath && typeof extendedPath.tx?.data === "string"
+          ? extendedPath.tx.data
+          : undefined;
+
+      if (!txData) {
+        alert("⚠️ Native token swap is not supported without tx data.");
+        return;
+      }
+
+      const tx = await signer.sendTransaction({
+        to: ROUTER_ADDRESS,
+        value: ethers.utils.parseUnits(amountIn, inputDecimals),
+        data: txData
+      });
+
+      console.log("✅ Native swap submitted:", tx.hash);
+      alert("✅ Swap submitted: " + tx.hash);
+      setAmountIn("");
+      setQuote(null);
+      setBestPath(null);
+      fetchBalances();
       return;
     }
 
@@ -199,7 +217,7 @@ export default function SwapTab() {
       }
     };
 
-    // ✅ Use standard swap for both native and ERC20, with correct approveTokens
+    // ✅ ERC20 swap using SDK
     await TokenSwap.swap(
       signer,
       ROUTER_ADDRESS,
@@ -207,7 +225,7 @@ export default function SwapTab() {
       parseFloat(amountIn),
       inputDecimals,
       outputDecimals,
-      approveTokens,
+      true, // approveTokens = true for ERC20
       onTxHash
     );
   } catch (err) {
