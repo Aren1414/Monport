@@ -36,9 +36,6 @@ type ExtendedRouteOutput = RouteOutput & {
   nativeSend?: boolean[];
 };
 
-const normalizeAddress = (addr: string) =>
-  addr.toLowerCase().replace(/^0x/, "");
-
 export default function SwapTab() {
   const { isConnected, address } = useAccount();
   const { connect, connectors } = useConnect();
