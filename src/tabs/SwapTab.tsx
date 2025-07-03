@@ -88,45 +88,61 @@ export default function SwapTab() {
   }, [fetchBalances]);
 
   const getQuote = useCallback(async () => {
-    const parsedAmount = parseFloat(amountIn);
-    if (!fromToken || !toToken || isNaN(parsedAmount) || parsedAmount <= 0) {
+  const parsedAmount = parseFloat(amountIn);
+  if (!fromToken || !toToken || isNaN(parsedAmount) || parsedAmount <= 0) {
+    setQuote(null);
+    setBestPath(null);
+    return;
+  }
+
+  setLoading(true);
+  const provider = new ethers.providers.JsonRpcProvider(RPC_URL);
+  const poolFetcher = new PoolFetcher(KURU_API_URL);
+
+  try {
+    const pools = await poolFetcher.getAllPools(fromToken, toToken, BASE_TOKENS);
+    const path = await PathFinder.findBestPath(
+      provider,
+      fromToken,
+      toToken,
+      parsedAmount,
+      "amountIn",
+      poolFetcher,
+      pools
+    );
+
+    if (!path || path.output <= 0) {
       setQuote(null);
       setBestPath(null);
       return;
     }
 
-    setLoading(true);
-    const provider = new ethers.providers.JsonRpcProvider(RPC_URL);
-    const poolFetcher = new PoolFetcher(KURU_API_URL);
+    const tx = await TokenSwap.buildTx(
+      provider,
+      ROUTER_ADDRESS,
+      path,
+      parsedAmount,
+      TOKEN_METADATA[fromToken]?.decimals ?? 18,
+      TOKEN_METADATA[toToken]?.decimals ?? 18,
+      false // approvalRequired = false 
+    );
 
-    try {
-      const pools = await poolFetcher.getAllPools(fromToken, toToken, BASE_TOKENS);
-      const path = await PathFinder.findBestPath(
-        provider,
-        fromToken,
-        toToken,
-        parsedAmount,
-        "amountIn",
-        poolFetcher,
-        pools
-      );
+    const extendedPath: ExtendedRouteOutput = {
+      ...path,
+      tx,
+      nativeSend: path.nativeSend
+    };
 
-      if (!path || path.output <= 0) {
-        setQuote(null);
-        setBestPath(null);
-        return;
-      }
-
-      setQuote(path.output.toString());
-      setBestPath(path);
-    } catch (err) {
-      console.error("Quote error:", err);
-      setQuote(null);
-      setBestPath(null);
-    } finally {
-      setLoading(false);
-    }
-  }, [fromToken, toToken, amountIn]);
+    setQuote(path.output.toString());
+    setBestPath(extendedPath);
+  } catch (err) {
+    console.error("Quote error:", err);
+    setQuote(null);
+    setBestPath(null);
+  } finally {
+    setLoading(false);
+  }
+}, [fromToken, toToken, amountIn]);
 
   useEffect(() => {
     getQuote();
