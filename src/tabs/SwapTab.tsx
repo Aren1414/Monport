@@ -127,9 +127,12 @@ export default function SwapTab() {
     console.log("🧪 nativeSend:", pathWithExtras.nativeSend);
     console.log("🧪 tx:", pathWithExtras.tx);
 
-    if (!pathWithExtras.tx?.data) {
-      console.warn("⚠️ Warning: tx.data is missing — native token swap may fail.");
-    }
+    if (
+  pathWithExtras.nativeSend?.[0] === true &&
+  !pathWithExtras.tx?.data
+) {
+  console.warn("⚠️ Warning: tx.data is missing — native token swap may fail.");
+}
 
     const extendedPath: ExtendedRouteOutput = {
       ...pathWithExtras,
