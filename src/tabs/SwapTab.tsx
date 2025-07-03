@@ -36,6 +36,11 @@ type ExtendedRouteOutput = RouteOutput & {
   nativeSend?: boolean[];
 };
 
+type RouteOutputWithExtras = RouteOutput & {
+  nativeSend?: boolean[];
+  tx?: { data: string };
+};
+
 export default function SwapTab() {
   const { isConnected, address } = useAccount();
   const { connect, connectors } = useConnect();
@@ -111,10 +116,12 @@ export default function SwapTab() {
         return;
       }
 
+      const pathWithExtras = path as RouteOutputWithExtras;
+
       const extendedPath: ExtendedRouteOutput = {
-        ...path,
-        nativeSend: (path as any).nativeSend,
-        tx: (path as any).tx
+        ...pathWithExtras,
+        nativeSend: pathWithExtras.nativeSend,
+        tx: pathWithExtras.tx
       };
 
       setQuote(path.output.toString());
@@ -133,18 +140,10 @@ export default function SwapTab() {
   }, [getQuote]);
 
   const doSwap = useCallback(async () => {
-    console.log("🧪 Swap Triggered");
-    console.log("🔍 isConnected:", isConnected);
-    console.log("🔍 amountIn:", amountIn);
-    console.log("🔍 quote:", quote);
-    console.log("🔍 bestPath:", bestPath);
-
     if (!isConnected || !quote || !bestPath || bestPath.output <= 0) {
       alert("⚠️ Connect wallet & get valid quote");
       return;
     }
-
-    console.log("✅ Passed validation, preparing to swap...");
 
     setLoading(true);
     try {
@@ -154,11 +153,8 @@ export default function SwapTab() {
 
       await provider.send("eth_requestAccounts", []);
       const signer = provider.getSigner();
-      const signerAddress = await signer.getAddress();
-      console.log("🔐 Signer address:", signerAddress);
 
       const routerCode = await provider.getCode(ROUTER_ADDRESS);
-      console.log("📦 Router contract code:", routerCode);
       if (routerCode === "0x") {
         throw new Error("❌ Router contract not found on this network");
       }
@@ -171,15 +167,6 @@ export default function SwapTab() {
         extendedPath.nativeSend && extendedPath.nativeSend[0] === true
           ? false
           : true;
-
-      const slippageBps = 50;
-
-      console.log("🧭 Swap Path:", bestPath.route.path);
-      console.log("🧭 Pools:", bestPath.route.pools);
-      console.log("💰 Output:", bestPath.output);
-      console.log("🧪 nativeSend:", extendedPath.nativeSend);
-      console.log("🎯 slippageBps:", slippageBps);
-      console.log("🔐 approvalRequired:", approvalRequired);
 
       if (!approvalRequired) {
         const txData =
@@ -198,7 +185,6 @@ export default function SwapTab() {
           data: txData
         });
 
-        console.log("✅ Native swap submitted:", tx.hash);
         alert("✅ Swap submitted: " + tx.hash);
         setAmountIn("");
         setQuote(null);
@@ -209,14 +195,12 @@ export default function SwapTab() {
 
       const onTxHash = (txHash: string | null) => {
         if (txHash) {
-          console.log("✅ Swap submitted with txHash:", txHash);
           alert("✅ Swap submitted: " + txHash);
           setAmountIn("");
           setQuote(null);
           setBestPath(null);
           fetchBalances();
         } else {
-          console.warn("⚠️ Swap callback returned null txHash");
           alert("⚠️ Swap failed or rejected");
         }
       };
@@ -232,7 +216,6 @@ export default function SwapTab() {
         onTxHash
       );
     } catch (err) {
-      console.error("❌ Swap error:", err);
       alert("❌ Swap failed: " + (err as Error).message);
     } finally {
       setLoading(false);
