@@ -117,19 +117,8 @@ export default function SwapTab() {
       return;
     }
 
-    const tx = await TokenSwap.buildTx(
-      provider,
-      ROUTER_ADDRESS,
-      path,
-      parsedAmount,
-      TOKEN_METADATA[fromToken]?.decimals ?? 18,
-      TOKEN_METADATA[toToken]?.decimals ?? 18,
-      false // approvalRequired = false 
-    );
-
     const extendedPath: ExtendedRouteOutput = {
       ...path,
-      tx,
       nativeSend: path.nativeSend
     };
 
@@ -144,11 +133,11 @@ export default function SwapTab() {
   }
 }, [fromToken, toToken, amountIn]);
 
-  useEffect(() => {
-    getQuote();
-  }, [getQuote]);
+useEffect(() => {
+  getQuote();
+}, [getQuote]);
 
-  const doSwap = useCallback(async () => {
+const doSwap = useCallback(async () => {
   console.log("🧪 Swap Triggered");
   console.log("🔍 isConnected:", isConnected);
   console.log("🔍 amountIn:", amountIn);
@@ -182,21 +171,23 @@ export default function SwapTab() {
     const inputDecimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
     const outputDecimals = TOKEN_METADATA[toToken]?.decimals ?? 18;
 
-    const isNative = isNativeToken(fromToken);
-    const approvalRequired = !isNative; 
-
     const extendedPath = bestPath as ExtendedRouteOutput;
+    const approvalRequired =
+      extendedPath.nativeSend && extendedPath.nativeSend[0] === true
+        ? false
+        : true;
+
     const slippageBps = 50;
 
     console.log("🧭 Swap Path:", bestPath.route.path);
     console.log("🧭 Pools:", bestPath.route.pools);
     console.log("💰 Output:", bestPath.output);
     console.log("🧪 fromToken:", fromToken);
-    console.log("🧪 isNativeToken:", isNative);
     console.log("🧪 nativeSend:", extendedPath.nativeSend);
     console.log("🎯 slippageBps:", slippageBps);
+    console.log("🔐 approvalRequired:", approvalRequired);
 
-    if (isNative) {
+    if (!approvalRequired) {
       const txData =
         extendedPath.tx && typeof extendedPath.tx.data === "string"
           ? extendedPath.tx.data
@@ -243,7 +234,7 @@ export default function SwapTab() {
       parseFloat(amountIn),
       inputDecimals,
       outputDecimals,
-      approvalRequired, 
+      approvalRequired,
       onTxHash
     );
   } catch (err) {
