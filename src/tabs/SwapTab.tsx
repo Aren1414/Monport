@@ -87,54 +87,66 @@ export default function SwapTab() {
   }, [fetchBalances]);
 
   const getQuote = useCallback(async () => {
-    const parsedAmount = parseFloat(amountIn);
-    if (!fromToken || !toToken || isNaN(parsedAmount) || parsedAmount <= 0) {
+  const parsedAmount = parseFloat(amountIn);
+  if (!fromToken || !toToken || isNaN(parsedAmount) || parsedAmount <= 0) {
+    setQuote(null);
+    setBestPath(null);
+    return;
+  }
+
+  setLoading(true);
+  const provider = new ethers.providers.JsonRpcProvider(RPC_URL);
+  const poolFetcher = new PoolFetcher(KURU_API_URL);
+
+  try {
+    const pools = await poolFetcher.getAllPools(fromToken, toToken, BASE_TOKENS);
+    console.log("📦 Pools fetched:", pools.length);
+
+    const path = await PathFinder.findBestPath(
+      provider,
+      fromToken,
+      toToken,
+      parsedAmount,
+      "amountIn",
+      poolFetcher,
+      pools
+    );
+
+    if (!path || path.output <= 0) {
+      console.warn("⚠️ No valid path found or output is zero.");
       setQuote(null);
       setBestPath(null);
       return;
     }
 
-    setLoading(true);
-    const provider = new ethers.providers.JsonRpcProvider(RPC_URL);
-    const poolFetcher = new PoolFetcher(KURU_API_URL);
+    const pathWithExtras = path as RouteOutputWithExtras;
 
-    try {
-      const pools = await poolFetcher.getAllPools(fromToken, toToken, BASE_TOKENS);
-      const path = await PathFinder.findBestPath(
-        provider,
-        fromToken,
-        toToken,
-        parsedAmount,
-        "amountIn",
-        poolFetcher,
-        pools
-      );
+    console.log("🧭 Path route:", pathWithExtras.route?.path);
+    console.log("🧭 Pools used:", pathWithExtras.route?.pools);
+    console.log("💰 Output amount:", pathWithExtras.output);
+    console.log("🧪 nativeSend:", pathWithExtras.nativeSend);
+    console.log("🧪 tx:", pathWithExtras.tx);
 
-      if (!path || path.output <= 0) {
-        setQuote(null);
-        setBestPath(null);
-        return;
-      }
-
-      const pathWithExtras = path as RouteOutputWithExtras;
-
-      const extendedPath: ExtendedRouteOutput = {
-        ...pathWithExtras,
-        nativeSend: pathWithExtras.nativeSend,
-        tx: pathWithExtras.tx
-      };
-
-      setQuote(path.output.toString());
-      setBestPath(extendedPath);
-    } catch (err) {
-      console.error("Quote error:", err);
-      setQuote(null);
-      setBestPath(null);
-    } finally {
-      setLoading(false);
+    if (!pathWithExtras.tx?.data) {
+      console.warn("⚠️ Warning: tx.data is missing — native token swap may fail.");
     }
-  }, [fromToken, toToken, amountIn]);
 
+    const extendedPath: ExtendedRouteOutput = {
+      ...pathWithExtras,
+      nativeSend: pathWithExtras.nativeSend,
+      tx: pathWithExtras.tx
+    };
+
+    setQuote(path.output.toString());
+    setBestPath(extendedPath);
+  } catch (err) {
+    console.error("❌ Quote error:", err);
+    setQuote(null);
+    setBestPath(null);
+  } finally {
+    setLoading(false);
+  }
+}, [fromToken, toToken, amountIn]);
   useEffect(() => {
     getQuote();
   }, [getQuote]);
