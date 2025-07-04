@@ -93,9 +93,9 @@ export default function SwapTab() {
 
     try {
       const pools = await poolFetcher.getAllPools(effectiveFromToken, toToken, [
-        TOKENS.MON,
-        TOKENS.USDC
-      ]);
+  { symbol: "MON", address: TOKENS.MON },
+  { symbol: "USDC", address: TOKENS.USDC }
+]);
 
       const path = await PathFinder.findBestPath(
         provider,
