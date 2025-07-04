@@ -180,6 +180,7 @@ export default function SwapTab() {
 
       
       (updatedPath.route as { [key: string]: unknown }).tokenIn = TOKENS.WMON;
+      updatedPath.route.path[0] = TOKENS.WMON; 
     }
 
     const onTxHash = (txHash: string | null) => {
