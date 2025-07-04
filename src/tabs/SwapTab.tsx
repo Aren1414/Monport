@@ -88,8 +88,8 @@ export default function SwapTab() {
   const provider = new ethers.providers.JsonRpcProvider(RPC_URL);
   const poolFetcher = new PoolFetcher(KURU_API_URL);
 
-  const isNativeInput = fromToken === NATIVE_TOKEN_ADDRESS;
-  const effectiveFromToken = isNativeInput ? TOKENS.WMON : fromToken;
+  
+  const effectiveFromToken = fromToken;
   const decimals = TOKEN_METADATA[effectiveFromToken]?.decimals ?? 18;
   const amountInUnits = ethers.utils.parseUnits(parsedAmount.toString(), decimals);
 
@@ -167,6 +167,7 @@ const doSwap = useCallback(async () => {
 
     const isNativeInput = fromToken === NATIVE_TOKEN_ADDRESS;
 
+    
     if (isNativeInput) {
       const wmonAbi = ["function deposit() public payable"];
       const wmon = new ethers.Contract(TOKENS.WMON, wmonAbi, signer);
@@ -175,6 +176,11 @@ const doSwap = useCallback(async () => {
       });
       await wrapTx.wait();
       console.log("✅ Wrapped MON → WMON");
+
+      
+      if (bestPath.route.tokenIn === NATIVE_TOKEN_ADDRESS) {
+        bestPath.route.tokenIn = TOKENS.WMON;
+      }
     }
 
     const onTxHash = (txHash: string | null) => {
@@ -205,6 +211,7 @@ const doSwap = useCallback(async () => {
     setLoading(false);
   }
 }, [isConnected, amountIn, quote, bestPath, fromToken, toToken, fetchBalances]);
+
 
   const swapTokens = () => {
     const temp = fromToken;
