@@ -183,16 +183,16 @@ export default function SwapTab() {
         }
       };
 
-      await TokenSwap.swap(
-        signer,
-        ROUTER_ADDRESS,
-        bestPath,
-        parseFloat(amountIn),
-        inputDecimals,
-        outputDecimals,
-        isNativeInput,
-        onTxHash
-      );
+    await TokenSwap.swap(
+     signer,
+     ROUTER_ADDRESS,
+     bestPath,
+     parseFloat(amountIn),
+     inputDecimals,
+     outputDecimals,
+     false, 
+     onTxHash
+  );
     } catch (err) {
       alert("❌ Swap failed: " + (err as Error).message);
     } finally {
