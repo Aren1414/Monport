@@ -40,6 +40,7 @@ export const ROUTER_ADDRESS = "0xc816865f172d640d93712C68a7E1F83F3fA63235";
 // ✅ Token Addresses on Monad Testnet
 export const TOKENS = {
   MON: NATIVE_TOKEN_ADDRESS, // 👈 MON is native token
+  WMON: "0x760AfE86e5de5fa0Ee542fc7B7B713e1c5425701",
   USDC: "0xf817257fed379853cDe0fa4F97AB987181B1E5Ea",
   USDT: "0x88b8E2161DEDC77EF4ab7585569D2415a1C1055D",
   DAK: "0x0F0BDEbF0F83cD1EE3974779Bcb7315f9808c714",
@@ -49,6 +50,7 @@ export const TOKENS = {
 
 // ✅ Token Metadata (only for ERC20 tokens — exclude MON)
 export const TOKEN_METADATA: Record<string, { decimals: number }> = {
+  [TOKENS.WMON]: { decimals: 18 },
   [TOKENS.USDC]: { decimals: 6 },
   [TOKENS.USDT]: { decimals: 6 },
   [TOKENS.DAK]: { decimals: 18 },
