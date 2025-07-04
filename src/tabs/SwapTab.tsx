@@ -169,8 +169,6 @@ export default function SwapTab() {
       const inputDecimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
       const outputDecimals = TOKEN_METADATA[toToken]?.decimals ?? 18;
 
-      const isNativeInput = fromToken === NATIVE_TOKEN_ADDRESS;
-
       const onTxHash = (txHash: string | null) => {
         if (txHash) {
           alert("✅ Swap submitted: " + txHash);
