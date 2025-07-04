@@ -165,24 +165,6 @@ export default function SwapTab() {
 
     const isNativeInput = fromToken === NATIVE_TOKEN_ADDRESS;
 
-    
-    const updatedPath: ExtendedRouteOutput = JSON.parse(JSON.stringify(bestPath));
-
-    if (isNativeInput) {
-      // ✅ wrap MON → WMON
-      const wmonAbi = ["function deposit() public payable"];
-      const wmon = new ethers.Contract(TOKENS.WMON, wmonAbi, signer);
-      const wrapTx = await wmon.deposit({
-        value: ethers.utils.parseUnits(amountIn, inputDecimals)
-      });
-      await wrapTx.wait();
-      console.log("✅ Wrapped MON → WMON");
-
-      
-      (updatedPath.route as { [key: string]: unknown }).tokenIn = TOKENS.WMON;
-      updatedPath.route.path[0] = TOKENS.WMON; 
-    }
-
     const onTxHash = (txHash: string | null) => {
       if (txHash) {
         alert("✅ Swap submitted: " + txHash);
@@ -198,11 +180,11 @@ export default function SwapTab() {
     await TokenSwap.swap(
       signer,
       ROUTER_ADDRESS,
-      updatedPath,
+      bestPath,
       parseFloat(amountIn),
       inputDecimals,
       outputDecimals,
-      false, 
+      isNativeInput, 
       onTxHash
     );
   } catch (err) {
