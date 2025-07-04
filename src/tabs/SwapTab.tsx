@@ -127,10 +127,15 @@ export default function SwapTab() {
     }
   }, [fromToken, toToken, amountIn]);
 
+  // ✅ Run getQuote when any input changes
   useEffect(() => {
-    getQuote();
-  }, [getQuote]);
-
+    if (amountIn && parseFloat(amountIn) > 0) {
+      getQuote();
+    } else {
+      setQuote(null);
+      setBestPath(null);
+    }
+  }, [fromToken, toToken, amountIn]);
   const doSwap = useCallback(async () => {
     if (!isConnected || !quote || !bestPath || bestPath.output <= 0) {
       alert("⚠️ Connect wallet & get valid quote");
