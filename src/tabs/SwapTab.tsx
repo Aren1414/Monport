@@ -93,9 +93,9 @@ export default function SwapTab() {
 
     try {
       const pools = await poolFetcher.getAllPools(effectiveFromToken, toToken, [
-  { symbol: "MON", address: TOKENS.MON },
-  { symbol: "USDC", address: TOKENS.USDC }
-]);
+        { symbol: "MON", address: TOKENS.MON },
+        { symbol: "USDC", address: TOKENS.USDC }
+      ]);
 
       const path = await PathFinder.findBestPath(
         provider,
@@ -113,14 +113,11 @@ export default function SwapTab() {
         return;
       }
 
-      const extendedPath: ExtendedRouteOutput = {
-        ...path,
-        nativeSend: path.nativeSend,
-        tx: path.tx
-      };
+      // Type assertion to safely access optional fields
+      const pathWithExtras = path as ExtendedRouteOutput;
 
       setQuote(path.output.toString());
-      setBestPath(extendedPath);
+      setBestPath(pathWithExtras);
     } catch (err) {
       console.error("❌ Quote error:", err);
       setQuote(null);
@@ -153,6 +150,7 @@ export default function SwapTab() {
 
       const isNativeInput = fromToken === NATIVE_TOKEN_ADDRESS;
 
+      // 🔁 If input is MON, wrap it to WMON before swap
       if (isNativeInput) {
         const wmonAbi = ["function deposit() public payable"];
         const wmon = new ethers.Contract(TOKENS.WMON, wmonAbi, signer);
