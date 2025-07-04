@@ -132,7 +132,7 @@ export default function SwapTab() {
 
       const pathWithExtras = path as ExtendedRouteOutput;
 
-  
+      // ✅ ست کردن nativeSend به صورت دستی برای MON
       if (fromToken === NATIVE_TOKEN_ADDRESS) {
         pathWithExtras.nativeSend = [true];
       }
@@ -181,16 +181,16 @@ export default function SwapTab() {
         }
       };
 
-    await TokenSwap.swap(
-     signer,
-     ROUTER_ADDRESS,
-     bestPath,
-     parseFloat(amountIn),
-     inputDecimals,
-     outputDecimals,
-     false, 
-     onTxHash
-  );
+      await TokenSwap.swap(
+        signer,
+        ROUTER_ADDRESS,
+        bestPath,
+        parseFloat(amountIn),
+        inputDecimals,
+        outputDecimals,
+        false, // ✅ چون MON هست، نباید approve بزنه
+        onTxHash
+      );
     } catch (err) {
       alert("❌ Swap failed: " + (err as Error).message);
     } finally {
@@ -206,7 +206,7 @@ export default function SwapTab() {
     setAmountIn("");
     setBestPath(null);
   };
-
+      
   return (
     <div className="tab swap-tab" style={{ maxWidth: 400, margin: "0 auto", padding: 16 }}>
       <h2 style={{ textAlign: "center", marginBottom: 24 }}>🔄 Swap</h2>
