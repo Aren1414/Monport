@@ -147,65 +147,52 @@ export default function SwapTab() {
   }, [getQuote]);
 
   const doSwap = useCallback(async () => {
-    if (!isConnected || !quote || !bestPath || bestPath.output <= 0) {
-      alert("⚠️ Connect wallet & get valid quote");
-      return;
-    }
+  if (!isConnected || !quote || !bestPath || bestPath.output <= 0) {
+    alert("⚠️ Connect wallet & get valid quote");
+    return;
+  }
 
-    setLoading(true);
-    try {
-      const provider = new ethers.providers.Web3Provider(
-        (window as EthereumWindow).ethereum!
-      );
-      await provider.send("eth_requestAccounts", []);
-      const signer = provider.getSigner();
+  setLoading(true);
+  try {
+    const provider = new ethers.providers.Web3Provider(
+      (window as EthereumWindow).ethereum!
+    );
+    await provider.send("eth_requestAccounts", []);
+    const signer = provider.getSigner();
 
-      const inputDecimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
-      const outputDecimals = TOKEN_METADATA[toToken]?.decimals ?? 18;
+    const inputDecimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
+    const outputDecimals = TOKEN_METADATA[toToken]?.decimals ?? 18;
 
-      const isNativeInput = fromToken === NATIVE_TOKEN_ADDRESS;
+    const isNativeInput = fromToken === NATIVE_TOKEN_ADDRESS;
 
-      const updatedPath: ExtendedRouteOutput = JSON.parse(JSON.stringify(bestPath));
-      (updatedPath.route as { [key: string]: unknown }).tokenIn = TOKENS.WMON;
-
-      if (isNativeInput) {
-        const wmonAbi = ["function deposit() public payable"];
-        const wmon = new ethers.Contract(TOKENS.WMON, wmonAbi, signer);
-        const wrapTx = await wmon.deposit({
-          value: ethers.utils.parseUnits(amountIn, inputDecimals)
-        });
-        await wrapTx.wait();
-        console.log("✅ Wrapped MON → WMON");
+    const onTxHash = (txHash: string | null) => {
+      if (txHash) {
+        alert("✅ Swap submitted: " + txHash);
+        setAmountIn("");
+        setQuote(null);
+        setBestPath(null);
+        fetchBalances();
+      } else {
+        alert("⚠️ Swap failed or rejected");
       }
+    };
 
-      const onTxHash = (txHash: string | null) => {
-        if (txHash) {
-          alert("✅ Swap submitted: " + txHash);
-          setAmountIn("");
-          setQuote(null);
-          setBestPath(null);
-          fetchBalances();
-        } else {
-          alert("⚠️ Swap failed or rejected");
-        }
-      };
-
-      await TokenSwap.swap(
-        signer,
-        ROUTER_ADDRESS,
-        updatedPath,
-        parseFloat(amountIn),
-        inputDecimals,
-        outputDecimals,
-        true,
-        onTxHash
-      );
-    } catch (err) {
-      alert("❌ Swap failed: " + (err as Error).message);
-    } finally {
-      setLoading(false);
-    }
-  }, [isConnected, amountIn, quote, bestPath, fromToken, toToken, fetchBalances]);
+    await TokenSwap.swap(
+      signer,
+      ROUTER_ADDRESS,
+      bestPath,
+      parseFloat(amountIn),
+      inputDecimals,
+      outputDecimals,
+      isNativeInput, 
+      onTxHash
+    );
+  } catch (err) {
+    alert("❌ Swap failed: " + (err as Error).message);
+  } finally {
+    setLoading(false);
+  }
+}, [isConnected, amountIn, quote, bestPath, fromToken, toToken, fetchBalances]);
 
   const swapTokens = () => {
     const temp = fromToken;
