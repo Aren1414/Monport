@@ -90,6 +90,8 @@ export default function SwapTab() {
 
   const isNativeInput = fromToken === NATIVE_TOKEN_ADDRESS;
   const effectiveFromToken = isNativeInput ? TOKENS.WMON : fromToken;
+  const decimals = TOKEN_METADATA[effectiveFromToken]?.decimals ?? 18;
+  const amountInUnits = ethers.utils.parseUnits(parsedAmount.toString(), decimals);
 
   try {
     console.log("🚀 getQuote triggered", { fromToken, toToken, amountIn });
@@ -102,11 +104,18 @@ export default function SwapTab() {
     const pools = await poolFetcher.getAllPools(effectiveFromToken, toToken, baseTokens);
     console.log("📦 Pools fetched:", pools.length);
 
+    if (!pools || pools.length === 0) {
+      console.warn("❌ No pools found for this token pair");
+      setQuote(null);
+      setBestPath(null);
+      return;
+    }
+
     const path = await PathFinder.findBestPath(
       provider,
       effectiveFromToken,
       toToken,
-      parsedAmount,
+      parseFloat(ethers.utils.formatUnits(amountInUnits, decimals)),
       "amountIn",
       poolFetcher,
       pools
