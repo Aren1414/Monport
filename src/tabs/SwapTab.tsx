@@ -215,7 +215,6 @@ export default function SwapTab() {
     setAmountIn("");
     setBestPath(null);
   };
-}
 
   return (
     <div className="tab swap-tab" style={{ maxWidth: 400, margin: "0 auto", padding: 16 }}>
