@@ -22,11 +22,6 @@ import ERC20_ABI from "@/abis/ERC20.json";
 
 const KURU_API_URL = "https://api.testnet.kuru.io";
 
-const BASE_TOKENS = [
-  { symbol: "MON", address: TOKENS.MON },
-  { symbol: "USDC", address: TOKENS.USDC }
-];
-
 type EthereumWindow = typeof window & {
   ethereum?: ethers.providers.ExternalProvider;
 };
@@ -34,11 +29,6 @@ type EthereumWindow = typeof window & {
 type ExtendedRouteOutput = RouteOutput & {
   tx?: { data: string };
   nativeSend?: boolean[];
-};
-
-type RouteOutputWithExtras = RouteOutput & {
-  nativeSend?: boolean[];
-  tx?: { data: string };
 };
 
 export default function SwapTab() {
@@ -50,7 +40,7 @@ export default function SwapTab() {
   const [amountIn, setAmountIn] = useState("");
   const [quote, setQuote] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [bestPath, setBestPath] = useState<RouteOutput | null>(null);
+  const [bestPath, setBestPath] = useState<ExtendedRouteOutput | null>(null);
   const [balances, setBalances] = useState<Record<string, string>>({});
 
   const fetchBalances = useCallback(async () => {
@@ -87,69 +77,59 @@ export default function SwapTab() {
   }, [fetchBalances]);
 
   const getQuote = useCallback(async () => {
-  const parsedAmount = parseFloat(amountIn);
-  if (!fromToken || !toToken || isNaN(parsedAmount) || parsedAmount <= 0) {
-    setQuote(null);
-    setBestPath(null);
-    return;
-  }
-
-  setLoading(true);
-  const provider = new ethers.providers.JsonRpcProvider(RPC_URL);
-  const poolFetcher = new PoolFetcher(KURU_API_URL);
-
-  try {
-    const pools = await poolFetcher.getAllPools(fromToken, toToken, BASE_TOKENS);
-    console.log("📦 Pools fetched:", pools.length);
-
-    const path = await PathFinder.findBestPath(
-      provider,
-      fromToken,
-      toToken,
-      parsedAmount,
-      "amountIn",
-      poolFetcher,
-      pools
-    );
-
-    if (!path || path.output <= 0) {
-      console.warn("⚠️ No valid path found or output is zero.");
+    const parsedAmount = parseFloat(amountIn);
+    if (!fromToken || !toToken || isNaN(parsedAmount) || parsedAmount <= 0) {
       setQuote(null);
       setBestPath(null);
       return;
     }
 
-    const pathWithExtras = path as RouteOutputWithExtras;
+    setLoading(true);
+    const provider = new ethers.providers.JsonRpcProvider(RPC_URL);
+    const poolFetcher = new PoolFetcher(KURU_API_URL);
 
-    console.log("🧭 Path route:", pathWithExtras.route?.path);
-    console.log("🧭 Pools used:", pathWithExtras.route?.pools);
-    console.log("💰 Output amount:", pathWithExtras.output);
-    console.log("🧪 nativeSend:", pathWithExtras.nativeSend);
-    console.log("🧪 tx:", pathWithExtras.tx);
+    const isNativeInput = fromToken === NATIVE_TOKEN_ADDRESS;
+    const effectiveFromToken = isNativeInput ? TOKENS.WMON : fromToken;
 
-    if (
-  pathWithExtras.nativeSend?.[0] === true &&
-  !pathWithExtras.tx?.data
-) {
-  console.warn("⚠️ Warning: tx.data is missing — native token swap may fail.");
-}
+    try {
+      const pools = await poolFetcher.getAllPools(effectiveFromToken, toToken, [
+        TOKENS.MON,
+        TOKENS.USDC
+      ]);
 
-    const extendedPath: ExtendedRouteOutput = {
-      ...pathWithExtras,
-      nativeSend: pathWithExtras.nativeSend,
-      tx: pathWithExtras.tx
-    };
+      const path = await PathFinder.findBestPath(
+        provider,
+        effectiveFromToken,
+        toToken,
+        parsedAmount,
+        "amountIn",
+        poolFetcher,
+        pools
+      );
 
-    setQuote(path.output.toString());
-    setBestPath(extendedPath);
-  } catch (err) {
-    console.error("❌ Quote error:", err);
-    setQuote(null);
-    setBestPath(null);
-  } finally {
-    setLoading(false);
-  }
-}, [fromToken, toToken, amountIn]);
+      if (!path || path.output <= 0) {
+        setQuote(null);
+        setBestPath(null);
+        return;
+      }
+
+      const extendedPath: ExtendedRouteOutput = {
+        ...path,
+        nativeSend: path.nativeSend,
+        tx: path.tx
+      };
+
+      setQuote(path.output.toString());
+      setBestPath(extendedPath);
+    } catch (err) {
+      console.error("❌ Quote error:", err);
+      setQuote(null);
+      setBestPath(null);
+    } finally {
+      setLoading(false);
+    }
+  }, [fromToken, toToken, amountIn]);
+
   useEffect(() => {
     getQuote();
   }, [getQuote]);
@@ -165,47 +145,22 @@ export default function SwapTab() {
       const provider = new ethers.providers.Web3Provider(
         (window as EthereumWindow).ethereum!
       );
-
       await provider.send("eth_requestAccounts", []);
       const signer = provider.getSigner();
-
-      const routerCode = await provider.getCode(ROUTER_ADDRESS);
-      if (routerCode === "0x") {
-        throw new Error("❌ Router contract not found on this network");
-      }
 
       const inputDecimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
       const outputDecimals = TOKEN_METADATA[toToken]?.decimals ?? 18;
 
-      const extendedPath = bestPath as ExtendedRouteOutput;
-      const approvalRequired =
-        extendedPath.nativeSend && extendedPath.nativeSend[0] === true
-          ? false
-          : true;
+      const isNativeInput = fromToken === NATIVE_TOKEN_ADDRESS;
 
-      if (!approvalRequired) {
-        const txData =
-          extendedPath.tx && typeof extendedPath.tx.data === "string"
-            ? extendedPath.tx.data
-            : undefined;
-
-        if (!txData) {
-          alert("⚠️ Native token swap is not supported without tx data.");
-          return;
-        }
-
-        const tx = await signer.sendTransaction({
-          to: ROUTER_ADDRESS,
-          value: ethers.utils.parseUnits(amountIn, inputDecimals),
-          data: txData
+      if (isNativeInput) {
+        const wmonAbi = ["function deposit() public payable"];
+        const wmon = new ethers.Contract(TOKENS.WMON, wmonAbi, signer);
+        const wrapTx = await wmon.deposit({
+          value: ethers.utils.parseUnits(amountIn, inputDecimals)
         });
-
-        alert("✅ Swap submitted: " + tx.hash);
-        setAmountIn("");
-        setQuote(null);
-        setBestPath(null);
-        fetchBalances();
-        return;
+        await wrapTx.wait();
+        console.log("✅ Wrapped MON → WMON");
       }
 
       const onTxHash = (txHash: string | null) => {
@@ -227,7 +182,7 @@ export default function SwapTab() {
         parseFloat(amountIn),
         inputDecimals,
         outputDecimals,
-        approvalRequired,
+        true,
         onTxHash
       );
     } catch (err) {
