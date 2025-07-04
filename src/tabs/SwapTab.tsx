@@ -77,138 +77,135 @@ export default function SwapTab() {
   }, [fetchBalances]);
 
   const getQuote = useCallback(async () => {
-  const parsedAmount = parseFloat(amountIn);
-  if (!fromToken || !toToken || isNaN(parsedAmount) || parsedAmount <= 0) {
-    setQuote(null);
-    setBestPath(null);
-    return;
-  }
-
-  setLoading(true);
-  const provider = new ethers.providers.JsonRpcProvider(RPC_URL);
-  const poolFetcher = new PoolFetcher(KURU_API_URL);
-
-  const effectiveFromToken = fromToken;
-  const decimals = TOKEN_METADATA[effectiveFromToken]?.decimals ?? 18;
-  const amountInUnits = ethers.utils.parseUnits(parsedAmount.toString(), decimals);
-
-  try {
-    console.log("🚀 getQuote triggered", { fromToken, toToken, amountIn });
-
-    const baseTokens = Object.entries(TOKENS).map(([symbol, address]) => ({
-      symbol,
-      address
-    }));
-
-    const pools = await poolFetcher.getAllPools(effectiveFromToken, toToken, baseTokens);
-    console.log("📦 Pools fetched:", pools.length);
-
-    if (!pools || pools.length === 0) {
-      console.warn("❌ No pools found for this token pair");
+    const parsedAmount = parseFloat(amountIn);
+    if (!fromToken || !toToken || isNaN(parsedAmount) || parsedAmount <= 0) {
       setQuote(null);
       setBestPath(null);
       return;
     }
 
-    const path = await PathFinder.findBestPath(
-      provider,
-      effectiveFromToken,
-      toToken,
-      parseFloat(ethers.utils.formatUnits(amountInUnits, decimals)),
-      "amountIn",
-      poolFetcher,
-      pools
-    );
+    setLoading(true);
+    const provider = new ethers.providers.JsonRpcProvider(RPC_URL);
+    const poolFetcher = new PoolFetcher(KURU_API_URL);
 
-    if (!path || path.output <= 0) {
-      console.warn("⚠️ No valid path found or output is zero.");
-      setQuote(null);
-      setBestPath(null);
-      return;
-    }
+    const effectiveFromToken = fromToken;
+    const decimals = TOKEN_METADATA[effectiveFromToken]?.decimals ?? 18;
+    const amountInUnits = ethers.utils.parseUnits(parsedAmount.toString(), decimals);
 
-    console.log("🧭 Best path:", path.route?.path);
-    console.log("💰 Output amount:", path.output);
+    try {
+      console.log("🚀 getQuote triggered", { fromToken, toToken, amountIn });
 
-    const pathWithExtras = path as ExtendedRouteOutput;
-    setQuote(path.output.toString());
-    setBestPath(pathWithExtras);
-  } catch (err) {
-    console.error("❌ Quote error:", err);
-    setQuote(null);
-    setBestPath(null);
-  } finally {
-    setLoading(false);
-  }
-}, [fromToken, toToken, amountIn]);
+      const baseTokens = Object.entries(TOKENS).map(([symbol, address]) => ({
+        symbol,
+        address
+      }));
 
-useEffect(() => {
-  getQuote();
-}, [fromToken, toToken, amountIn]);
+      const pools = await poolFetcher.getAllPools(effectiveFromToken, toToken, baseTokens);
+      console.log("📦 Pools fetched:", pools.length);
 
-const doSwap = useCallback(async () => {
-  if (!isConnected || !quote || !bestPath || bestPath.output <= 0) {
-    alert("⚠️ Connect wallet & get valid quote");
-    return;
-  }
-
-  setLoading(true);
-  try {
-    const provider = new ethers.providers.Web3Provider(
-      (window as EthereumWindow).ethereum!
-    );
-    await provider.send("eth_requestAccounts", []);
-    const signer = provider.getSigner();
-
-    const inputDecimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
-    const outputDecimals = TOKEN_METADATA[toToken]?.decimals ?? 18;
-
-    const isNativeInput = fromToken === NATIVE_TOKEN_ADDRESS;
-
-    
-    let updatedPath: ExtendedRouteOutput = JSON.parse(JSON.stringify(bestPath));
-
-    if (isNativeInput) {
-      const wmonAbi = ["function deposit() public payable"];
-      const wmon = new ethers.Contract(TOKENS.WMON, wmonAbi, signer);
-      const wrapTx = await wmon.deposit({
-        value: ethers.utils.parseUnits(amountIn, inputDecimals)
-      });
-      await wrapTx.wait();
-      console.log("✅ Wrapped MON → WMON");
-
-      
-      (updatedPath.route as any).tokenIn = TOKENS.WMON;
-    }
-
-    const onTxHash = (txHash: string | null) => {
-      if (txHash) {
-        alert("✅ Swap submitted: " + txHash);
-        setAmountIn("");
+      if (!pools || pools.length === 0) {
+        console.warn("❌ No pools found for this token pair");
         setQuote(null);
         setBestPath(null);
-        fetchBalances();
-      } else {
-        alert("⚠️ Swap failed or rejected");
+        return;
       }
-    };
 
-    await TokenSwap.swap(
-      signer,
-      ROUTER_ADDRESS,
-      updatedPath,
-      parseFloat(amountIn),
-      inputDecimals,
-      outputDecimals,
-      true,
-      onTxHash
-    );
-  } catch (err) {
-    alert("❌ Swap failed: " + (err as Error).message);
-  } finally {
-    setLoading(false);
-  }
-}, [isConnected, amountIn, quote, bestPath, fromToken, toToken, fetchBalances]);
+      const path = await PathFinder.findBestPath(
+        provider,
+        effectiveFromToken,
+        toToken,
+        parseFloat(ethers.utils.formatUnits(amountInUnits, decimals)),
+        "amountIn",
+        poolFetcher,
+        pools
+      );
+
+      if (!path || path.output <= 0) {
+        console.warn("⚠️ No valid path found or output is zero.");
+        setQuote(null);
+        setBestPath(null);
+        return;
+      }
+
+      console.log("🧭 Best path:", path.route?.path);
+      console.log("💰 Output amount:", path.output);
+
+      const pathWithExtras = path as ExtendedRouteOutput;
+      setQuote(path.output.toString());
+      setBestPath(pathWithExtras);
+    } catch (err) {
+      console.error("❌ Quote error:", err);
+      setQuote(null);
+      setBestPath(null);
+    } finally {
+      setLoading(false);
+    }
+  }, [fromToken, toToken, amountIn]);
+
+  useEffect(() => {
+    getQuote();
+  }, [getQuote]);
+
+  const doSwap = useCallback(async () => {
+    if (!isConnected || !quote || !bestPath || bestPath.output <= 0) {
+      alert("⚠️ Connect wallet & get valid quote");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const provider = new ethers.providers.Web3Provider(
+        (window as EthereumWindow).ethereum!
+      );
+      await provider.send("eth_requestAccounts", []);
+      const signer = provider.getSigner();
+
+      const inputDecimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
+      const outputDecimals = TOKEN_METADATA[toToken]?.decimals ?? 18;
+
+      const isNativeInput = fromToken === NATIVE_TOKEN_ADDRESS;
+
+      const updatedPath: ExtendedRouteOutput = JSON.parse(JSON.stringify(bestPath));
+      (updatedPath.route as { [key: string]: unknown }).tokenIn = TOKENS.WMON;
+
+      if (isNativeInput) {
+        const wmonAbi = ["function deposit() public payable"];
+        const wmon = new ethers.Contract(TOKENS.WMON, wmonAbi, signer);
+        const wrapTx = await wmon.deposit({
+          value: ethers.utils.parseUnits(amountIn, inputDecimals)
+        });
+        await wrapTx.wait();
+        console.log("✅ Wrapped MON → WMON");
+      }
+
+      const onTxHash = (txHash: string | null) => {
+        if (txHash) {
+          alert("✅ Swap submitted: " + txHash);
+          setAmountIn("");
+          setQuote(null);
+          setBestPath(null);
+          fetchBalances();
+        } else {
+          alert("⚠️ Swap failed or rejected");
+        }
+      };
+
+      await TokenSwap.swap(
+        signer,
+        ROUTER_ADDRESS,
+        updatedPath,
+        parseFloat(amountIn),
+        inputDecimals,
+        outputDecimals,
+        true,
+        onTxHash
+      );
+    } catch (err) {
+      alert("❌ Swap failed: " + (err as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  }, [isConnected, amountIn, quote, bestPath, fromToken, toToken, fetchBalances]);
 
   const swapTokens = () => {
     const temp = fromToken;
@@ -218,6 +215,7 @@ const doSwap = useCallback(async () => {
     setAmountIn("");
     setBestPath(null);
   };
+}
 
   return (
     <div className="tab swap-tab" style={{ maxWidth: 400, margin: "0 auto", padding: 16 }}>
