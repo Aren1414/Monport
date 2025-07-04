@@ -92,10 +92,14 @@ export default function SwapTab() {
     const effectiveFromToken = isNativeInput ? TOKENS.WMON : fromToken;
 
     try {
+      console.log("🚀 getQuote triggered", { fromToken, toToken, amountIn });
+
       const pools = await poolFetcher.getAllPools(effectiveFromToken, toToken, [
         { symbol: "MON", address: TOKENS.MON },
         { symbol: "USDC", address: TOKENS.USDC }
       ]);
+
+      console.log("📦 Pools fetched:", pools.length);
 
       const path = await PathFinder.findBestPath(
         provider,
@@ -108,12 +112,15 @@ export default function SwapTab() {
       );
 
       if (!path || path.output <= 0) {
+        console.warn("⚠️ No valid path found or output is zero.");
         setQuote(null);
         setBestPath(null);
         return;
       }
 
-      // Type assertion to safely access optional fields
+      console.log("🧭 Best path:", path.route?.path);
+      console.log("💰 Output amount:", path.output);
+
       const pathWithExtras = path as ExtendedRouteOutput;
 
       setQuote(path.output.toString());
@@ -129,13 +136,9 @@ export default function SwapTab() {
 
   // ✅ Run getQuote when any input changes
   useEffect(() => {
-    if (amountIn && parseFloat(amountIn) > 0) {
-      getQuote();
-    } else {
-      setQuote(null);
-      setBestPath(null);
-    }
+    getQuote();
   }, [fromToken, toToken, amountIn]);
+
   const doSwap = useCallback(async () => {
     if (!isConnected || !quote || !bestPath || bestPath.output <= 0) {
       alert("⚠️ Connect wallet & get valid quote");
@@ -155,7 +158,6 @@ export default function SwapTab() {
 
       const isNativeInput = fromToken === NATIVE_TOKEN_ADDRESS;
 
-      // 🔁 If input is MON, wrap it to WMON before swap
       if (isNativeInput) {
         const wmonAbi = ["function deposit() public payable"];
         const wmon = new ethers.Contract(TOKENS.WMON, wmonAbi, signer);
