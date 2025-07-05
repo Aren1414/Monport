@@ -37,6 +37,7 @@ export default function SwapTab() {
   const [loading, setLoading] = useState(false);
   const [bestPath, setBestPath] = useState<RouteOutput | null>(null);
   const [balances, setBalances] = useState<Record<string, string>>({});
+  const [approvalNeeded, setApprovalNeeded] = useState(false);
 
   const fetchBalances = useCallback(async () => {
     if (!isConnected || !address) return;
@@ -71,7 +72,6 @@ export default function SwapTab() {
     fetchBalances();
   }, [fetchBalances]);
 
-  
   useEffect(() => {
     if (!isConnected || !address) return;
 
@@ -89,7 +89,6 @@ export default function SwapTab() {
     };
   }, [isConnected, address, fetchBalances]);
 
-  
   useEffect(() => {
     const ethereum = (window as EthereumWindow).ethereum;
     if (!ethereum) return;
@@ -111,6 +110,7 @@ export default function SwapTab() {
     if (!fromToken || !toToken || isNaN(parsedAmount) || parsedAmount <= 0) {
       setQuote(null);
       setBestPath(null);
+      setApprovalNeeded(false);
       return;
     }
 
@@ -132,6 +132,7 @@ export default function SwapTab() {
       if (!pools || pools.length === 0) {
         setQuote(null);
         setBestPath(null);
+        setApprovalNeeded(false);
         return;
       }
 
@@ -148,15 +149,29 @@ export default function SwapTab() {
       if (!path || path.output <= 0) {
         setQuote(null);
         setBestPath(null);
+        setApprovalNeeded(false);
         return;
       }
 
       setQuote(path.output.toString());
       setBestPath(path);
+
+      if (fromToken !== NATIVE_TOKEN_ADDRESS) {
+        const web3Provider = new ethers.providers.Web3Provider(
+          (window as EthereumWindow).ethereum!
+        );
+        const signer = web3Provider.getSigner();
+        const contract = new ethers.Contract(fromToken, ERC20_ABI, signer);
+        const allowance = await contract.allowance(address, ROUTER_ADDRESS);
+        setApprovalNeeded(allowance.lt(amountInUnits));
+      } else {
+        setApprovalNeeded(false);
+      }
     } catch (err) {
       console.error("❌ Quote error:", err);
       setQuote(null);
       setBestPath(null);
+      setApprovalNeeded(false);
     } finally {
       setLoading(false);
     }
@@ -167,60 +182,58 @@ export default function SwapTab() {
   }, [getQuote]);
 
   const doSwap = useCallback(async () => {
-  if (!isConnected || !quote || !bestPath || bestPath.output <= 0) {
-    alert("⚠️ Please connect your wallet and enter a valid amount.");
-    return;
-  }
-
-  setLoading(true);
-  try {
-    const provider = new ethers.providers.Web3Provider(
-      (window as EthereumWindow).ethereum!
-    );
-    await provider.send("eth_requestAccounts", []);
-    const signer = provider.getSigner();
-
-    const inputDecimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
-    const outputDecimals = TOKEN_METADATA[toToken]?.decimals ?? 18;
-    const isNative = fromToken === NATIVE_TOKEN_ADDRESS;
-
-    // ✅ Promise wrapper to wait for txHash
-    const txHash = await new Promise<string | null>((resolve) => {
-      TokenSwap.swap(
-        signer,
-        ROUTER_ADDRESS,
-        bestPath,
-        parseFloat(amountIn),
-        inputDecimals,
-        outputDecimals,
-        1,
-        !isNative,
-        (hash) => resolve(hash)
-      );
-    });
-
-    if (txHash) {
-      const receipt = await provider.waitForTransaction(txHash, 1);
-      if (receipt && receipt.status === 1) {
-        setAmountIn("");
-        setQuote(null);
-        setBestPath(null);
-        await fetchBalances();
-
-        alert("✅ Swap completed successfully.\n\nTransaction Hash:\n" + txHash);
-      } else {
-        alert("⚠️ Swap transaction failed or was reverted.");
-      }
-    } else {
-      alert("⚠️ Swap was rejected or failed to broadcast.");
+    if (!isConnected || !quote || !bestPath || bestPath.output <= 0) {
+      alert("⚠️ Please connect your wallet and enter a valid amount.");
+      return;
     }
-  } catch (err) {
-    alert("❌ Swap failed: " + (err as Error).message);
-  } finally {
-    setLoading(false);
-  }
-}, [isConnected, amountIn, quote, bestPath, fromToken, toToken, fetchBalances]);
-  
+
+    setLoading(true);
+    try {
+      const provider = new ethers.providers.Web3Provider(
+        (window as EthereumWindow).ethereum!
+      );
+      await provider.send("eth_requestAccounts", []);
+      const signer = provider.getSigner();
+
+      const inputDecimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
+      const outputDecimals = TOKEN_METADATA[toToken]?.decimals ?? 18;
+      const isNative = fromToken === NATIVE_TOKEN_ADDRESS;
+
+      const txHash = await new Promise<string | null>((resolve) => {
+        TokenSwap.swap(
+          signer,
+          ROUTER_ADDRESS,
+          bestPath,
+          parseFloat(amountIn),
+          inputDecimals,
+          outputDecimals,
+          1,
+          !isNative,
+          (hash) => resolve(hash)
+        );
+      });
+
+      if (txHash) {
+        const receipt = await provider.waitForTransaction(txHash, 1);
+        if (receipt && receipt.status === 1) {
+          setAmountIn("");
+          setQuote(null);
+          setBestPath(null);
+          await fetchBalances();
+          alert("✅ Swap completed successfully.");
+        } else {
+          alert("⚠️ Swap transaction failed or was reverted.");
+        }
+      } else {
+        alert("⚠️ Swap was rejected or failed to broadcast.");
+      }
+    } catch (err) {
+      alert("❌ Swap failed: " + (err as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  }, [isConnected, amountIn, quote, bestPath, fromToken, toToken, fetchBalances]);
+
   const swapTokens = () => {
     const temp = fromToken;
     setFromToken(toToken);
@@ -230,8 +243,7 @@ export default function SwapTab() {
     setBestPath(null);
   };
 
-      
-  return (
+return (
     <div className="tab swap-tab" style={{ maxWidth: 400, margin: "0 auto", padding: 16 }}>
       <h2 style={{ textAlign: "center", marginBottom: 24 }}>🔄 Swap</h2>
 
@@ -275,7 +287,7 @@ export default function SwapTab() {
           >
             {Object.entries(TOKENS).map(([sym, addr]) => (
               <option key={sym} value={addr}>
-                {sym} ({balances[addr]?.slice(0, 8) ?? "0"} available)
+                {sym} ({parseFloat(balances[addr] || "0").toFixed(3)})
               </option>
             ))}
           </select>
@@ -293,6 +305,32 @@ export default function SwapTab() {
               textAlign: "right"
             }}
           />
+        </div>
+
+        {/* دکمه‌های درصدی */}
+        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8 }}>
+          {[10, 20, 50, 100].map((percent) => (
+            <button
+              key={percent}
+              onClick={() => {
+                const balance = parseFloat(balances[fromToken] || "0");
+                const value = (balance * percent) / 100;
+                setAmountIn(value.toFixed(6));
+              }}
+              style={{
+                flex: 1,
+                margin: "0 2px",
+                padding: "4px 0",
+                fontSize: 12,
+                borderRadius: 6,
+                border: "1px solid #ccc",
+                background: "#fff",
+                cursor: "pointer"
+              }}
+            >
+              {percent === 100 ? "Max" : `${percent}%`}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -321,7 +359,7 @@ export default function SwapTab() {
           >
             {Object.entries(TOKENS).map(([sym, addr]) => (
               <option key={sym} value={addr}>
-                {sym} ({balances[addr]?.slice(0, 8) ?? "0"} available)
+                {sym} ({parseFloat(balances[addr] || "0").toFixed(3)})
               </option>
             ))}
           </select>
@@ -344,12 +382,33 @@ export default function SwapTab() {
       </div>
 
       <button
-        onClick={doSwap}
+        onClick={async () => {
+          if (approvalNeeded) {
+            try {
+              const provider = new ethers.providers.Web3Provider(
+                (window as EthereumWindow).ethereum!
+              );
+              const signer = provider.getSigner();
+              const contract = new ethers.Contract(fromToken, ERC20_ABI, signer);
+              const tx = await contract.approve(
+                ROUTER_ADDRESS,
+                ethers.constants.MaxUint256
+              );
+              await tx.wait();
+              setApprovalNeeded(false);
+              alert("✅ Token approved successfully.");
+            } catch (err) {
+              alert("❌ Approval failed: " + (err as Error).message);
+            }
+          } else {
+            await doSwap();
+          }
+        }}
         disabled={!quote || loading || !isConnected}
         style={{
           width: "100%",
           padding: 12,
-          background: "#28a745",
+          background: approvalNeeded ? "#ffc107" : "#28a745",
           color: "white",
           fontWeight: "bold",
           border: "none",
@@ -357,7 +416,11 @@ export default function SwapTab() {
           cursor: !quote || loading ? "not-allowed" : "pointer"
         }}
       >
-        {loading ? "Processing…" : "Swap Now"}
+        {loading
+          ? "Processing…"
+          : approvalNeeded
+          ? "Approve"
+          : "Swap Now"}
       </button>
     </div>
   );
