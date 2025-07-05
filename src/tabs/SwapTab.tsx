@@ -325,22 +325,20 @@ const doSwap = useCallback(async () => {
             justifyContent: "space-between"
           }}
         >
-          <Select.Value>
-            {() => (
-              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                {logo && (
-                  <Image
-                    src={logo}
-                    alt={symbol || "token"}
-                    width={16}
-                    height={16}
-                    style={{ borderRadius: "50%" }}
-                  />
-                )}
-                <span>{symbol}</span>
-              </div>
-            )}
-          </Select.Value>
+          <Select.Value asChild>
+  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+    {logo && (
+      <Image
+        src={logo}
+        alt={symbol || "token"}
+        width={16}
+        height={16}
+        style={{ borderRadius: "50%" }}
+      />
+    )}
+    <span>{symbol}</span>
+  </div>
+</Select.Value>
           <Select.Icon>▼</Select.Icon>
         </Select.Trigger>
 
