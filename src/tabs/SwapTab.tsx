@@ -26,11 +26,6 @@ type EthereumWindow = typeof window & {
   ethereum?: ethers.providers.ExternalProvider;
 };
 
-type ExtendedRouteOutput = RouteOutput & {
-  tx?: { data: string };
-  nativeSend?: boolean[];
-};
-
 export default function SwapTab() {
   const { isConnected, address } = useAccount();
   const { connect, connectors } = useConnect();
@@ -40,7 +35,7 @@ export default function SwapTab() {
   const [amountIn, setAmountIn] = useState("");
   const [quote, setQuote] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [bestPath, setBestPath] = useState<ExtendedRouteOutput | null>(null);
+  const [bestPath, setBestPath] = useState<RouteOutput | null>(null);
   const [balances, setBalances] = useState<Record<string, string>>({});
 
   const fetchBalances = useCallback(async () => {
@@ -88,23 +83,18 @@ export default function SwapTab() {
     const provider = new ethers.providers.JsonRpcProvider(RPC_URL);
     const poolFetcher = new PoolFetcher(KURU_API_URL);
 
-    const effectiveFromToken = fromToken;
-    const decimals = TOKEN_METADATA[effectiveFromToken]?.decimals ?? 18;
+    const decimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
     const amountInUnits = ethers.utils.parseUnits(parsedAmount.toString(), decimals);
 
     try {
-      console.log("🚀 getQuote triggered", { fromToken, toToken, amountIn });
-
       const baseTokens = Object.entries(TOKENS).map(([symbol, address]) => ({
         symbol,
         address
       }));
 
-      const pools = await poolFetcher.getAllPools(effectiveFromToken, toToken, baseTokens);
-      console.log("📦 Pools fetched:", pools.length);
+      const pools = await poolFetcher.getAllPools(fromToken, toToken, baseTokens);
 
       if (!pools || pools.length === 0) {
-        console.warn("❌ No pools found for this token pair");
         setQuote(null);
         setBestPath(null);
         return;
@@ -112,7 +102,7 @@ export default function SwapTab() {
 
       const path = await PathFinder.findBestPath(
         provider,
-        effectiveFromToken,
+        fromToken,
         toToken,
         parseFloat(ethers.utils.formatUnits(amountInUnits, decimals)),
         "amountIn",
@@ -121,23 +111,13 @@ export default function SwapTab() {
       );
 
       if (!path || path.output <= 0) {
-        console.warn("⚠️ No valid path found or output is zero.");
         setQuote(null);
         setBestPath(null);
         return;
       }
 
-      console.log("🧭 Best path:", path.route?.path);
-      console.log("💰 Output amount:", path.output);
-
-      const pathWithExtras = path as ExtendedRouteOutput;
-
-      if (fromToken === NATIVE_TOKEN_ADDRESS) {
-        pathWithExtras.nativeSend = [true];
-      }
-
       setQuote(path.output.toString());
-      setBestPath(pathWithExtras);
+      setBestPath(path);
     } catch (err) {
       console.error("❌ Quote error:", err);
       setQuote(null);
@@ -187,8 +167,8 @@ export default function SwapTab() {
         parseFloat(amountIn),
         inputDecimals,
         outputDecimals,
-        1, // ✅ slippageTolerance in percent
-        false, // 
+        1, // slippageTolerance in percent
+        false, // approveTokens — MON doesn’t need it
         onTxHash
       );
     } catch (err) {
@@ -206,6 +186,7 @@ export default function SwapTab() {
     setAmountIn("");
     setBestPath(null);
   };
+
       
   return (
     <div className="tab swap-tab" style={{ maxWidth: 400, margin: "0 auto", padding: 16 }}>
