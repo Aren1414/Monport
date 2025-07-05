@@ -243,8 +243,17 @@ export default function SwapTab() {
     setBestPath(null);
   };
 
-  return (
-    <div className="tab swap-tab" style={{ maxWidth: 420, margin: "0 auto", padding: 16 }}>
+return (
+    <div
+      className="tab swap-tab"
+      style={{
+        maxWidth: 420,
+        margin: "0 auto",
+        padding: 16,
+        boxSizing: "border-box",
+        width: "100%",
+      }}
+    >
       <h2 style={{ textAlign: "center", marginBottom: 24 }}>🔄 Swap</h2>
 
       {!isConnected ? (
@@ -286,11 +295,22 @@ export default function SwapTab() {
         boxSizing: "border-box"
       }}>
         <label style={{ fontWeight: "bold" }}>From</label>
-        <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 8 }}>
+        <div style={{
+          display: "flex",
+          flexWrap: "wrap",
+          gap: 8,
+          alignItems: "center",
+          marginTop: 8
+        }}>
           <select
             value={fromToken}
             onChange={(e) => setFromToken(e.target.value)}
-            style={{ flex: 1, padding: 8, borderRadius: 8 }}
+            style={{
+              flex: 1,
+              minWidth: 0,
+              padding: 8,
+              borderRadius: 8
+            }}
           >
             {Object.entries(TOKENS).map(([sym, addr]) => (
               <option key={sym} value={addr}>
@@ -305,7 +325,8 @@ export default function SwapTab() {
             value={amountIn}
             onChange={(e) => setAmountIn(e.target.value)}
             style={{
-              width: "120px",
+              flex: 1,
+              minWidth: 0,
               padding: 8,
               borderRadius: 8,
               border: "1px solid #ccc",
@@ -366,11 +387,22 @@ export default function SwapTab() {
         boxSizing: "border-box"
       }}>
         <label style={{ fontWeight: "bold" }}>To</label>
-        <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 8 }}>
+        <div style={{
+          display: "flex",
+          flexWrap: "wrap",
+          gap: 8,
+          alignItems: "center",
+          marginTop: 8
+        }}>
           <select
             value={toToken}
             onChange={(e) => setToToken(e.target.value)}
-            style={{ flex: 1, padding: 8, borderRadius: 8 }}
+            style={{
+              flex: 1,
+              minWidth: 0,
+              padding: 8,
+              borderRadius: 8
+            }}
           >
             {Object.entries(TOKENS).map(([sym, addr]) => (
               <option key={sym} value={addr}>
@@ -383,7 +415,8 @@ export default function SwapTab() {
             readOnly
             placeholder="0.0"
             style={{
-              width: "120px",
+              flex: 1,
+              minWidth: 0,
               padding: 8,
               borderRadius: 8,
               border: "1px solid #ccc",
@@ -440,4 +473,4 @@ export default function SwapTab() {
       </button>
     </div>
   );
- }
+}
