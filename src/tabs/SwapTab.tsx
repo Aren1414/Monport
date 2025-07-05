@@ -216,7 +216,7 @@ export default function SwapTab() {
       if (txHash) {
         const receipt = await provider.waitForTransaction(txHash, 1);
         if (receipt && receipt.status === 1) {
-          setAmountIn("");
+          setAmountIn(""); 
           setQuote(null);
           setBestPath(null);
           await fetchBalances();
@@ -244,7 +244,7 @@ export default function SwapTab() {
   };
 
 return (
-    <div className="tab swap-tab" style={{ maxWidth: 400, margin: "0 auto", padding: 16 }}>
+    <div className="tab swap-tab" style={{ maxWidth: 420, margin: "0 auto", padding: 16 }}>
       <h2 style={{ textAlign: "center", marginBottom: 24 }}>🔄 Swap</h2>
 
       {!isConnected ? (
@@ -277,7 +277,14 @@ return (
         </div>
       )}
 
-      <div style={{ background: "#f5f5f5", padding: 12, borderRadius: 12, marginBottom: 12 }}>
+      {/* FROM SECTION */}
+      <div style={{
+        background: "#f5f5f5",
+        padding: 12,
+        borderRadius: 12,
+        marginBottom: 12,
+        boxSizing: "border-box"
+      }}>
         <label style={{ fontWeight: "bold" }}>From</label>
         <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 8 }}>
           <select
@@ -334,6 +341,7 @@ return (
         </div>
       </div>
 
+      {/* SWAP ICON */}
       <div style={{ textAlign: "center", margin: "8px 0" }}>
         <button
           onClick={swapTokens}
@@ -349,7 +357,14 @@ return (
         </button>
       </div>
 
-      <div style={{ background: "#f5f5f5", padding: 12, borderRadius: 12, marginBottom: 12 }}>
+      {/* TO SECTION */}
+      <div style={{
+        background: "#f5f5f5",
+        padding: 12,
+        borderRadius: 12,
+        marginBottom: 12,
+        boxSizing: "border-box"
+      }}>
         <label style={{ fontWeight: "bold" }}>To</label>
         <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 8 }}>
           <select
@@ -364,7 +379,7 @@ return (
             ))}
           </select>
           <input
-            value={quote ?? ""}
+            value={quote ? parseFloat(quote).toFixed(3) : ""}
             readOnly
             placeholder="0.0"
             style={{
@@ -381,6 +396,7 @@ return (
         </div>
       </div>
 
+      {/* APPROVE / SWAP BUTTON */}
       <button
         onClick={async () => {
           if (approvalNeeded) {
