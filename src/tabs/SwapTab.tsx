@@ -149,28 +149,30 @@ export default function SwapTab() {
       const outputDecimals = TOKEN_METADATA[toToken]?.decimals ?? 18;
 
       const onTxHash = (txHash: string | null) => {
-        if (txHash) {
-          alert("✅ Swap submitted: " + txHash);
-          setAmountIn("");
-          setQuote(null);
-          setBestPath(null);
-          fetchBalances();
-        } else {
-          alert("⚠️ Swap failed or rejected");
-        }
-      };
+  if (txHash) {
+    alert("✅ Swap submitted: " + txHash);
+    setAmountIn("");
+    setQuote(null);
+    setBestPath(null);
+    fetchBalances();
+  } else {
+    alert("⚠️ Swap failed or rejected");
+  }
+};
 
-      await TokenSwap.swap(
-        signer,
-        ROUTER_ADDRESS,
-        bestPath,
-        parseFloat(amountIn),
-        inputDecimals,
-        outputDecimals,
-        1, // slippageTolerance in percent
-        false, // approveTokens — MON doesn’t need it
-        onTxHash
-      );
+const isNative = fromToken === NATIVE_TOKEN_ADDRESS;
+
+await TokenSwap.swap(
+  signer,
+  ROUTER_ADDRESS,
+  bestPath,
+  parseFloat(amountIn),
+  inputDecimals,
+  outputDecimals,
+  1, // slippageTolerance in percent
+  !isNative, 
+  onTxHash
+);
     } catch (err) {
       alert("❌ Swap failed: " + (err as Error).message);
     } finally {
