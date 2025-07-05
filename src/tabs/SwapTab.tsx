@@ -344,7 +344,6 @@ const doSwap = useCallback(async () => {
 
       <Select.Portal>
         <Select.Content
-          forceMount
           style={{
             position: "absolute",
             top: "100%",
