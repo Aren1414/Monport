@@ -38,6 +38,30 @@ export default function SwapTab() {
   const [bestPath, setBestPath] = useState<RouteOutput | null>(null);
   const [balances, setBalances] = useState<Record<string, string>>({});
   const [approvalNeeded, setApprovalNeeded] = useState(false);
+  const [tokenLogos, setTokenLogos] = useState<Record<string, string>>({});
+
+  
+  useEffect(() => {
+    const fetchLogos = async () => {
+      const fetcher = new PoolFetcher(KURU_API_URL);
+      const logos: Record<string, string> = {};
+
+      for (const addr of Object.values(TOKENS)) {
+        try {
+          const meta = await fetcher.getTokenMetadata(addr);
+          if (meta?.logoURI) {
+            logos[addr] = meta.logoURI;
+          }
+        } catch (err) {
+          console.warn(`❌ Failed to fetch logo for ${addr}`, err);
+        }
+      }
+
+      setTokenLogos(logos);
+    };
+
+    fetchLogos();
+  }, []);
 
   const fetchBalances = useCallback(async () => {
     if (!isConnected || !address) return;
@@ -107,7 +131,7 @@ export default function SwapTab() {
 
   const getQuote = useCallback(async () => {
     const parsedAmount = parseFloat(amountIn);
-    if (!fromToken || !toToken || isNaN(parsedAmount) || parsedAmount <= 0 || !isConnected) {
+    if (!fromToken || !toToken || isNaN(parsedAmount) || parsedAmount <= 0 || !isConnected || !address) {
       setQuote(null);
       setBestPath(null);
       setApprovalNeeded(false);
@@ -175,7 +199,7 @@ export default function SwapTab() {
     } finally {
       setLoading(false);
     }
-  }, [fromToken, toToken, amountIn, isConnected]);
+  }, [fromToken, toToken, amountIn, isConnected, address]);
 
   useEffect(() => {
     getQuote();
@@ -243,7 +267,37 @@ export default function SwapTab() {
     setBestPath(null);
   };
 
-return (
+  const renderTokenOption = (symbol: string, addr: string) => {
+    const balance = parseFloat(balances[addr] || "0").toFixed(3);
+    const logo = tokenLogos[addr];
+    return (
+      <option key={addr} value={addr}>
+        {symbol} — {balance}
+      </option>
+    );
+  };
+
+  const renderTokenHeader = (token: string) => {
+    const symbol = Object.entries(TOKENS).find(([, addr]) => addr === token)?.[0];
+    const balance = parseFloat(balances[token] || "0").toFixed(3);
+    const logo = tokenLogos[token];
+    return (
+      <div style={{ fontSize: 12, color: "#666", marginBottom: 4, display: "flex", alignItems: "center" }}>
+        {logo && (
+          <img
+            src={logo}
+            alt={symbol}
+            width={16}
+            height={16}
+            style={{ marginRight: 6, verticalAlign: "middle" }}
+          />
+        )}
+        {symbol} — Balance: {balance}
+      </div>
+    );
+  };
+
+  return (
     <div
       className="tab swap-tab"
       style={{
@@ -295,12 +349,7 @@ return (
         boxSizing: "border-box"
       }}>
         <label style={{ fontWeight: "bold" }}>From</label>
-
-        
-        <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>
-          Balance: {parseFloat(balances[fromToken] || "0").toFixed(3)} {Object.entries(TOKENS).find(([_, addr]) => addr === fromToken)?.[0]}
-        </div>
-
+        {renderTokenHeader(fromToken)}
         <div style={{
           display: "flex",
           flexWrap: "wrap",
@@ -318,11 +367,7 @@ return (
               borderRadius: 8
             }}
           >
-            {Object.entries(TOKENS).map(([sym, addr]) => (
-              <option key={sym} value={addr}>
-                {sym}
-              </option>
-            ))}
+            {Object.entries(TOKENS).map(([sym, addr]) => renderTokenOption(sym, addr))}
           </select>
           <input
             type="number"
@@ -393,12 +438,7 @@ return (
         boxSizing: "border-box"
       }}>
         <label style={{ fontWeight: "bold" }}>To</label>
-
-        
-        <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>
-          Balance: {parseFloat(balances[toToken] || "0").toFixed(3)} {Object.entries(TOKENS).find(([_, addr]) => addr === toToken)?.[0]}
-        </div>
-
+        {renderTokenHeader(toToken)}
         <div style={{
           display: "flex",
           flexWrap: "wrap",
@@ -416,11 +456,7 @@ return (
               borderRadius: 8
             }}
           >
-            {Object.entries(TOKENS).map(([sym, addr]) => (
-              <option key={sym} value={addr}>
-                {sym}
-              </option>
-            ))}
+            {Object.entries(TOKENS).map(([sym, addr]) => renderTokenOption(sym, addr))}
           </select>
           <input
             value={quote ? parseFloat(quote).toFixed(3) : ""}
