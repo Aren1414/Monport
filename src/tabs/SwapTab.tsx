@@ -178,8 +178,14 @@ export default function SwapTab() {
   }, [fromToken, toToken, amountIn]);
 
   useEffect(() => {
-    getQuote();
-  }, [getQuote]);
+    if (amountIn && parseFloat(amountIn) > 0) {
+      getQuote();
+    } else {
+      setQuote(null);
+      setBestPath(null);
+      setApprovalNeeded(false);
+    }
+  }, [getQuote, amountIn]);
 
   const doSwap = useCallback(async () => {
     if (!isConnected || !quote || !bestPath || bestPath.output <= 0) {
@@ -216,7 +222,7 @@ export default function SwapTab() {
       if (txHash) {
         const receipt = await provider.waitForTransaction(txHash, 1);
         if (receipt && receipt.status === 1) {
-          setAmountIn(""); 
+          setAmountIn(""); // 👈 مهم برای جلوگیری از گیر کردن
           setQuote(null);
           setBestPath(null);
           await fetchBalances();
@@ -440,4 +446,4 @@ return (
       </button>
     </div>
   );
-}
+ }
