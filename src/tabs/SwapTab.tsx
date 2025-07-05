@@ -107,7 +107,7 @@ export default function SwapTab() {
 
   const getQuote = useCallback(async () => {
     const parsedAmount = parseFloat(amountIn);
-    if (!fromToken || !toToken || isNaN(parsedAmount) || parsedAmount <= 0) {
+    if (!fromToken || !toToken || isNaN(parsedAmount) || parsedAmount <= 0 || !isConnected) {
       setQuote(null);
       setBestPath(null);
       setApprovalNeeded(false);
@@ -175,17 +175,11 @@ export default function SwapTab() {
     } finally {
       setLoading(false);
     }
-  }, [fromToken, toToken, amountIn]);
+  }, [fromToken, toToken, amountIn, isConnected]);
 
   useEffect(() => {
-    if (amountIn && parseFloat(amountIn) > 0) {
-      getQuote();
-    } else {
-      setQuote(null);
-      setBestPath(null);
-      setApprovalNeeded(false);
-    }
-  }, [getQuote, amountIn]);
+    getQuote();
+  }, [getQuote]);
 
   const doSwap = useCallback(async () => {
     if (!isConnected || !quote || !bestPath || bestPath.output <= 0) {
@@ -222,7 +216,7 @@ export default function SwapTab() {
       if (txHash) {
         const receipt = await provider.waitForTransaction(txHash, 1);
         if (receipt && receipt.status === 1) {
-          setAmountIn(""); // 👈 مهم برای جلوگیری از گیر کردن
+          setAmountIn(""); 
           setQuote(null);
           setBestPath(null);
           await fetchBalances();
@@ -249,7 +243,7 @@ export default function SwapTab() {
     setBestPath(null);
   };
 
-return (
+  return (
     <div className="tab swap-tab" style={{ maxWidth: 420, margin: "0 auto", padding: 16 }}>
       <h2 style={{ textAlign: "center", marginBottom: 24 }}>🔄 Swap</h2>
 
@@ -320,7 +314,7 @@ return (
           />
         </div>
 
-        {/* دکمه‌های درصدی */}
+        
         <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8 }}>
           {[10, 20, 50, 100].map((percent) => (
             <button
