@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+import Image from "next/image";
+import * as Select from "@radix-ui/react-select";
 import { useAccount, useConnect } from "wagmi";
 import { ethers } from "ethers";
 import {
@@ -40,7 +42,6 @@ export default function SwapTab() {
   const [approvalNeeded, setApprovalNeeded] = useState(false);
   const [tokenLogos, setTokenLogos] = useState<Record<string, string>>({});
 
-  
   useEffect(() => {
     const fetchLogos = async () => {
       const fetcher = new PoolFetcher(KURU_API_URL);
@@ -129,7 +130,7 @@ export default function SwapTab() {
     };
   }, [fetchBalances]);
 
-  const getQuote = useCallback(async () => {
+const getQuote = useCallback(async () => {
     const parsedAmount = parseFloat(amountIn);
     if (!fromToken || !toToken || isNaN(parsedAmount) || parsedAmount <= 0 || !isConnected || !address) {
       setQuote(null);
@@ -267,16 +268,6 @@ export default function SwapTab() {
     setBestPath(null);
   };
 
-  const renderTokenOption = (symbol: string, addr: string) => {
-    const balance = parseFloat(balances[addr] || "0").toFixed(3);
-    const logo = tokenLogos[addr];
-    return (
-      <option key={addr} value={addr}>
-        {symbol} — {balance}
-      </option>
-    );
-  };
-
   const renderTokenHeader = (token: string) => {
     const symbol = Object.entries(TOKENS).find(([, addr]) => addr === token)?.[0];
     const balance = parseFloat(balances[token] || "0").toFixed(3);
@@ -284,7 +275,7 @@ export default function SwapTab() {
     return (
       <div style={{ fontSize: 12, color: "#666", marginBottom: 4, display: "flex", alignItems: "center" }}>
         {logo && (
-          <img
+          <Image
             src={logo}
             alt={symbol}
             width={16}
@@ -294,6 +285,75 @@ export default function SwapTab() {
         )}
         {symbol} — Balance: {balance}
       </div>
+    );
+  };
+
+  const renderTokenSelect = (
+    value: string,
+    onChange: (val: string) => void
+  ) => {
+    return (
+      <Select.Root value={value} onValueChange={onChange}>
+        <Select.Trigger
+          style={{
+            flex: 1,
+            minWidth: 0,
+            padding: 8,
+            borderRadius: 8,
+            border: "1px solid #ccc",
+            background: "#fff",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between"
+          }}
+        >
+          <Select.Value />
+          <Select.Icon>▼</Select.Icon>
+        </Select.Trigger>
+        <Select.Portal>
+          <Select.Content
+            style={{
+              background: "#fff",
+              border: "1px solid #ccc",
+              borderRadius: 8,
+              padding: 4,
+              zIndex: 1000
+            }}
+          >
+            <Select.Viewport>
+              {Object.entries(TOKENS).map(([symbol, addr]) => {
+                const logo = tokenLogos[addr];
+                const balance = parseFloat(balances[addr] || "0").toFixed(3);
+                return (
+                  <Select.Item
+                    key={addr}
+                    value={addr}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      padding: 6,
+                      borderRadius: 6,
+                      cursor: "pointer"
+                    }}
+                  >
+                    {logo && (
+                      <Image
+                        src={logo}
+                        alt={symbol}
+                        width={20}
+                        height={20}
+                        style={{ marginRight: 8, borderRadius: "50%" }}
+                      />
+                    )}
+                    <span style={{ fontSize: 14 }}>{symbol}</span>
+                    <span style={{ marginLeft: "auto", fontSize: 12, color: "#888" }}>{balance}</span>
+                  </Select.Item>
+                );
+              })}
+            </Select.Viewport>
+          </Select.Content>
+        </Select.Portal>
+      </Select.Root>
     );
   };
 
@@ -357,18 +417,7 @@ export default function SwapTab() {
           alignItems: "center",
           marginTop: 4
         }}>
-          <select
-            value={fromToken}
-            onChange={(e) => setFromToken(e.target.value)}
-            style={{
-              flex: 1,
-              minWidth: 0,
-              padding: 8,
-              borderRadius: 8
-            }}
-          >
-            {Object.entries(TOKENS).map(([sym, addr]) => renderTokenOption(sym, addr))}
-          </select>
+          {renderTokenSelect(fromToken, setFromToken)}
           <input
             type="number"
             step="any"
@@ -386,7 +435,6 @@ export default function SwapTab() {
           />
         </div>
 
-        
         <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8 }}>
           {[10, 20, 50, 100].map((percent) => (
             <button
@@ -446,18 +494,7 @@ export default function SwapTab() {
           alignItems: "center",
           marginTop: 4
         }}>
-          <select
-            value={toToken}
-            onChange={(e) => setToToken(e.target.value)}
-            style={{
-              flex: 1,
-              minWidth: 0,
-              padding: 8,
-              borderRadius: 8
-            }}
-          >
-            {Object.entries(TOKENS).map(([sym, addr]) => renderTokenOption(sym, addr))}
-          </select>
+          {renderTokenSelect(toToken, setToToken)}
           <input
             value={quote ? parseFloat(quote).toFixed(3) : ""}
             readOnly
