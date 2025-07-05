@@ -43,26 +43,58 @@ export default function SwapTab() {
   const [tokenLogos, setTokenLogos] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    const fetchLogos = async () => {
-      const fetcher = new PoolFetcher(KURU_API_URL);
-      const logos: Record<string, string> = {};
+  const fetchLogos = async () => {
+    const fetcher = new PoolFetcher(KURU_API_URL);
+    const logos: Record<string, string> = {};
 
-      for (const addr of Object.values(TOKENS)) {
-        try {
-          const meta = await fetcher.getTokenMetadata(addr);
-          if (meta?.logoURI) {
-            logos[addr] = meta.logoURI;
-          }
-        } catch (err) {
-          console.warn(`❌ Failed to fetch logo for ${addr}`, err);
+    try {
+      
+      const baseTokens = Object.entries(TOKENS).map(([symbol, address]) => ({
+        symbol,
+        address,
+      }));
+
+      const pairs = baseTokens.flatMap((base1, i) =>
+        baseTokens.slice(i + 1).map((base2) => ({
+          baseToken: base1.address,
+          quoteToken: base2.address,
+        }))
+      );
+
+      const response = await fetch(
+        `${KURU_API_URL.replace(/\/$/, "")}/api/v1/markets/filtered`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ pairs }),
         }
-      }
+      );
+
+      const data = await response.json();
+
+      data?.data?.forEach((market: any) => {
+        const base = market.baseasset;
+        const quote = market.quoteasset;
+
+        if (base?.address && base?.image) {
+          logos[base.address] = base.image;
+        }
+
+        if (quote?.address && quote?.image) {
+          logos[quote.address] = quote.image;
+        }
+      });
 
       setTokenLogos(logos);
-    };
+    } catch (err) {
+      console.error("❌ Failed to fetch token logos:", err);
+    }
+  };
 
-    fetchLogos();
-  }, []);
+  fetchLogos();
+}, []);
 
   const fetchBalances = useCallback(async () => {
     if (!isConnected || !address) return;
