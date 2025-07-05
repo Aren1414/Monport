@@ -43,62 +43,62 @@ export default function SwapTab() {
   const [tokenLogos, setTokenLogos] = useState<Record<string, string>>({});
 
   useEffect(() => {
-  const fetchLogos = async () => {
-    const logos: Record<string, string> = {};
+    const fetchLogos = async () => {
+      const logos: Record<string, string> = {};
 
-    try {
-      const baseTokens = Object.entries(TOKENS).map(([symbol, address]) => ({
-        symbol,
-        address,
-      }));
+      try {
+        const baseTokens = Object.entries(TOKENS).map(([symbol, address]) => ({
+          symbol,
+          address,
+        }));
 
-      const pairs = baseTokens.flatMap((base1, i) =>
-        baseTokens.slice(i + 1).map((base2) => ({
-          baseToken: base1.address,
-          quoteToken: base2.address,
-        }))
-      );
+        const pairs = baseTokens.flatMap((base1, i) =>
+          baseTokens.slice(i + 1).map((base2) => ({
+            baseToken: base1.address,
+            quoteToken: base2.address,
+          }))
+        );
 
-      const response = await fetch(
-        `${KURU_API_URL.replace(/\/$/, "")}/api/v1/markets/filtered`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ pairs }),
-        }
-      );
+        const response = await fetch(
+          `${KURU_API_URL.replace(/\/$/, "")}/api/v1/markets/filtered`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ pairs }),
+          }
+        );
 
-      type Token = { address: string; image?: string };
-      type Market = { baseasset: Token; quoteasset: Token };
-      type MarketResponse = { data: Market[] };
+        type Token = { address: string; image?: string };
+        type Market = { baseasset: Token; quoteasset: Token };
+        type MarketResponse = { data: Market[] };
 
-      const data: MarketResponse = await response.json();
+        const data: MarketResponse = await response.json();
 
-      data.data.forEach((market) => {
-        const base = market.baseasset;
-        const quote = market.quoteasset;
+        data.data.forEach((market) => {
+          const base = market.baseasset;
+          const quote = market.quoteasset;
 
-        if (base?.address && base?.image) {
-          logos[base.address] = base.image;
-        }
+          if (base?.address && base?.image) {
+            logos[base.address] = base.image;
+          }
 
-        if (quote?.address && quote?.image) {
-          logos[quote.address] = quote.image;
-        }
-      });
+          if (quote?.address && quote?.image) {
+            logos[quote.address] = quote.image;
+          }
+        });
 
-      setTokenLogos(logos);
-    } catch (err) {
-      console.error("❌ Failed to fetch token logos:", err);
-    }
-  };
+        setTokenLogos(logos);
+      } catch (err) {
+        console.error("❌ Failed to fetch token logos:", err);
+      }
+    };
 
-  fetchLogos();
-}, []);
+    fetchLogos();
+  }, []);
 
-  const fetchBalances = useCallback(async () => {
+const fetchBalances = useCallback(async () => {
     if (!isConnected || !address) return;
 
     const provider = new ethers.providers.Web3Provider(
@@ -164,7 +164,7 @@ export default function SwapTab() {
     };
   }, [fetchBalances]);
 
-const getQuote = useCallback(async () => {
+  const getQuote = useCallback(async () => {
     const parsedAmount = parseFloat(amountIn);
     if (!fromToken || !toToken || isNaN(parsedAmount) || parsedAmount <= 0 || !isConnected || !address) {
       setQuote(null);
@@ -302,7 +302,7 @@ const getQuote = useCallback(async () => {
     setBestPath(null);
   };
 
-  const renderTokenHeader = (token: string) => {
+const renderTokenHeader = (token: string) => {
     const symbol = Object.entries(TOKENS).find(([, addr]) => addr === token)?.[0];
     const balance = parseFloat(balances[token] || "0").toFixed(3);
     const logo = tokenLogos[token];
@@ -311,7 +311,7 @@ const getQuote = useCallback(async () => {
         {logo && (
           <Image
             src={logo}
-            alt={symbol}
+            alt={symbol || "token"}
             width={16}
             height={16}
             style={{ marginRight: 6, verticalAlign: "middle" }}
@@ -373,7 +373,7 @@ const getQuote = useCallback(async () => {
                     {logo && (
                       <Image
                         src={logo}
-                        alt={symbol}
+                        alt={symbol || "token"}
                         width={20}
                         height={20}
                         style={{ marginRight: 8, borderRadius: "50%" }}
