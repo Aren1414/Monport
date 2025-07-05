@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import * as Select from "@radix-ui/react-select";
 import { useAccount, useConnect } from "wagmi";
-import { ethers } from "ethers";
+import { ethers, utils as ethersUtils } from "ethers";
 import {
   PoolFetcher,
   PathFinder,
@@ -81,11 +81,11 @@ export default function SwapTab() {
           const quote = market.quoteasset;
 
           if (base?.address && base?.image) {
-            logos[base.address] = base.image;
+            logos[ethersUtils.getAddress(base.address)] = base.image;
           }
 
           if (quote?.address && quote?.image) {
-            logos[quote.address] = quote.image;
+            logos[ethersUtils.getAddress(quote.address)] = quote.image;
           }
         });
 
@@ -109,14 +109,15 @@ const fetchBalances = useCallback(async () => {
 
     for (const [symbol, tokenAddress] of Object.entries(TOKENS)) {
       try {
-        if (tokenAddress === NATIVE_TOKEN_ADDRESS) {
+        const normalized = ethersUtils.getAddress(tokenAddress);
+        if (normalized === NATIVE_TOKEN_ADDRESS) {
           const balance = await provider.getBalance(address);
-          newBalances[tokenAddress] = ethers.utils.formatEther(balance);
+          newBalances[normalized] = ethers.utils.formatEther(balance);
         } else {
-          const contract = new ethers.Contract(tokenAddress, ERC20_ABI, provider);
-          const decimals = TOKEN_METADATA[tokenAddress]?.decimals ?? 18;
+          const contract = new ethers.Contract(normalized, ERC20_ABI, provider);
+          const decimals = TOKEN_METADATA[normalized]?.decimals ?? 18;
           const balance = await contract.balanceOf(address);
-          newBalances[tokenAddress] = ethers.utils.formatUnits(balance, decimals);
+          newBalances[normalized] = ethers.utils.formatUnits(balance, decimals);
         }
       } catch (err) {
         console.error(`Failed to fetch balance for ${symbol}:`, err);
@@ -240,7 +241,7 @@ const fetchBalances = useCallback(async () => {
     getQuote();
   }, [getQuote]);
 
-  const doSwap = useCallback(async () => {
+const doSwap = useCallback(async () => {
     if (!isConnected || !quote || !bestPath || bestPath.output <= 0) {
       alert("⚠️ Please connect your wallet and enter a valid amount.");
       return;
@@ -302,30 +303,13 @@ const fetchBalances = useCallback(async () => {
     setBestPath(null);
   };
 
-const renderTokenHeader = (token: string) => {
-    const symbol = Object.entries(TOKENS).find(([, addr]) => addr === token)?.[0];
-    const balance = parseFloat(balances[token] || "0").toFixed(3);
-    const logo = tokenLogos[token];
-    return (
-      <div style={{ fontSize: 12, color: "#666", marginBottom: 4, display: "flex", alignItems: "center" }}>
-        {logo && (
-          <Image
-            src={logo}
-            alt={symbol || "token"}
-            width={16}
-            height={16}
-            style={{ marginRight: 6, verticalAlign: "middle" }}
-          />
-        )}
-        {symbol} — Balance: {balance}
-      </div>
-    );
-  };
-
   const renderTokenSelect = (
     value: string,
     onChange: (val: string) => void
   ) => {
+    const symbol = Object.entries(TOKENS).find(([, addr]) => addr === value)?.[0];
+    const logo = tokenLogos[ethersUtils.getAddress(value)];
+
     return (
       <Select.Root value={value} onValueChange={onChange}>
         <Select.Trigger
@@ -341,9 +325,25 @@ const renderTokenHeader = (token: string) => {
             justifyContent: "space-between"
           }}
         >
-          <Select.Value />
+          <Select.Value>
+            {() => (
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                {logo && (
+                  <Image
+                    src={logo}
+                    alt={symbol || "token"}
+                    width={16}
+                    height={16}
+                    style={{ borderRadius: "50%" }}
+                  />
+                )}
+                <span>{symbol}</span>
+              </div>
+            )}
+          </Select.Value>
           <Select.Icon>▼</Select.Icon>
         </Select.Trigger>
+
         <Select.Portal>
           <Select.Content
             style={{
@@ -356,12 +356,14 @@ const renderTokenHeader = (token: string) => {
           >
             <Select.Viewport>
               {Object.entries(TOKENS).map(([symbol, addr]) => {
-                const logo = tokenLogos[addr];
-                const balance = parseFloat(balances[addr] || "0").toFixed(3);
+                const normalized = ethersUtils.getAddress(addr);
+                const logo = tokenLogos[normalized];
+                const balance = parseFloat(balances[normalized] || "0").toFixed(3);
+
                 return (
                   <Select.Item
-                    key={addr}
-                    value={addr}
+                    key={normalized}
+                    value={normalized}
                     style={{
                       display: "flex",
                       alignItems: "center",
@@ -373,14 +375,16 @@ const renderTokenHeader = (token: string) => {
                     {logo && (
                       <Image
                         src={logo}
-                        alt={symbol || "token"}
+                        alt={symbol}
                         width={20}
                         height={20}
                         style={{ marginRight: 8, borderRadius: "50%" }}
                       />
                     )}
                     <span style={{ fontSize: 14 }}>{symbol}</span>
-                    <span style={{ marginLeft: "auto", fontSize: 12, color: "#888" }}>{balance}</span>
+                    <span style={{ marginLeft: "auto", fontSize: 12, color: "#888" }}>
+                      {balance}
+                    </span>
                   </Select.Item>
                 );
               })}
@@ -443,7 +447,9 @@ const renderTokenHeader = (token: string) => {
         boxSizing: "border-box"
       }}>
         <label style={{ fontWeight: "bold" }}>From</label>
-        {renderTokenHeader(fromToken)}
+        <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>
+          Balance: {parseFloat(balances[fromToken] || "0").toFixed(3)}
+        </div>
         <div style={{
           display: "flex",
           flexWrap: "wrap",
@@ -520,7 +526,9 @@ const renderTokenHeader = (token: string) => {
         boxSizing: "border-box"
       }}>
         <label style={{ fontWeight: "bold" }}>To</label>
-        {renderTokenHeader(toToken)}
+        <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>
+          Balance: {parseFloat(balances[toToken] || "0").toFixed(3)}
+        </div>
         <div style={{
           display: "flex",
           flexWrap: "wrap",
