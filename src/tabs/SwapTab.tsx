@@ -71,6 +71,41 @@ export default function SwapTab() {
     fetchBalances();
   }, [fetchBalances]);
 
+  
+  useEffect(() => {
+    if (!isConnected || !address) return;
+
+    const provider = new ethers.providers.Web3Provider(
+      (window as EthereumWindow).ethereum!
+    );
+
+    const updateOnBlock = async () => {
+      await fetchBalances();
+    };
+
+    provider.on("block", updateOnBlock);
+    return () => {
+      provider.off("block", updateOnBlock);
+    };
+  }, [isConnected, address, fetchBalances]);
+
+  
+  useEffect(() => {
+    const ethereum = (window as EthereumWindow).ethereum;
+    if (!ethereum) return;
+
+    const handleAccountsChanged = () => fetchBalances();
+    const handleChainChanged = () => fetchBalances();
+
+    ethereum.on("accountsChanged", handleAccountsChanged);
+    ethereum.on("chainChanged", handleChainChanged);
+
+    return () => {
+      ethereum.removeListener("accountsChanged", handleAccountsChanged);
+      ethereum.removeListener("chainChanged", handleChainChanged);
+    };
+  }, [fetchBalances]);
+
   const getQuote = useCallback(async () => {
     const parsedAmount = parseFloat(amountIn);
     if (!fromToken || !toToken || isNaN(parsedAmount) || parsedAmount <= 0) {
@@ -133,7 +168,7 @@ export default function SwapTab() {
 
   const doSwap = useCallback(async () => {
     if (!isConnected || !quote || !bestPath || bestPath.output <= 0) {
-      alert("⚠️ Connect wallet & get valid quote");
+      alert("⚠️ Please connect your wallet and enter a valid amount.");
       return;
     }
 
@@ -147,32 +182,40 @@ export default function SwapTab() {
 
       const inputDecimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
       const outputDecimals = TOKEN_METADATA[toToken]?.decimals ?? 18;
+      const isNative = fromToken === NATIVE_TOKEN_ADDRESS;
 
-      const onTxHash = (txHash: string | null) => {
-  if (txHash) {
-    alert("✅ Swap submitted: " + txHash);
-    setAmountIn("");
-    setQuote(null);
-    setBestPath(null);
-    fetchBalances();
-  } else {
-    alert("⚠️ Swap failed or rejected");
-  }
-};
+      let txHash: string | null = null;
 
-const isNative = fromToken === NATIVE_TOKEN_ADDRESS;
+      await TokenSwap.swap(
+        signer,
+        ROUTER_ADDRESS,
+        bestPath,
+        parseFloat(amountIn),
+        inputDecimals,
+        outputDecimals,
+        1,
+        !isNative,
+        (hash) => {
+          txHash = hash;
+        }
+      );
 
-await TokenSwap.swap(
-  signer,
-  ROUTER_ADDRESS,
-  bestPath,
-  parseFloat(amountIn),
-  inputDecimals,
-  outputDecimals,
-  1, // slippageTolerance in percent
-  !isNative, 
-  onTxHash
-);
+      if (txHash) {
+        const receipt = await provider.waitForTransaction(txHash, 1);
+        if (receipt && receipt.status === 1) {
+          setAmountIn("");
+          setQuote(null);
+          setBestPath(null);
+          await fetchBalances();
+
+          
+          alert("✅ Swap completed successfully.\n\nTransaction Hash:\n" + txHash);
+        } else {
+          alert("⚠️ Swap transaction failed or was reverted.");
+        }
+      } else {
+        alert("⚠️ Swap was rejected or failed to broadcast.");
+      }
     } catch (err) {
       alert("❌ Swap failed: " + (err as Error).message);
     } finally {
