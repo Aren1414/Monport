@@ -44,11 +44,9 @@ export default function SwapTab() {
 
   useEffect(() => {
   const fetchLogos = async () => {
-    const fetcher = new PoolFetcher(KURU_API_URL);
     const logos: Record<string, string> = {};
 
     try {
-      
       const baseTokens = Object.entries(TOKENS).map(([symbol, address]) => ({
         symbol,
         address,
@@ -72,9 +70,13 @@ export default function SwapTab() {
         }
       );
 
-      const data = await response.json();
+      type Token = { address: string; image?: string };
+      type Market = { baseasset: Token; quoteasset: Token };
+      type MarketResponse = { data: Market[] };
 
-      data?.data?.forEach((market: any) => {
+      const data: MarketResponse = await response.json();
+
+      data.data.forEach((market) => {
         const base = market.baseasset;
         const quote = market.quoteasset;
 
