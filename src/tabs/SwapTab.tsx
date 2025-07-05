@@ -216,7 +216,7 @@ export default function SwapTab() {
       if (txHash) {
         const receipt = await provider.waitForTransaction(txHash, 1);
         if (receipt && receipt.status === 1) {
-          setAmountIn(""); 
+          setAmountIn("");
           setQuote(null);
           setBestPath(null);
           await fetchBalances();
@@ -295,12 +295,18 @@ return (
         boxSizing: "border-box"
       }}>
         <label style={{ fontWeight: "bold" }}>From</label>
+
+        
+        <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>
+          Balance: {parseFloat(balances[fromToken] || "0").toFixed(3)} {Object.entries(TOKENS).find(([_, addr]) => addr === fromToken)?.[0]}
+        </div>
+
         <div style={{
           display: "flex",
           flexWrap: "wrap",
           gap: 8,
           alignItems: "center",
-          marginTop: 8
+          marginTop: 4
         }}>
           <select
             value={fromToken}
@@ -314,7 +320,7 @@ return (
           >
             {Object.entries(TOKENS).map(([sym, addr]) => (
               <option key={sym} value={addr}>
-                {sym} ({parseFloat(balances[addr] || "0").toFixed(3)})
+                {sym}
               </option>
             ))}
           </select>
@@ -387,12 +393,18 @@ return (
         boxSizing: "border-box"
       }}>
         <label style={{ fontWeight: "bold" }}>To</label>
+
+        
+        <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>
+          Balance: {parseFloat(balances[toToken] || "0").toFixed(3)} {Object.entries(TOKENS).find(([_, addr]) => addr === toToken)?.[0]}
+        </div>
+
         <div style={{
           display: "flex",
           flexWrap: "wrap",
           gap: 8,
           alignItems: "center",
-          marginTop: 8
+          marginTop: 4
         }}>
           <select
             value={toToken}
@@ -406,7 +418,7 @@ return (
           >
             {Object.entries(TOKENS).map(([sym, addr]) => (
               <option key={sym} value={addr}>
-                {sym} ({parseFloat(balances[addr] || "0").toFixed(3)})
+                {sym}
               </option>
             ))}
           </select>
@@ -473,4 +485,4 @@ return (
       </button>
     </div>
   );
-}
+ }
