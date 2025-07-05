@@ -167,26 +167,26 @@ export default function SwapTab() {
   }, [getQuote]);
 
   const doSwap = useCallback(async () => {
-    if (!isConnected || !quote || !bestPath || bestPath.output <= 0) {
-      alert("⚠️ Please connect your wallet and enter a valid amount.");
-      return;
-    }
+  if (!isConnected || !quote || !bestPath || bestPath.output <= 0) {
+    alert("⚠️ Please connect your wallet and enter a valid amount.");
+    return;
+  }
 
-    setLoading(true);
-    try {
-      const provider = new ethers.providers.Web3Provider(
-        (window as EthereumWindow).ethereum!
-      );
-      await provider.send("eth_requestAccounts", []);
-      const signer = provider.getSigner();
+  setLoading(true);
+  try {
+    const provider = new ethers.providers.Web3Provider(
+      (window as EthereumWindow).ethereum!
+    );
+    await provider.send("eth_requestAccounts", []);
+    const signer = provider.getSigner();
 
-      const inputDecimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
-      const outputDecimals = TOKEN_METADATA[toToken]?.decimals ?? 18;
-      const isNative = fromToken === NATIVE_TOKEN_ADDRESS;
+    const inputDecimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
+    const outputDecimals = TOKEN_METADATA[toToken]?.decimals ?? 18;
+    const isNative = fromToken === NATIVE_TOKEN_ADDRESS;
 
-      let txHash: string | null = null;
-
-      await TokenSwap.swap(
+    // ✅ Promise wrapper to wait for txHash
+    const txHash = await new Promise<string | null>((resolve) => {
+      TokenSwap.swap(
         signer,
         ROUTER_ADDRESS,
         bestPath,
@@ -195,34 +195,32 @@ export default function SwapTab() {
         outputDecimals,
         1,
         !isNative,
-        (hash) => {
-          txHash = hash;
-        }
+        (hash) => resolve(hash)
       );
+    });
 
-      if (txHash) {
-        const receipt = await provider.waitForTransaction(txHash, 1);
-        if (receipt && receipt.status === 1) {
-          setAmountIn("");
-          setQuote(null);
-          setBestPath(null);
-          await fetchBalances();
+    if (txHash) {
+      const receipt = await provider.waitForTransaction(txHash, 1);
+      if (receipt && receipt.status === 1) {
+        setAmountIn("");
+        setQuote(null);
+        setBestPath(null);
+        await fetchBalances();
 
-          
-          alert("✅ Swap completed successfully.\n\nTransaction Hash:\n" + txHash);
-        } else {
-          alert("⚠️ Swap transaction failed or was reverted.");
-        }
+        alert("✅ Swap completed successfully.\n\nTransaction Hash:\n" + txHash);
       } else {
-        alert("⚠️ Swap was rejected or failed to broadcast.");
+        alert("⚠️ Swap transaction failed or was reverted.");
       }
-    } catch (err) {
-      alert("❌ Swap failed: " + (err as Error).message);
-    } finally {
-      setLoading(false);
+    } else {
+      alert("⚠️ Swap was rejected or failed to broadcast.");
     }
-  }, [isConnected, amountIn, quote, bestPath, fromToken, toToken, fetchBalances]);
-
+  } catch (err) {
+    alert("❌ Swap failed: " + (err as Error).message);
+  } finally {
+    setLoading(false);
+  }
+}, [isConnected, amountIn, quote, bestPath, fromToken, toToken, fetchBalances]);
+  
   const swapTokens = () => {
     const temp = fromToken;
     setFromToken(toToken);
