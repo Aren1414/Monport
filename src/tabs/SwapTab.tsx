@@ -132,7 +132,6 @@ export default function SwapTab() {
 
       const pathWithExtras = path as ExtendedRouteOutput;
 
-      // ✅ ست کردن nativeSend به صورت دستی برای MON
       if (fromToken === NATIVE_TOKEN_ADDRESS) {
         pathWithExtras.nativeSend = [true];
       }
@@ -188,7 +187,8 @@ export default function SwapTab() {
         parseFloat(amountIn),
         inputDecimals,
         outputDecimals,
-        false, // ✅ چون MON هست، نباید approve بزنه
+        1, // ✅ slippageTolerance in percent
+        false, // 
         onTxHash
       );
     } catch (err) {
