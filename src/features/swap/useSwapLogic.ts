@@ -39,31 +39,55 @@ export function useSwapLogic() {
 
   
   useEffect(() => {
-    const fetchLogos = async () => {
-      const logos: Record<string, string> = {};
-      try {
-        const tokenAddresses = Object.values(TOKENS).map((addr) =>
-          ethersUtils.getAddress(addr)
-        );
+  const fetchLogos = async () => {
+    const logos: Record<string, string> = {};
+    try {
+      const tokenList = Object.entries(TOKENS).map(([symbol, address]) => ({
+        symbol,
+        address: ethersUtils.getAddress(address)
+      }));
 
-        const response = await fetch(`${KURU_API_URL}/api/v1/tokens`);
-        const data: { data: { address: string; image: string }[] } = await response.json();
+      
+      const pairs = tokenList.flatMap((base, i) =>
+        tokenList.slice(i + 1).map((quote) => ({
+          baseToken: base.address,
+          quoteToken: quote.address
+        }))
+      );
 
-        data.data.forEach((token) => {
-          const normalized = ethersUtils.getAddress(token.address);
-          if (token.image && tokenAddresses.includes(normalized)) {
-            logos[normalized] = token.image;
-          }
-        });
+      const response = await fetch("https://api.testnet.kuru.io/api/v1/markets/filtered", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pairs })
+      });
 
-        setTokenLogos(logos);
-      } catch (err) {
-        console.error("❌ Failed to fetch token logos:", err);
+      const data = await response.json();
+
+      if (!data?.data || !Array.isArray(data.data)) {
+        console.error("❌ Unexpected response from Kuru API:", data);
+        return;
       }
-    };
 
-    fetchLogos();
-  }, []);
+      // استخراج لوگوها از baseasset و quoteasset
+      data.data.forEach(({ baseasset, quoteasset }) => {
+        if (baseasset?.address && baseasset?.imageurl) {
+          const addr = ethersUtils.getAddress(baseasset.address);
+          if (!logos[addr]) logos[addr] = baseasset.imageurl;
+        }
+        if (quoteasset?.address && quoteasset?.imageurl) {
+          const addr = ethersUtils.getAddress(quoteasset.address);
+          if (!logos[addr]) logos[addr] = quoteasset.imageurl;
+        }
+      });
+
+      setTokenLogos(logos);
+    } catch (err) {
+      console.error("❌ Failed to fetch token logos:", err);
+    }
+  };
+
+  fetchLogos();
+}, []);
 
   const fetchBalances = useCallback(async () => {
     if (!isConnected || !address) return;
