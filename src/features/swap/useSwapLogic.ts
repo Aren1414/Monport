@@ -255,18 +255,18 @@ export function useSwapLogic() {
     const isNative = ethers.utils.getAddress(fromToken) === NATIVE_TOKEN_ADDRESS;
 
     const receipt = await TokenSwap.swap(
-      signer,
-      ROUTER_ADDRESS,
-      bestPath,
-      parseFloat(amountIn),
-      inputDecimals,
-      outputDecimals,
-      !isNative,
-      (txHash) => {
-        console.log("🔁 Swap tx hash:", txHash);
-      },
-      {}
-    );
+  signer,
+  ROUTER_ADDRESS,
+  bestPath,
+  parseFloat(amountIn),
+  inputDecimals,
+  outputDecimals,
+  isNative ? 0 : 1, 
+  (txHash) => {
+    console.log("🔁 Swap tx hash:", txHash);
+  },
+  {}
+);
 
     console.log("📦 Swap receipt:", receipt);
 
