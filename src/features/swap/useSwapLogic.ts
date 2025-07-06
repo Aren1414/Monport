@@ -255,10 +255,8 @@ data.data.forEach(({ baseasset, quoteasset }) => {
     const outputDecimals = TOKEN_METADATA[toToken]?.decimals ?? 18;
     const isNative = fromToken === NATIVE_TOKEN_ADDRESS;
 
-    let didResolve = false;
-
-    const txHash = await Promise.race([
-      new Promise<string | null>((resolve) => {
+    const txHash = await new Promise<string>((resolve, reject) => {
+      try {
         TokenSwap.swap(
           signer,
           ROUTER_ADDRESS,
@@ -269,22 +267,17 @@ data.data.forEach(({ baseasset, quoteasset }) => {
           1,
           !isNative,
           (hash) => {
-            didResolve = true;
-            resolve(hash);
+            if (!hash) {
+              reject(new Error("No transaction hash received"));
+            } else {
+              resolve(hash);
+            }
           }
         );
-      }),
-      new Promise<null>((_, reject) =>
-        setTimeout(() => {
-          if (!didResolve) reject(new Error("Swap timeout"));
-        }, 30000) 
-      )
-    ]);
-
-    if (!txHash) {
-      alert("⚠️ Swap was rejected or failed to broadcast.");
-      return;
-    }
+      } catch (err) {
+        reject(err);
+      }
+    });
 
     const receipt = await provider.waitForTransaction(txHash, 1);
     if (receipt && receipt.status === 1) {
