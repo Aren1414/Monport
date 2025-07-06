@@ -23,6 +23,16 @@ import type { EthereumWindow } from "./types";
 
 const KURU_API_URL = "https://api.testnet.kuru.io";
 
+type MarketAsset = {
+  address: string;
+  image?: string;
+};
+
+type Market = {
+  baseasset: MarketAsset;
+  quoteasset: MarketAsset;
+};
+
 export function useSwapLogic() {
   const { isConnected, address } = useAccount();
   const { connect, connectors } = useConnect();
@@ -55,19 +65,20 @@ export function useSwapLogic() {
         );
 
         const response = await fetch(`${KURU_API_URL}/api/v1/markets/filtered`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ pairs }),
-        });
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ pairs }),
+});
 
-        const data = await response.json();
-        data.data.forEach(({ baseasset, quoteasset }: any) => {
-          if (baseasset?.address && baseasset?.image)
-            logos[ethersUtils.getAddress(baseasset.address)] = baseasset.image;
-          if (quoteasset?.address && quoteasset?.image)
-            logos[ethersUtils.getAddress(quoteasset.address)] = quoteasset.image;
-        });
+const data: { data: Market[] } = await response.json();
 
+data.data.forEach(({ baseasset, quoteasset }) => {
+  if (baseasset?.address && baseasset?.image)
+    logos[ethersUtils.getAddress(baseasset.address)] = baseasset.image;
+  if (quoteasset?.address && quoteasset?.image)
+    logos[ethersUtils.getAddress(quoteasset.address)] = quoteasset.image;
+});
+        
         setTokenLogos(logos);
       } catch (err) {
         console.error("❌ Failed to fetch token logos:", err);
