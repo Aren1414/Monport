@@ -255,7 +255,8 @@ data.data.forEach(({ baseasset, quoteasset }) => {
     const outputDecimals = TOKEN_METADATA[toToken]?.decimals ?? 18;
     const isNative = fromToken === NATIVE_TOKEN_ADDRESS;
 
-    
+    let didResolve = false;
+
     const txHash = await Promise.race([
       new Promise<string | null>((resolve) => {
         TokenSwap.swap(
@@ -267,11 +268,16 @@ data.data.forEach(({ baseasset, quoteasset }) => {
           outputDecimals,
           1,
           !isNative,
-          (hash) => resolve(hash)
+          (hash) => {
+            didResolve = true;
+            resolve(hash);
+          }
         );
       }),
       new Promise<null>((_, reject) =>
-        setTimeout(() => reject(new Error("Swap timeout")), 20000)
+        setTimeout(() => {
+          if (!didResolve) reject(new Error("Swap timeout"));
+        }, 30000) 
       )
     ]);
 
@@ -293,7 +299,7 @@ data.data.forEach(({ baseasset, quoteasset }) => {
   } catch (err) {
     alert("❌ Swap failed: " + (err as Error).message);
   } finally {
-    setLoading(false); 
+    setLoading(false);
   }
 }, [isConnected, amountIn, quote, bestPath, fromToken, toToken, fetchBalances]);
 
