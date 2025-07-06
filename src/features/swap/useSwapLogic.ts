@@ -269,19 +269,24 @@ export function useSwapLogic() {
             if (!hash || typeof hash !== "string") {
               reject(new Error("No transaction hash received"));
             } else {
+              console.log("🔁 Swap tx hash:", hash);
               resolve(hash);
             }
           }
         );
       } catch (err) {
-        reject(err); 
+        reject(err);
       }
     });
 
     const receipt = await provider.waitForTransaction(txHash, 1);
+    console.log("📦 Swap receipt:", receipt);
 
-    if (!receipt) {
-      alert("⚠️ Transaction dropped or not mined.");
+    if (!receipt || typeof receipt.status === "undefined") {
+      alert("⚠️ Transaction may have completed, but no receipt was returned.");
+      setQuote(null);
+      setBestPath(null);
+      await fetchBalances();
       return;
     }
 
@@ -297,11 +302,11 @@ export function useSwapLogic() {
     console.error("❌ Swap error:", err);
     alert("❌ Swap failed: " + (err as Error).message);
   } finally {
-    setAmountIn("");         
-    setQuote(null);          
-    setBestPath(null);       
-    setApprovalNeeded(false); 
-    setLoading(false);       
+    setAmountIn("");
+    setQuote(null);
+    setBestPath(null);
+    setApprovalNeeded(false);
+    setLoading(false);
   }
 }, [isConnected, amountIn, quote, bestPath, fromToken, toToken, fetchBalances]);
 
