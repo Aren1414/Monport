@@ -23,16 +23,6 @@ import type { EthereumWindow } from "./types";
 
 const KURU_API_URL = "https://api.testnet.kuru.io";
 
-type MarketAsset = {
-  address: string;
-  image?: string;
-};
-
-type Market = {
-  baseasset: MarketAsset;
-  quoteasset: MarketAsset;
-};
-
 export function useSwapLogic() {
   const { isConnected, address } = useAccount();
   const { connect, connectors } = useConnect();
@@ -47,35 +37,23 @@ export function useSwapLogic() {
   const [approvalNeeded, setApprovalNeeded] = useState(false);
   const [tokenLogos, setTokenLogos] = useState<Record<string, string>>({});
 
+  
   useEffect(() => {
     const fetchLogos = async () => {
       const logos: Record<string, string> = {};
       try {
-        const baseTokens = Object.entries(TOKENS).map(([symbol, address]) => ({
-          symbol,
-          address,
-        }));
-
-        const pairs = baseTokens.flatMap((base1, i) =>
-          baseTokens.slice(i + 1).map((base2) => ({
-            baseToken: base1.address,
-            quoteToken: base2.address,
-          }))
+        const tokenAddresses = Object.values(TOKENS).map((addr) =>
+          ethersUtils.getAddress(addr)
         );
 
-        const response = await fetch(`${KURU_API_URL}/api/v1/markets/filtered`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ pairs }),
-        });
+        const response = await fetch(`${KURU_API_URL}/api/v1/tokens`);
+        const data: { data: { address: string; image: string }[] } = await response.json();
 
-        const data: { data: Market[] } = await response.json();
-
-        data.data.forEach(({ baseasset, quoteasset }) => {
-          if (baseasset?.address && baseasset?.image)
-            logos[ethersUtils.getAddress(baseasset.address)] = baseasset.image;
-          if (quoteasset?.address && quoteasset?.image)
-            logos[ethersUtils.getAddress(quoteasset.address)] = quoteasset.image;
+        data.data.forEach((token) => {
+          const normalized = ethersUtils.getAddress(token.address);
+          if (token.image && tokenAddresses.includes(normalized)) {
+            logos[normalized] = token.image;
+          }
         });
 
         setTokenLogos(logos);
@@ -222,7 +200,7 @@ export function useSwapLogic() {
 
   useEffect(() => {
     getQuote();
-  }, [getQuote]); 
+  }, [getQuote]);
 
   const swapTokens = () => {
     const temp = fromToken;
@@ -234,64 +212,64 @@ export function useSwapLogic() {
   };
 
   const doSwap = useCallback(async () => {
-  if (!isConnected || !quote || !bestPath || bestPath.output <= 0) {
-    alert("⚠️ Please connect your wallet and enter a valid amount.");
-    return;
-  }
-
-  setLoading(true);
-  try {
-    const provider = new ethers.providers.Web3Provider(
-      (window as EthereumWindow).ethereum!
-    );
-    await provider.send("eth_requestAccounts", []);
-    const signer = provider.getSigner();
-
-    const inputDecimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
-    const outputDecimals = TOKEN_METADATA[toToken]?.decimals ?? 18;
-    const isNative = fromToken === NATIVE_TOKEN_ADDRESS;
-
-    const receipt = await TokenSwap.swap(
-      signer,
-      ROUTER_ADDRESS,
-      bestPath,
-      parseFloat(amountIn),
-      inputDecimals,
-      outputDecimals,
-      1,
-      !isNative,
-      (txHash) => {
-        console.log("🔁 Swap tx hash:", txHash);
-      }
-    );
-
-    console.log("📦 Swap receipt:", receipt);
-
-    if (!receipt || typeof receipt.status === "undefined") {
-      alert("⚠️ Swap may have completed, but no receipt was returned.");
-      await fetchBalances();
+    if (!isConnected || !quote || !bestPath || bestPath.output <= 0) {
+      alert("⚠️ Please connect your wallet and enter a valid amount.");
       return;
     }
 
-    if (receipt.status === 1) {
+    setLoading(true);
+    try {
+      const provider = new ethers.providers.Web3Provider(
+        (window as EthereumWindow).ethereum!
+      );
+      await provider.send("eth_requestAccounts", []);
+      const signer = provider.getSigner();
+
+      const inputDecimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
+      const outputDecimals = TOKEN_METADATA[toToken]?.decimals ?? 18;
+      const isNative = fromToken === NATIVE_TOKEN_ADDRESS;
+
+      const receipt = await TokenSwap.swap(
+        signer,
+        ROUTER_ADDRESS,
+        bestPath,
+        parseFloat(amountIn),
+        inputDecimals,
+        outputDecimals,
+        1,
+        !isNative,
+        (txHash) => {
+          console.log("🔁 Swap tx hash:", txHash);
+        }
+      );
+
+      console.log("📦 Swap receipt:", receipt);
+
+      if (!receipt || typeof receipt.status === "undefined") {
+        alert("⚠️ Swap may have completed, but no receipt was returned.");
+        await fetchBalances();
+        return;
+      }
+
+      if (receipt.status === 1) {
+        setQuote(null);
+        setBestPath(null);
+        await fetchBalances();
+        alert("✅ Swap completed successfully.");
+      } else {
+        alert("⚠️ Swap transaction failed or was reverted.");
+      }
+    } catch (err) {
+      console.error("❌ Swap error:", err);
+      alert("❌ Swap failed: " + (err as Error).message);
+    } finally {
+      setAmountIn("");
       setQuote(null);
       setBestPath(null);
-      await fetchBalances();
-      alert("✅ Swap completed successfully.");
-    } else {
-      alert("⚠️ Swap transaction failed or was reverted.");
+      setApprovalNeeded(false);
+      setLoading(false);
     }
-  } catch (err) {
-    console.error("❌ Swap error:", err);
-    alert("❌ Swap failed: " + (err as Error).message);
-  } finally {
-    setAmountIn("");
-    setQuote(null);
-    setBestPath(null);
-    setApprovalNeeded(false);
-    setLoading(false);
-  }
-}, [isConnected, amountIn, quote, bestPath, fromToken, toToken, fetchBalances]);
+  }, [isConnected, amountIn, quote, bestPath, fromToken, toToken, fetchBalances]);
 
   return {
     fromToken,
