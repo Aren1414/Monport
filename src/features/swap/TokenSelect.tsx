@@ -52,7 +52,6 @@ export default function TokenSelect({ value, onChange, tokenLogos, balances }: P
 
       <Select.Portal>
         <Select.Content
-          forceMount
           style={{
             background: "#fff",
             border: "1px solid #ccc",
