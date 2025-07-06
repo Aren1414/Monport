@@ -1,3 +1,5 @@
+import { utils as ethersUtils } from "ethers";
+
 // App Metadata
 export const APP_URL = process.env.NEXT_PUBLIC_URL ?? "";
 export const APP_NAME = process.env.NEXT_PUBLIC_FRAME_NAME ?? "MonPort";
@@ -37,15 +39,15 @@ export const NATIVE_TOKEN_ADDRESS = "0x0000000000000000000000000000000000000000"
 // ✅ Kuru Router Address (from official docs)
 export const ROUTER_ADDRESS = "0xc816865f172d640d93712C68a7E1F83F3fA63235";
 
-// ✅ Token Addresses on Monad Testnet
+// ✅ Token Addresses on Monad Testnet (checksum format)
 export const TOKENS = {
-  MON: NATIVE_TOKEN_ADDRESS, // 👈 MON is native token
-  WMON: "0x760AfE86e5de5fa0Ee542fc7B7B713e1c5425701",
-  USDC: "0xf817257fed379853cDe0fa4F97AB987181B1E5Ea",
-  USDT: "0x88b8E2161DEDC77EF4ab7585569D2415a1C1055D",
-  DAK: "0x0F0BDEbF0F83cD1EE3974779Bcb7315f9808c714",
-  CHOG: "0xE0590015A873bF326bd645c3E1266d4db41C4E6B",
-  YAKI: "0xfe140e1dCe99Be9F4F15d657CD9b7BF622270C50",
+  MON: NATIVE_TOKEN_ADDRESS,
+  WMON: ethersUtils.getAddress("0x760AfE86e5de5fa0Ee542fc7B7B713e1c5425701"),
+  USDC: ethersUtils.getAddress("0xf817257fed379853cDe0fa4F97AB987181B1E5Ea"),
+  USDT: ethersUtils.getAddress("0x88b8E2161DEDC77EF4ab7585569D2415a1C1055D"),
+  DAK: ethersUtils.getAddress("0x0F0BDEbF0F83cD1EE3974779Bcb7315f9808c714"),
+  CHOG: ethersUtils.getAddress("0xE0590015A873bF326bd645c3E1266d4db41C4E6B"),
+  YAKI: ethersUtils.getAddress("0xfe140e1dCe99Be9F4F15d657CD9b7BF622270C50"),
 };
 
 // ✅ Token Metadata (only for ERC20 tokens — exclude MON)
