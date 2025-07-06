@@ -221,11 +221,8 @@ export function useSwapLogic() {
   }, [fromToken, toToken, amountIn, isConnected, address]);
 
   useEffect(() => {
-    const parsed = parseFloat(amountIn);
-    if (!isNaN(parsed) && parsed > 0) {
-      getQuote();
-    }
-  }, [amountIn, fromToken, toToken, isConnected, address]);
+    getQuote();
+  }, [getQuote]); 
 
   const swapTokens = () => {
     const temp = fromToken;
@@ -237,58 +234,57 @@ export function useSwapLogic() {
   };
 
   const doSwap = useCallback(async () => {
-  if (!isConnected || !quote || !bestPath || bestPath.output <= 0) {
-    alert("⚠️ Please connect your wallet and enter a valid amount.");
-    return;
-  }
+    if (!isConnected || !quote || !bestPath || bestPath.output <= 0) {
+      alert("⚠️ Please connect your wallet and enter a valid amount.");
+      return;
+    }
 
-  setLoading(true);
-  try {
-    const provider = new ethers.providers.Web3Provider(
-      (window as EthereumWindow).ethereum!
-    );
-    await provider.send("eth_requestAccounts", []);
-    const signer = provider.getSigner();
+    setLoading(true);
+    try {
+      const provider = new ethers.providers.Web3Provider(
+        (window as EthereumWindow).ethereum!
+      );
+      await provider.send("eth_requestAccounts", []);
+      const signer = provider.getSigner();
 
-    const inputDecimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
-    const outputDecimals = TOKEN_METADATA[toToken]?.decimals ?? 18;
-    const isNative = ethers.utils.getAddress(fromToken) === NATIVE_TOKEN_ADDRESS;
+      const inputDecimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
+      const outputDecimals = TOKEN_METADATA[toToken]?.decimals ?? 18;
 
-    const receipt = await TokenSwap.swap(
-  signer,
-  ROUTER_ADDRESS,
-  bestPath,
-  parseFloat(amountIn),
-  inputDecimals,
-  outputDecimals,
-  1, // approveTokens
-  {}, // ✅ overrides
-  (txHash) => {
-    console.log("🔁 Swap tx hash:", txHash);
-  }
-);
+      const receipt = await TokenSwap.swap(
+        signer,
+        ROUTER_ADDRESS,
+        bestPath,
+        parseFloat(amountIn),
+        inputDecimals,
+        outputDecimals,
+        1,
+        {},
+        (txHash) => {
+          console.log("🔁 Swap tx hash:", txHash);
+        }
+      );
 
-    console.log("📦 Swap receipt:", receipt);
+      console.log("📦 Swap receipt:", receipt);
 
-    if (receipt && receipt.status === 1) {
+      if (receipt && receipt.status === 1) {
+        setQuote(null);
+        setBestPath(null);
+        await fetchBalances();
+        alert("✅ Swap completed successfully.");
+      } else {
+        alert("⚠️ Swap transaction failed or was reverted.");
+      }
+    } catch (err) {
+      console.error("❌ Swap error:", err);
+      alert("❌ Swap failed: " + (err as Error).message);
+    } finally {
+      setAmountIn("");
       setQuote(null);
       setBestPath(null);
-      await fetchBalances();
-      alert("✅ Swap completed successfully.");
-    } else {
-      alert("⚠️ Swap transaction failed or was reverted.");
+      setApprovalNeeded(false);
+      setLoading(false);
     }
-  } catch (err) {
-    console.error("❌ Swap error:", err);
-    alert("❌ Swap failed: " + (err as Error).message);
-  } finally {
-    setAmountIn("");
-    setQuote(null);
-    setBestPath(null);
-    setApprovalNeeded(false);
-    setLoading(false);
-  }
-}, [isConnected, amountIn, quote, bestPath, fromToken, toToken, fetchBalances]);
+  }, [isConnected, amountIn, quote, bestPath, fromToken, toToken, fetchBalances]);
 
   return {
     fromToken,
