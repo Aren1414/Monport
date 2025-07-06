@@ -117,16 +117,18 @@ export function useSwapLogic() {
   }, [fetchBalances]);
 
   useEffect(() => {
-    if (!isConnected || !address) return;
+  if (!isConnected || !address) return;
 
-    const provider = new ethers.providers.Web3Provider(
-      (window as EthereumWindow).ethereum!
-    );
+  const provider = new ethers.providers.Web3Provider(
+    (window as EthereumWindow).ethereum!
+  );
 
-    provider.on("block", fetchBalances);
-    return () => provider.off("block", fetchBalances);
-  }, [isConnected, address, fetchBalances]);
-
+  provider.on("block", fetchBalances);
+  return () => {
+    provider.off("block", fetchBalances);
+  };
+}, [isConnected, address, fetchBalances]);
+  
   useEffect(() => {
     const ethereum = (window as EthereumWindow).ethereum;
     if (!ethereum) return;
