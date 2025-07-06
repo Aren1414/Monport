@@ -254,43 +254,23 @@ export function useSwapLogic() {
     const outputDecimals = TOKEN_METADATA[toToken]?.decimals ?? 18;
     const isNative = fromToken === NATIVE_TOKEN_ADDRESS;
 
-    const txHash = await new Promise<string>((resolve, reject) => {
-      try {
-        TokenSwap.swap(
-          signer,
-          ROUTER_ADDRESS,
-          bestPath,
-          parseFloat(amountIn),
-          inputDecimals,
-          outputDecimals,
-          1,
-          !isNative,
-          (hash) => {
-            if (!hash || typeof hash !== "string") {
-              reject(new Error("No transaction hash received"));
-            } else {
-              console.log("🔁 Swap tx hash:", hash);
-              resolve(hash);
-            }
-          }
-        );
-      } catch (err) {
-        reject(err);
+    const receipt = await TokenSwap.swap(
+      signer,
+      ROUTER_ADDRESS,
+      bestPath,
+      parseFloat(amountIn),
+      inputDecimals,
+      outputDecimals,
+      1,
+      !isNative,
+      (txHash) => {
+        console.log("🔁 Swap tx hash:", txHash);
       }
-    });
+    );
 
-    const receipt = await provider.waitForTransaction(txHash, 1);
     console.log("📦 Swap receipt:", receipt);
 
-    if (!receipt || typeof receipt.status === "undefined") {
-      alert("⚠️ Transaction may have completed, but no receipt was returned.");
-      setQuote(null);
-      setBestPath(null);
-      await fetchBalances();
-      return;
-    }
-
-    if (receipt.status === 1) {
+    if (receipt && receipt.status === 1) {
       setQuote(null);
       setBestPath(null);
       await fetchBalances();
