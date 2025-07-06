@@ -395,7 +395,8 @@ const doSwap = useCallback(async () => {
     </Select.Viewport>
   </Select.Content>
 </Select.Root>
-);
+ );
+};  
   
   return (
     <div
