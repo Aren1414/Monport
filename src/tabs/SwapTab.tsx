@@ -594,12 +594,14 @@ const doSwap = useCallback(async () => {
           cursor: !quote || loading ? "not-allowed" : "pointer"
         }}
       >
-        {loading
-          ? "Processing…"
-          : approvalNeeded
-          ? "Approve"
-          : "Swap Now"}
+        {loading ? (
+          "Processing…"
+        ) : approvalNeeded ? (
+          "Approve"
+        ) : (
+          "Swap Now"
+        )}
       </button>
     </div>
   );
- }
+}
