@@ -98,6 +98,8 @@ export function useSwapLogic() {
   const fetchBalances = useCallback(async () => {
     if (!isConnected || !address) return;
 
+    console.log("🔁 fetchBalances triggered");
+
     const provider = new ethers.providers.Web3Provider(
       (window as EthereumWindow).ethereum!
     );
@@ -164,6 +166,8 @@ export function useSwapLogic() {
 
   // 🧠 Get quote
   const getQuote = useCallback(async () => {
+    console.log("🔁 getQuote triggered", { fromToken, toToken, amountIn });
+
     const parsedAmount = parseFloat(amountIn);
     if (!fromToken || !toToken || isNaN(parsedAmount) || parsedAmount <= 0 || !isConnected || !address) {
       setQuote(null);
