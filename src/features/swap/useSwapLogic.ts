@@ -261,10 +261,11 @@ export function useSwapLogic() {
       parseFloat(amountIn),
       inputDecimals,
       outputDecimals,
-      isNative ? false : true, 
+      !isNative,
       (txHash) => {
         console.log("🔁 Swap tx hash:", txHash);
-      }
+      },
+      {}
     );
 
     console.log("📦 Swap receipt:", receipt);
