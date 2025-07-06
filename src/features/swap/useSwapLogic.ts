@@ -252,7 +252,7 @@ export function useSwapLogic() {
 
     const inputDecimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
     const outputDecimals = TOKEN_METADATA[toToken]?.decimals ?? 18;
-    const isNative = fromToken === NATIVE_TOKEN_ADDRESS;
+    const isNative = ethers.utils.getAddress(fromToken) === NATIVE_TOKEN_ADDRESS;
 
     const receipt = await TokenSwap.swap(
       signer,
@@ -261,8 +261,7 @@ export function useSwapLogic() {
       parseFloat(amountIn),
       inputDecimals,
       outputDecimals,
-      1,
-      !isNative,
+      isNative ? false : true, 
       (txHash) => {
         console.log("🔁 Swap tx hash:", txHash);
       }
