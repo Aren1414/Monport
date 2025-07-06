@@ -219,16 +219,26 @@ export function useSwapLogic() {
       setBestPath(path);
 
       if (fromToken !== NATIVE_TOKEN_ADDRESS) {
-        const web3Provider = new ethers.providers.Web3Provider(
-          (window as EthereumWindow).ethereum!
-        );
-        const signer = web3Provider.getSigner();
-        const contract = new ethers.Contract(fromToken, ERC20_ABI, signer);
-        const allowance = await contract.allowance(address, ROUTER_ADDRESS);
-        setApprovalNeeded(allowance.lt(amountInUnits));
-      } else {
-        setApprovalNeeded(false);
-      }
+  const web3Provider = new ethers.providers.Web3Provider(
+    (window as EthereumWindow).ethereum!
+  );
+  const signer = web3Provider.getSigner();
+  const contract = new ethers.Contract(fromToken, ERC20_ABI, signer);
+  const allowance = await contract.allowance(address, ROUTER_ADDRESS);
+
+  const needsApproval = allowance.lt(amountInUnits);
+
+  
+  setApprovalNeeded((prev) => {
+    if (prev !== needsApproval) {
+      console.log("🔁 approvalNeeded changed:", needsApproval);
+      return needsApproval;
+    }
+    return prev;
+  });
+} else {
+  setApprovalNeeded(false);
+    }
     } catch (err) {
       console.error("❌ Quote error:", err);
       setQuote(null);
