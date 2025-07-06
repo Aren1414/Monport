@@ -267,7 +267,8 @@ data.data.forEach(({ baseasset, quoteasset }) => {
           1,
           !isNative,
           (hash) => {
-            if (!hash) {
+            console.log("🔁 Swap callback received hash:", hash);
+            if (!hash || typeof hash !== "string") {
               reject(new Error("No transaction hash received"));
             } else {
               resolve(hash);
@@ -279,8 +280,15 @@ data.data.forEach(({ baseasset, quoteasset }) => {
       }
     });
 
+    console.log("🔁 Waiting for transaction receipt:", txHash);
     const receipt = await provider.waitForTransaction(txHash, 1);
-    if (receipt && receipt.status === 1) {
+
+    if (!receipt) {
+      alert("⚠️ Transaction dropped or not mined.");
+      return;
+    }
+
+    if (receipt.status === 1) {
       setAmountIn("");
       setQuote(null);
       setBestPath(null);
@@ -290,6 +298,7 @@ data.data.forEach(({ baseasset, quoteasset }) => {
       alert("⚠️ Swap transaction failed or was reverted.");
     }
   } catch (err) {
+    console.error("❌ Swap error:", err);
     alert("❌ Swap failed: " + (err as Error).message);
   } finally {
     setLoading(false);
