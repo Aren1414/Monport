@@ -37,6 +37,7 @@ export function useSwapLogic() {
   const [approvalNeeded, setApprovalNeeded] = useState(false);
   const [tokenLogos, setTokenLogos] = useState<Record<string, string>>({});
 
+  // 🧠 Fetch token logos
   useEffect(() => {
     const fetchLogos = async () => {
       const logos: Record<string, string> = {};
@@ -53,20 +54,14 @@ export function useSwapLogic() {
           }))
         );
 
-        const response = await fetch(
-          `${KURU_API_URL.replace(/\/$/, "")}/api/v1/markets/filtered`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ pairs }),
-          }
-        );
+        const response = await fetch(`${KURU_API_URL}/api/v1/markets/filtered`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ pairs }),
+        });
 
-        const data = (await response.json()) as {
-          data: { baseasset: { address: string; image?: string }; quoteasset: { address: string; image?: string } }[];
-        };
-
-        data.data.forEach(({ baseasset, quoteasset }) => {
+        const data = await response.json();
+        data.data.forEach(({ baseasset, quoteasset }: any) => {
           if (baseasset?.address && baseasset?.image)
             logos[ethersUtils.getAddress(baseasset.address)] = baseasset.image;
           if (quoteasset?.address && quoteasset?.image)
@@ -82,6 +77,7 @@ export function useSwapLogic() {
     fetchLogos();
   }, []);
 
+  // 🧠 Fetch balances
   const fetchBalances = useCallback(async () => {
     if (!isConnected || !address) return;
 
@@ -117,18 +113,18 @@ export function useSwapLogic() {
   }, [fetchBalances]);
 
   useEffect(() => {
-  if (!isConnected || !address) return;
+    if (!isConnected || !address) return;
 
-  const provider = new ethers.providers.Web3Provider(
-    (window as EthereumWindow).ethereum!
-  );
+    const provider = new ethers.providers.Web3Provider(
+      (window as EthereumWindow).ethereum!
+    );
 
-  provider.on("block", fetchBalances);
-  return () => {
-    provider.off("block", fetchBalances);
-  };
-}, [isConnected, address, fetchBalances]);
-  
+    provider.on("block", fetchBalances);
+    return () => {
+      provider.off("block", fetchBalances);
+    };
+  }, [isConnected, address, fetchBalances]);
+
   useEffect(() => {
     const ethereum = (window as EthereumWindow).ethereum;
     if (!ethereum) return;
@@ -142,6 +138,7 @@ export function useSwapLogic() {
     };
   }, [fetchBalances]);
 
+  // 🧠 Get quote
   const getQuote = useCallback(async () => {
     const parsedAmount = parseFloat(amountIn);
     if (!fromToken || !toToken || isNaN(parsedAmount) || parsedAmount <= 0 || !isConnected || !address) {
@@ -189,16 +186,20 @@ export function useSwapLogic() {
       setQuote(path.output.toString());
       setBestPath(path);
 
-      if (fromToken !== NATIVE_TOKEN_ADDRESS) {
-        const web3Provider = new ethers.providers.Web3Provider(
-          (window as EthereumWindow).ethereum!
-        );
-        const signer = web3Provider.getSigner();
-        const contract = new ethers.Contract(fromToken, ERC20_ABI, signer);
-        const allowance = await contract.allowance(address, ROUTER_ADDRESS);
+      
+      if (fromToken !== NATIVE_TOKEN_ADDRESS && isConnected && window.ethereum) {
+        try {
+          const web3Provider = new ethers.providers.Web3Provider(window.ethereum);
+          const signer = web3Provider.getSigner();
+          const contract = new ethers.Contract(fromToken, ERC20_ABI, signer);
+          const allowance = await contract.allowance(address, ROUTER_ADDRESS);
 
-        const needsApproval = allowance.lt(amountInUnits);
-        setApprovalNeeded((prev) => (prev !== needsApproval ? needsApproval : prev));
+          const needsApproval = allowance.lt(amountInUnits);
+          setApprovalNeeded((prev) => (prev !== needsApproval ? needsApproval : prev));
+        } catch (err) {
+          console.error("❌ Failed to check allowance:", err);
+          setApprovalNeeded(false);
+        }
       } else {
         setApprovalNeeded(false);
       }
