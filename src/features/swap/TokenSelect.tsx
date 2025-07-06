@@ -61,17 +61,17 @@ export default function TokenSelect({ value, onChange, tokenLogos, balances }: P
 
       <Select.Portal>
         <Select.Content
+          position="popper"
+          sideOffset={4}
           style={{
-            position: "absolute",
-            top: "100%",
-            left: 0,
-            width: "100%",
             background: "#fff",
             border: "1px solid #ccc",
             borderRadius: 8,
             padding: 4,
             zIndex: 9999,
-            boxShadow: "0 4px 12px rgba(0,0,0,0.1)"
+            boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+            maxHeight: "var(--radix-select-content-available-height)",
+            overflowY: "auto"
           }}
         >
           <Select.Viewport>
