@@ -37,11 +37,9 @@ export function useSwapLogic() {
   const [approvalNeeded, setApprovalNeeded] = useState(false);
   const [tokenLogos, setTokenLogos] = useState<Record<string, string>>({});
 
-  // 🧠 Fetch token logos
   useEffect(() => {
     const fetchLogos = async () => {
       const logos: Record<string, string> = {};
-
       try {
         const baseTokens = Object.entries(TOKENS).map(([symbol, address]) => ({
           symbol,
@@ -59,30 +57,20 @@ export function useSwapLogic() {
           `${KURU_API_URL.replace(/\/$/, "")}/api/v1/markets/filtered`,
           {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ pairs }),
           }
         );
 
-        type Token = { address: string; image?: string };
-        type Market = { baseasset: Token; quoteasset: Token };
-        type MarketResponse = { data: Market[] };
+        const data = (await response.json()) as {
+          data: { baseasset: { address: string; image?: string }; quoteasset: { address: string; image?: string } }[];
+        };
 
-        const data: MarketResponse = await response.json();
-
-        data.data.forEach((market) => {
-          const base = market.baseasset;
-          const quote = market.quoteasset;
-
-          if (base?.address && base?.image) {
-            logos[ethersUtils.getAddress(base.address)] = base.image;
-          }
-
-          if (quote?.address && quote?.image) {
-            logos[ethersUtils.getAddress(quote.address)] = quote.image;
-          }
+        data.data.forEach(({ baseasset, quoteasset }) => {
+          if (baseasset?.address && baseasset?.image)
+            logos[ethersUtils.getAddress(baseasset.address)] = baseasset.image;
+          if (quoteasset?.address && quoteasset?.image)
+            logos[ethersUtils.getAddress(quoteasset.address)] = quoteasset.image;
         });
 
         setTokenLogos(logos);
@@ -94,11 +82,8 @@ export function useSwapLogic() {
     fetchLogos();
   }, []);
 
-  // 🧠 Fetch balances
   const fetchBalances = useCallback(async () => {
     if (!isConnected || !address) return;
-
-    console.log("🔁 fetchBalances triggered");
 
     const provider = new ethers.providers.Web3Provider(
       (window as EthereumWindow).ethereum!
@@ -138,36 +123,24 @@ export function useSwapLogic() {
       (window as EthereumWindow).ethereum!
     );
 
-    const updateOnBlock = async () => {
-      await fetchBalances();
-    };
-
-    provider.on("block", updateOnBlock);
-    return () => {
-      provider.off("block", updateOnBlock);
-    };
+    provider.on("block", fetchBalances);
+    return () => provider.off("block", fetchBalances);
   }, [isConnected, address, fetchBalances]);
 
   useEffect(() => {
     const ethereum = (window as EthereumWindow).ethereum;
     if (!ethereum) return;
 
-    const handleAccountsChanged = () => fetchBalances();
-    const handleChainChanged = () => fetchBalances();
-
-    ethereum.on("accountsChanged", handleAccountsChanged);
-    ethereum.on("chainChanged", handleChainChanged);
+    ethereum.on("accountsChanged", fetchBalances);
+    ethereum.on("chainChanged", fetchBalances);
 
     return () => {
-      ethereum.removeListener("accountsChanged", handleAccountsChanged);
-      ethereum.removeListener("chainChanged", handleChainChanged);
+      ethereum.removeListener("accountsChanged", fetchBalances);
+      ethereum.removeListener("chainChanged", fetchBalances);
     };
   }, [fetchBalances]);
 
-  // 🧠 Get quote
   const getQuote = useCallback(async () => {
-    console.log("🔁 getQuote triggered", { fromToken, toToken, amountIn });
-
     const parsedAmount = parseFloat(amountIn);
     if (!fromToken || !toToken || isNaN(parsedAmount) || parsedAmount <= 0 || !isConnected || !address) {
       setQuote(null);
@@ -184,11 +157,7 @@ export function useSwapLogic() {
     const amountInUnits = ethers.utils.parseUnits(parsedAmount.toString(), decimals);
 
     try {
-      const baseTokens = Object.entries(TOKENS).map(([symbol, address]) => ({
-        symbol,
-        address
-      }));
-
+      const baseTokens = Object.entries(TOKENS).map(([symbol, address]) => ({ symbol, address }));
       const pools = await poolFetcher.getAllPools(fromToken, toToken, baseTokens);
 
       if (!pools || pools.length === 0) {
@@ -219,26 +188,18 @@ export function useSwapLogic() {
       setBestPath(path);
 
       if (fromToken !== NATIVE_TOKEN_ADDRESS) {
-  const web3Provider = new ethers.providers.Web3Provider(
-    (window as EthereumWindow).ethereum!
-  );
-  const signer = web3Provider.getSigner();
-  const contract = new ethers.Contract(fromToken, ERC20_ABI, signer);
-  const allowance = await contract.allowance(address, ROUTER_ADDRESS);
+        const web3Provider = new ethers.providers.Web3Provider(
+          (window as EthereumWindow).ethereum!
+        );
+        const signer = web3Provider.getSigner();
+        const contract = new ethers.Contract(fromToken, ERC20_ABI, signer);
+        const allowance = await contract.allowance(address, ROUTER_ADDRESS);
 
-  const needsApproval = allowance.lt(amountInUnits);
-
-  
-  setApprovalNeeded((prev) => {
-    if (prev !== needsApproval) {
-      console.log("🔁 approvalNeeded changed:", needsApproval);
-      return needsApproval;
-    }
-    return prev;
-  });
-} else {
-  setApprovalNeeded(false);
-    }
+        const needsApproval = allowance.lt(amountInUnits);
+        setApprovalNeeded((prev) => (prev !== needsApproval ? needsApproval : prev));
+      } else {
+        setApprovalNeeded(false);
+      }
     } catch (err) {
       console.error("❌ Quote error:", err);
       setQuote(null);
@@ -253,7 +214,6 @@ export function useSwapLogic() {
     getQuote();
   }, [getQuote]);
 
-  // 🔁 Swap tokens
   const swapTokens = () => {
     const temp = fromToken;
     setFromToken(toToken);
@@ -263,7 +223,6 @@ export function useSwapLogic() {
     setBestPath(null);
   };
 
-  // 🚀 Do swap
   const doSwap = useCallback(async () => {
     if (!isConnected || !quote || !bestPath || bestPath.output <= 0) {
       alert("⚠️ Please connect your wallet and enter a valid amount.");
