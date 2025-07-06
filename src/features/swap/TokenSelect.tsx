@@ -15,6 +15,7 @@ type Props = {
 export default function TokenSelect({ value, onChange, tokenLogos, balances }: Props) {
   const symbol = Object.entries(TOKENS).find(([, addr]) => addr === value)?.[0];
   const logo = tokenLogos[ethersUtils.getAddress(value)];
+  const fallbackLogo = "/default-token.png"; 
 
   return (
     <Select.Root value={value} onValueChange={onChange}>
@@ -35,15 +36,13 @@ export default function TokenSelect({ value, onChange, tokenLogos, balances }: P
       >
         <Select.Value asChild>
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            {logo && (
-              <Image
-                src={logo}
-                alt={symbol || "token"}
-                width={16}
-                height={16}
-                style={{ borderRadius: "50%" }}
-              />
-            )}
+            <Image
+              src={logo || fallbackLogo}
+              alt={symbol || "token"}
+              width={16}
+              height={16}
+              style={{ borderRadius: "50%" }}
+            />
             <span>{symbol}</span>
           </div>
         </Select.Value>
@@ -79,15 +78,13 @@ export default function TokenSelect({ value, onChange, tokenLogos, balances }: P
                     cursor: "pointer"
                   }}
                 >
-                  {logo && (
-                    <Image
-                      src={logo}
-                      alt={symbol}
-                      width={20}
-                      height={20}
-                      style={{ marginRight: 8, borderRadius: "50%" }}
-                    />
-                  )}
+                  <Image
+                    src={logo || fallbackLogo}
+                    alt={symbol}
+                    width={20}
+                    height={20}
+                    style={{ marginRight: 8, borderRadius: "50%" }}
+                  />
                   <span style={{ fontSize: 14 }}>{symbol}</span>
                   <span style={{ marginLeft: "auto", fontSize: 12, color: "#888" }}>
                     {balance}
