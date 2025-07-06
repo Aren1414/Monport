@@ -29,6 +29,8 @@ export default function SwapTab() {
     connectors
   } = useSwapLogic();
 
+  const isAmountValid = !!amountIn && parseFloat(amountIn) > 0;
+
   return (
     <div
       className="tab swap-tab"
@@ -115,28 +117,28 @@ export default function SwapTab() {
         </div>
 
         <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8 }}>
-          {[10, 20, 50, 100].map((percent) => (
-            <button
-              key={percent}
-              onClick={() => {
-                const balance = parseFloat(balances[fromToken] || "0");
-                const value = (balance * percent) / 100;
-                setAmountIn(value.toFixed(6));
-              }}
-              style={{
-                flex: 1,
-                margin: "0 2px",
-                padding: "4px 0",
-                fontSize: 12,
-                borderRadius: 6,
-                border: "1px solid #ccc",
-                background: "#fff",
-                cursor: "pointer"
-              }}
-            >
-              {percent === 100 ? "Max" : `${percent}%`}
-            </button>
-          ))}
+          {[10, 20, 50, 100].map((percent) => {
+            const balance = parseFloat(balances[fromToken] || "0");
+            const value = (balance * percent) / 100;
+            return (
+              <button
+                key={percent}
+                onClick={() => setAmountIn(value.toFixed(6))}
+                style={{
+                  flex: 1,
+                  margin: "0 2px",
+                  padding: "4px 0",
+                  fontSize: 12,
+                  borderRadius: 6,
+                  border: "1px solid #ccc",
+                  background: "#fff",
+                  cursor: "pointer"
+                }}
+              >
+                {percent === 100 ? "Max" : `${percent}%`}
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -223,7 +225,12 @@ export default function SwapTab() {
             await doSwap();
           }
         }}
-        disabled={!quote || loading || !isConnected}
+        disabled={
+          loading ||
+          !isConnected ||
+          !isAmountValid ||
+          !quote
+        }
         style={{
           width: "100%",
           padding: 12,
@@ -232,16 +239,16 @@ export default function SwapTab() {
           fontWeight: "bold",
           border: "none",
           borderRadius: 8,
-          cursor: !quote || loading ? "not-allowed" : "pointer"
+          cursor: loading || !isAmountValid || !quote ? "not-allowed" : "pointer"
         }}
       >
-        {loading ? (
-          "Processing…"
-        ) : approvalNeeded ? (
-          "Approve"
-        ) : (
-          "Swap Now"
-        )}
+        {loading
+          ? "Processing…"
+          : approvalNeeded
+          ? "Approve"
+          : !isAmountValid
+          ? "Enter Amount"
+          : "Swap Now"}
       </button>
     </div>
   );
