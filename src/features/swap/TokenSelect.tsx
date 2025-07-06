@@ -2,7 +2,7 @@
 
 import * as Select from "@radix-ui/react-select";
 import Image from "next/image";
-import { ethers, utils as ethersUtils } from "ethers";
+import { utils as ethersUtils } from "ethers";
 import { TOKENS } from "@/lib/constants";
 
 type Props = {
