@@ -238,24 +238,26 @@ data.data.forEach(({ baseasset, quoteasset }) => {
   };
 
   const doSwap = useCallback(async () => {
-    if (!isConnected || !quote || !bestPath || bestPath.output <= 0) {
-      alert("⚠️ Please connect your wallet and enter a valid amount.");
-      return;
-    }
+  if (!isConnected || !quote || !bestPath || bestPath.output <= 0) {
+    alert("⚠️ Please connect your wallet and enter a valid amount.");
+    return;
+  }
 
-    setLoading(true);
-    try {
-      const provider = new ethers.providers.Web3Provider(
-        (window as EthereumWindow).ethereum!
-      );
-      await provider.send("eth_requestAccounts", []);
-      const signer = provider.getSigner();
+  setLoading(true);
+  try {
+    const provider = new ethers.providers.Web3Provider(
+      (window as EthereumWindow).ethereum!
+    );
+    await provider.send("eth_requestAccounts", []);
+    const signer = provider.getSigner();
 
-      const inputDecimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
-      const outputDecimals = TOKEN_METADATA[toToken]?.decimals ?? 18;
-      const isNative = fromToken === NATIVE_TOKEN_ADDRESS;
+    const inputDecimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
+    const outputDecimals = TOKEN_METADATA[toToken]?.decimals ?? 18;
+    const isNative = fromToken === NATIVE_TOKEN_ADDRESS;
 
-      const txHash = await new Promise<string | null>((resolve) => {
+    
+    const txHash = await Promise.race([
+      new Promise<string | null>((resolve) => {
         TokenSwap.swap(
           signer,
           ROUTER_ADDRESS,
@@ -267,28 +269,33 @@ data.data.forEach(({ baseasset, quoteasset }) => {
           !isNative,
           (hash) => resolve(hash)
         );
-      });
+      }),
+      new Promise<null>((_, reject) =>
+        setTimeout(() => reject(new Error("Swap timeout")), 20000)
+      )
+    ]);
 
-      if (txHash) {
-        const receipt = await provider.waitForTransaction(txHash, 1);
-        if (receipt && receipt.status === 1) {
-          setAmountIn("");
-          setQuote(null);
-          setBestPath(null);
-          await fetchBalances();
-          alert("✅ Swap completed successfully.");
-        } else {
-          alert("⚠️ Swap transaction failed or was reverted.");
-        }
-      } else {
-        alert("⚠️ Swap was rejected or failed to broadcast.");
-      }
-    } catch (err) {
-      alert("❌ Swap failed: " + (err as Error).message);
-    } finally {
-      setLoading(false);
+    if (!txHash) {
+      alert("⚠️ Swap was rejected or failed to broadcast.");
+      return;
     }
-  }, [isConnected, amountIn, quote, bestPath, fromToken, toToken, fetchBalances]);
+
+    const receipt = await provider.waitForTransaction(txHash, 1);
+    if (receipt && receipt.status === 1) {
+      setAmountIn("");
+      setQuote(null);
+      setBestPath(null);
+      await fetchBalances();
+      alert("✅ Swap completed successfully.");
+    } else {
+      alert("⚠️ Swap transaction failed or was reverted.");
+    }
+  } catch (err) {
+    alert("❌ Swap failed: " + (err as Error).message);
+  } finally {
+    setLoading(false); 
+  }
+}, [isConnected, amountIn, quote, bestPath, fromToken, toToken, fetchBalances]);
 
   return {
     fromToken,
