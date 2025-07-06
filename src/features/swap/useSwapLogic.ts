@@ -234,57 +234,64 @@ export function useSwapLogic() {
   };
 
   const doSwap = useCallback(async () => {
-    if (!isConnected || !quote || !bestPath || bestPath.output <= 0) {
-      alert("⚠️ Please connect your wallet and enter a valid amount.");
+  if (!isConnected || !quote || !bestPath || bestPath.output <= 0) {
+    alert("⚠️ Please connect your wallet and enter a valid amount.");
+    return;
+  }
+
+  setLoading(true);
+  try {
+    const provider = new ethers.providers.Web3Provider(
+      (window as EthereumWindow).ethereum!
+    );
+    await provider.send("eth_requestAccounts", []);
+    const signer = provider.getSigner();
+
+    const inputDecimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
+    const outputDecimals = TOKEN_METADATA[toToken]?.decimals ?? 18;
+    const isNative = fromToken === NATIVE_TOKEN_ADDRESS;
+
+    const receipt = await TokenSwap.swap(
+      signer,
+      ROUTER_ADDRESS,
+      bestPath,
+      parseFloat(amountIn),
+      inputDecimals,
+      outputDecimals,
+      1,
+      !isNative,
+      (txHash) => {
+        console.log("🔁 Swap tx hash:", txHash);
+      }
+    );
+
+    console.log("📦 Swap receipt:", receipt);
+
+    if (!receipt || typeof receipt.status === "undefined") {
+      alert("⚠️ Swap may have completed, but no receipt was returned.");
+      await fetchBalances();
       return;
     }
 
-    setLoading(true);
-    try {
-      const provider = new ethers.providers.Web3Provider(
-        (window as EthereumWindow).ethereum!
-      );
-      await provider.send("eth_requestAccounts", []);
-      const signer = provider.getSigner();
-
-      const inputDecimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
-      const outputDecimals = TOKEN_METADATA[toToken]?.decimals ?? 18;
-
-      const receipt = await TokenSwap.swap(
-        signer,
-        ROUTER_ADDRESS,
-        bestPath,
-        parseFloat(amountIn),
-        inputDecimals,
-        outputDecimals,
-        1,
-        {},
-        (txHash) => {
-          console.log("🔁 Swap tx hash:", txHash);
-        }
-      );
-
-      console.log("📦 Swap receipt:", receipt);
-
-      if (receipt && receipt.status === 1) {
-        setQuote(null);
-        setBestPath(null);
-        await fetchBalances();
-        alert("✅ Swap completed successfully.");
-      } else {
-        alert("⚠️ Swap transaction failed or was reverted.");
-      }
-    } catch (err) {
-      console.error("❌ Swap error:", err);
-      alert("❌ Swap failed: " + (err as Error).message);
-    } finally {
-      setAmountIn("");
+    if (receipt.status === 1) {
       setQuote(null);
       setBestPath(null);
-      setApprovalNeeded(false);
-      setLoading(false);
+      await fetchBalances();
+      alert("✅ Swap completed successfully.");
+    } else {
+      alert("⚠️ Swap transaction failed or was reverted.");
     }
-  }, [isConnected, amountIn, quote, bestPath, fromToken, toToken, fetchBalances]);
+  } catch (err) {
+    console.error("❌ Swap error:", err);
+    alert("❌ Swap failed: " + (err as Error).message);
+  } finally {
+    setAmountIn("");
+    setQuote(null);
+    setBestPath(null);
+    setApprovalNeeded(false);
+    setLoading(false);
+  }
+}, [isConnected, amountIn, quote, bestPath, fromToken, toToken, fetchBalances]);
 
   return {
     fromToken,
