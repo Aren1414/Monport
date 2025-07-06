@@ -13,11 +13,16 @@ type Props = {
 };
 
 export default function TokenSelect({ value, onChange, tokenLogos, balances }: Props) {
-  const symbol = Object.entries(TOKENS).find(([, addr]) => addr === value)?.[0];
-  const logo = tokenLogos[ethersUtils.getAddress(value)];
+  const normalizedValue = ethersUtils.getAddress(value);
+  const symbol = Object.entries(TOKENS).find(([, addr]) => ethersUtils.getAddress(addr) === normalizedValue)?.[0];
+  const logo = tokenLogos[normalizedValue];
+
+  
+  console.log("🔍 Selected token:", normalizedValue);
+  console.log("🔍 Logo found:", logo);
 
   return (
-    <Select.Root value={value} onValueChange={onChange}>
+    <Select.Root value={normalizedValue} onValueChange={onChange}>
       <Select.Trigger
         style={{
           flex: 1,
@@ -49,9 +54,16 @@ export default function TokenSelect({ value, onChange, tokenLogos, balances }: P
                   width: 16,
                   height: 16,
                   borderRadius: "50%",
-                  background: "#eee"
+                  background: "#eee",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 10,
+                  color: "#999"
                 }}
-              />
+              >
+                ?
+              </div>
             )}
             <span>{symbol}</span>
           </div>
@@ -64,7 +76,7 @@ export default function TokenSelect({ value, onChange, tokenLogos, balances }: P
           position="popper"
           sideOffset={4}
           style={{
-            width: "240px", 
+            width: "240px",
             background: "#fff",
             border: "1px solid #ccc",
             borderRadius: 8,
@@ -80,6 +92,9 @@ export default function TokenSelect({ value, onChange, tokenLogos, balances }: P
               const normalized = ethersUtils.getAddress(addr);
               const logo = tokenLogos[normalized];
               const balance = parseFloat(balances[normalized] || "0").toFixed(3);
+
+              
+              console.log(`🔍 ${symbol} (${normalized}) → logo:`, logo);
 
               return (
                 <Select.Item
@@ -108,9 +123,16 @@ export default function TokenSelect({ value, onChange, tokenLogos, balances }: P
                         height: 20,
                         marginRight: 8,
                         borderRadius: "50%",
-                        background: "#eee"
+                        background: "#eee",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: 12,
+                        color: "#999"
                       }}
-                    />
+                    >
+                      ?
+                    </div>
                   )}
                   <span style={{ fontSize: 14 }}>{symbol}</span>
                   <span style={{ marginLeft: "auto", fontSize: 12, color: "#888" }}>
