@@ -289,7 +289,6 @@ data.data.forEach(({ baseasset, quoteasset }) => {
     }
 
     if (receipt.status === 1) {
-      setAmountIn("");
       setQuote(null);
       setBestPath(null);
       await fetchBalances();
@@ -301,7 +300,8 @@ data.data.forEach(({ baseasset, quoteasset }) => {
     console.error("❌ Swap error:", err);
     alert("❌ Swap failed: " + (err as Error).message);
   } finally {
-    setLoading(false);
+    setAmountIn(""); 
+    setLoading(false); 
   }
 }, [isConnected, amountIn, quote, bestPath, fromToken, toToken, fetchBalances]);
 
