@@ -64,6 +64,7 @@ export default function TokenSelect({ value, onChange, tokenLogos, balances }: P
           position="popper"
           sideOffset={4}
           style={{
+            width: "300px", 
             background: "#fff",
             border: "1px solid #ccc",
             borderRadius: 8,
