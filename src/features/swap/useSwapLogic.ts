@@ -21,19 +21,6 @@ import {
 import ERC20_ABI from "@/abis/ERC20.json";
 import type { EthereumWindow } from "./types";
 
-const KURU_API_URL = "https://api.testnet.kuru.io";
-
-
-type MarketAsset = {
-  address: string;
-  imageurl?: string;
-};
-
-type Market = {
-  baseasset: MarketAsset;
-  quoteasset: MarketAsset;
-};
-
 export function useSwapLogic() {
   const { isConnected, address } = useAccount();
   const { connect, connectors } = useConnect();
@@ -46,52 +33,6 @@ export function useSwapLogic() {
   const [bestPath, setBestPath] = useState<RouteOutput | null>(null);
   const [balances, setBalances] = useState<Record<string, string>>({});
   const [approvalNeeded, setApprovalNeeded] = useState(false);
-  const [tokenLogos, setTokenLogos] = useState<Record<string, string>>({});
-
-  
-  useEffect(() => {
-    const fetchLogos = async () => {
-      const logos: Record<string, string> = {};
-      try {
-        const tokenList = Object.entries(TOKENS).map(([symbol, address]) => ({
-          symbol,
-          address: ethersUtils.getAddress(address)
-        }));
-
-        const pairs = tokenList.flatMap((base, i) =>
-          tokenList.slice(i + 1).map((quote) => ({
-            baseToken: base.address,
-            quoteToken: quote.address
-          }))
-        );
-
-        const response = await fetch(`${KURU_API_URL}/api/v1/markets/filtered`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ pairs })
-        });
-
-        const data: { data: Market[] } = await response.json();
-
-        data.data.forEach(({ baseasset, quoteasset }) => {
-          if (baseasset?.address && baseasset?.imageurl) {
-            const addr = ethersUtils.getAddress(baseasset.address);
-            if (!logos[addr]) logos[addr] = baseasset.imageurl;
-          }
-          if (quoteasset?.address && quoteasset?.imageurl) {
-            const addr = ethersUtils.getAddress(quoteasset.address);
-            if (!logos[addr]) logos[addr] = quoteasset.imageurl;
-          }
-        });
-
-        setTokenLogos(logos);
-      } catch (err) {
-        console.error("❌ Failed to fetch token logos:", err);
-      }
-    };
-
-    fetchLogos();
-  }, []);
 
   const fetchBalances = useCallback(async () => {
     if (!isConnected || !address) return;
@@ -164,7 +105,7 @@ export function useSwapLogic() {
 
     setLoading(true);
     const provider = new ethers.providers.JsonRpcProvider(RPC_URL);
-    const poolFetcher = new PoolFetcher(KURU_API_URL);
+    const poolFetcher = new PoolFetcher("https://api.testnet.kuru.io");
 
     const decimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
     const amountInUnits = ethers.utils.parseUnits(parsedAmount.toString(), decimals);
@@ -307,7 +248,6 @@ export function useSwapLogic() {
     loading,
     approvalNeeded,
     balances,
-    tokenLogos,
     isConnected,
     address,
     setFromToken,
