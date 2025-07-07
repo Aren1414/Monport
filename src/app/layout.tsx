@@ -1,3 +1,5 @@
+// src/app/layout.tsx
+
 import type { Metadata } from "next";
 import Script from "next/script";
 import { getSession } from "~/auth";
@@ -60,6 +62,21 @@ export default async function RootLayout({
         <Script
           src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"
           strategy="beforeInteractive"
+        />
+
+        {/* ✅ Load Farcaster Mini App SDK */}
+        <Script
+          src="https://miniapps.farcaster.xyz/sdk/v0"
+          strategy="afterInteractive"
+          onLoad={() => {
+            if (typeof window !== "undefined") {
+              const hasShown = localStorage.getItem("miniapp_prompt_shown");
+              if (!hasShown && window.AddMiniApp?.show) {
+                window.AddMiniApp.show();
+                localStorage.setItem("miniapp_prompt_shown", "true");
+              }
+            }
+          }}
         />
       </head>
       <body>
