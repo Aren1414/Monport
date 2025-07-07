@@ -12,10 +12,15 @@ type Props = {
   balances: Record<string, string>;
 };
 
-type TokenLogo = {
-  address: string;
-  symbol: string;
-  imageurl: string;
+type MarketItem = {
+  basetoken?: {
+    address: string;
+    imageurl: string;
+  };
+  quotetoken?: {
+    address: string;
+    imageurl: string;
+  };
 };
 
 export default function TokenSelect({ value, onChange, balances }: Props) {
@@ -25,7 +30,7 @@ export default function TokenSelect({ value, onChange, balances }: Props) {
     async function fetchLogos() {
       const pairs = Object.values(TOKENS).map((base) => ({
         baseToken: base,
-        quoteToken: TOKENS.USDT, 
+        quoteToken: TOKENS.USDT,
       }));
 
       const res = await fetch("https://api.testnet.kuru.io/api/v1/markets/filtered", {
@@ -37,7 +42,7 @@ export default function TokenSelect({ value, onChange, balances }: Props) {
       const json = await res.json();
 
       const logos: Record<string, string> = {};
-      json.data.forEach((item: any) => {
+      (json.data as MarketItem[]).forEach((item) => {
         if (item.basetoken?.address && item.basetoken?.imageurl) {
           logos[ethersUtils.getAddress(item.basetoken.address)] = item.basetoken.imageurl;
         }
