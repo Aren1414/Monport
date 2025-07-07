@@ -45,7 +45,7 @@ export function useSwapLogic() {
 
     const newBalances: Record<string, string> = {};
 
-    for (const [symbol, tokenAddress] of Object.entries(TOKENS)) {
+    for (const [_, tokenAddress] of Object.entries(TOKENS)) {
       try {
         const normalized = ethersUtils.getAddress(tokenAddress);
         if (normalized === NATIVE_TOKEN_ADDRESS) {
@@ -62,7 +62,6 @@ export function useSwapLogic() {
       }
     }
 
-    // فقط اگه موجودی تغییر کرده بود، state رو آپدیت کن
     const prev = previousBalancesRef.current;
     const changed = Object.keys(newBalances).some(
       (key) => newBalances[key] !== prev[key]
@@ -75,7 +74,7 @@ export function useSwapLogic() {
   }, [isConnected, address]);
 
   useEffect(() => {
-    fetchBalances(); 
+    fetchBalances();
   }, [fetchBalances]);
 
   useEffect(() => {
@@ -91,76 +90,76 @@ export function useSwapLogic() {
     };
   }, [fetchBalances]);
 
-const getQuote = useCallback(async () => {
-  const parsedAmount = parseFloat(amountIn);
-  if (!fromToken || !toToken || isNaN(parsedAmount) || parsedAmount <= 0 || !isConnected || !address) {
-    setQuote(null);
-    setBestPath(null);
-    setApprovalNeeded(false);
-    return;
-  }
-
-  setLoading(true);
-  const provider = new ethers.providers.JsonRpcProvider(RPC_URL);
-  const poolFetcher = new PoolFetcher("https://api.testnet.kuru.io");
-
-  const decimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
-  const amountInUnits = ethers.utils.parseUnits(parsedAmount.toString(), decimals);
-
-  try {
-    const baseTokens = Object.values(TOKENS).map((address) => ({ address }));
-    const pools = await poolFetcher.getAllPools(fromToken, toToken, baseTokens);
-
-    if (!pools || pools.length === 0) {
+  const getQuote = useCallback(async () => {
+    const parsedAmount = parseFloat(amountIn);
+    if (!fromToken || !toToken || isNaN(parsedAmount) || parsedAmount <= 0 || !isConnected || !address) {
       setQuote(null);
       setBestPath(null);
       setApprovalNeeded(false);
       return;
     }
 
-    const path = await PathFinder.findBestPath(
-      provider,
-      fromToken,
-      toToken,
-      parseFloat(ethers.utils.formatUnits(amountInUnits, decimals)),
-      "amountIn",
-      poolFetcher,
-      pools
-    );
+    setLoading(true);
+    const provider = new ethers.providers.JsonRpcProvider(RPC_URL);
+    const poolFetcher = new PoolFetcher("https://api.testnet.kuru.io");
 
-    if (!path || path.output <= 0) {
-      setQuote(null);
-      setBestPath(null);
-      setApprovalNeeded(false);
-      return;
-    }
+    const decimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
+    const amountInUnits = ethers.utils.parseUnits(parsedAmount.toString(), decimals);
 
-    setQuote(path.output.toString());
-    setBestPath(path);
+    try {
+      const baseTokens = Object.values(TOKENS).map((address) => ({ address }));
+      const pools = await poolFetcher.getAllPools(fromToken, toToken, baseTokens);
 
-    if (fromToken !== NATIVE_TOKEN_ADDRESS && isConnected && window.ethereum) {
-      try {
-        const web3Provider = new ethers.providers.Web3Provider(window.ethereum);
-        const signer = web3Provider.getSigner();
-        const contract = new ethers.Contract(fromToken, ERC20_ABI, signer);
-        const allowance = await contract.allowance(address, ROUTER_ADDRESS);
+      if (!pools || pools.length === 0) {
+        setQuote(null);
+        setBestPath(null);
+        setApprovalNeeded(false);
+        return;
+      }
 
-        const needsApproval = allowance.lt(amountInUnits);
-        setApprovalNeeded((prev) => (prev !== needsApproval ? needsApproval : prev));
-      } catch {
+      const path = await PathFinder.findBestPath(
+        provider,
+        fromToken,
+        toToken,
+        parseFloat(ethers.utils.formatUnits(amountInUnits, decimals)),
+        "amountIn",
+        poolFetcher,
+        pools
+      );
+
+      if (!path || path.output <= 0) {
+        setQuote(null);
+        setBestPath(null);
+        setApprovalNeeded(false);
+        return;
+      }
+
+      setQuote(path.output.toString());
+      setBestPath(path);
+
+      if (fromToken !== NATIVE_TOKEN_ADDRESS && isConnected && window.ethereum) {
+        try {
+          const web3Provider = new ethers.providers.Web3Provider(window.ethereum);
+          const signer = web3Provider.getSigner();
+          const contract = new ethers.Contract(fromToken, ERC20_ABI, signer);
+          const allowance = await contract.allowance(address, ROUTER_ADDRESS);
+
+          const needsApproval = allowance.lt(amountInUnits);
+          setApprovalNeeded((prev) => (prev !== needsApproval ? needsApproval : prev));
+        } catch {
+          setApprovalNeeded(false);
+        }
+      } else {
         setApprovalNeeded(false);
       }
-    } else {
+    } catch {
+      setQuote(null);
+      setBestPath(null);
       setApprovalNeeded(false);
+    } finally {
+      setLoading(false);
     }
-  } catch {
-    setQuote(null);
-    setBestPath(null);
-    setApprovalNeeded(false);
-  } finally {
-    setLoading(false);
-  }
-}, [fromToken, toToken, amountIn, isConnected, address]);
+  }, [fromToken, toToken, amountIn, isConnected, address]);
 
   useEffect(() => {
     getQuote();
