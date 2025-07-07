@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react'
 import { useAccount, useChainId, useSwitchChain, useWalletClient } from 'wagmi'
 import { writeContract } from 'viem/actions'
 import { parseEther } from 'viem'
-import { sdk } from '@farcaster/frame-sdk'
+import { sdk } from '@farcaster/miniapp-sdk'
 import welcomeAbi from '~/abis/WelcomeNFT.json'
 
 const WELCOME_CONTRACT_ADDRESS = '0x40649af9dEE8bDB94Dc21BA2175AE8f5181f14AE'
@@ -12,7 +12,6 @@ const NFT_PRICE = 0.3
 const VIDEO_URL =
   'https://zxmqva22v53mlvaeypxc7nyw7ucxf5dat53l2ngf2umq6kiftn3a.arweave.net/zdkKg1qvdsXUBMPuL7cW_QVy9GCfdr00xdUZDykFm3Y'
 const MINI_APP_URL = 'https://monport-three.vercel.app/?tab=welcome'
-
 const MONAD_TESTNET_CHAIN_ID = 10143
 
 export default function WelcomeTab() {
@@ -27,14 +26,14 @@ export default function WelcomeTab() {
   const totalPriceMon = (NFT_PRICE * selectedAmount).toFixed(2)
 
   useEffect(() => {
+    sdk.actions.ready() 
+  }, [])
+
+  useEffect(() => {
     if (isConnected && chainId !== MONAD_TESTNET_CHAIN_ID) {
       switchChain({ chainId: MONAD_TESTNET_CHAIN_ID })
     }
   }, [isConnected, chainId, switchChain])
-
-  useEffect(() => {
-    sdk.actions.ready()
-  }, [])
 
   const mintNFT = async () => {
     if (!walletClient || !address || chainId !== MONAD_TESTNET_CHAIN_ID) {
@@ -84,22 +83,12 @@ export default function WelcomeTab() {
       <h2>Welcome to MonPort</h2>
       <p>🎉 Mint your commemorative NFT celebrating Monad & Farcaster</p>
 
-      <video
-        width="100%"
-        controls
-        autoPlay
-        loop
-        muted
-        style={{ borderRadius: 12 }}
-      >
+      <video width="100%" controls autoPlay loop muted style={{ borderRadius: 12 }}>
         <source src={VIDEO_URL} type="video/mp4" />
         Your browser does not support video playback.
       </video>
 
-      <div
-        className="mint-options"
-        style={{ margin: '16px 0', display: 'flex', gap: 8 }}
-      >
+      <div style={{ margin: '16px 0', display: 'flex', gap: 8 }}>
         {[1, 5, 10].map((amt) => (
           <button
             key={amt}
@@ -117,15 +106,7 @@ export default function WelcomeTab() {
         ))}
       </div>
 
-      <div
-        style={{
-          marginBottom: 16,
-          fontSize: 16,
-          fontWeight: 'bold',
-          textAlign: 'center',
-          color: '#333',
-        }}
-      >
+      <div style={{ marginBottom: 16, fontSize: 16, fontWeight: 'bold', textAlign: 'center' }}>
         Total Price: {totalPriceMon} MON
       </div>
 
