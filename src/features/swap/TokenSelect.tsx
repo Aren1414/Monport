@@ -2,24 +2,59 @@
 
 import * as Select from "@radix-ui/react-select";
 import Image from "next/image";
+import { useEffect, useState } from "react";
 import { utils as ethersUtils } from "ethers";
 import { TOKENS } from "@/lib/constants";
 
 type Props = {
   value: string;
   onChange: (val: string) => void;
-  tokenLogos: Record<string, string>;
   balances: Record<string, string>;
 };
 
-export default function TokenSelect({ value, onChange, tokenLogos, balances }: Props) {
+type TokenLogo = {
+  address: string;
+  symbol: string;
+  imageurl: string;
+};
+
+export default function TokenSelect({ value, onChange, balances }: Props) {
+  const [tokenLogos, setTokenLogos] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    async function fetchLogos() {
+      const pairs = Object.values(TOKENS).map((base) => ({
+        baseToken: base,
+        quoteToken: TOKENS.USDT, 
+      }));
+
+      const res = await fetch("https://api.testnet.kuru.io/api/v1/markets/filtered", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pairs }),
+      });
+
+      const json = await res.json();
+
+      const logos: Record<string, string> = {};
+      json.data.forEach((item: any) => {
+        if (item.basetoken?.address && item.basetoken?.imageurl) {
+          logos[ethersUtils.getAddress(item.basetoken.address)] = item.basetoken.imageurl;
+        }
+        if (item.quotetoken?.address && item.quotetoken?.imageurl) {
+          logos[ethersUtils.getAddress(item.quotetoken.address)] = item.quotetoken.imageurl;
+        }
+      });
+
+      setTokenLogos(logos);
+    }
+
+    fetchLogos();
+  }, []);
+
   const normalizedValue = ethersUtils.getAddress(value);
   const symbol = Object.entries(TOKENS).find(([, addr]) => ethersUtils.getAddress(addr) === normalizedValue)?.[0];
   const logo = tokenLogos[normalizedValue];
-
-  
-  console.log("🔍 Selected token:", normalizedValue);
-  console.log("🔍 Logo found:", logo);
 
   return (
     <Select.Root value={normalizedValue} onValueChange={onChange}>
@@ -47,6 +82,7 @@ export default function TokenSelect({ value, onChange, tokenLogos, balances }: P
                 width={16}
                 height={16}
                 style={{ borderRadius: "50%" }}
+                onError={(e) => (e.currentTarget.src = "/logos/default.png")}
               />
             ) : (
               <div
@@ -93,9 +129,6 @@ export default function TokenSelect({ value, onChange, tokenLogos, balances }: P
               const logo = tokenLogos[normalized];
               const balance = parseFloat(balances[normalized] || "0").toFixed(3);
 
-              
-              console.log(`🔍 ${symbol} (${normalized}) → logo:`, logo);
-
               return (
                 <Select.Item
                   key={normalized}
@@ -115,6 +148,7 @@ export default function TokenSelect({ value, onChange, tokenLogos, balances }: P
                       width={20}
                       height={20}
                       style={{ marginRight: 8, borderRadius: "50%" }}
+                      onError={(e) => (e.currentTarget.src = "/logos/default.png")}
                     />
                   ) : (
                     <div
