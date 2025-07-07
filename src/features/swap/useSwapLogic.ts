@@ -45,22 +45,22 @@ export function useSwapLogic() {
 
     const newBalances: Record<string, string> = {};
 
-    for (const [_, tokenAddress] of Object.entries(TOKENS)) {
-      try {
-        const normalized = ethersUtils.getAddress(tokenAddress);
-        if (normalized === NATIVE_TOKEN_ADDRESS) {
-          const balance = await provider.getBalance(address);
-          newBalances[normalized] = ethers.utils.formatEther(balance);
-        } else {
-          const contract = new ethers.Contract(normalized, ERC20_ABI, provider);
-          const decimals = TOKEN_METADATA[normalized]?.decimals ?? 18;
-          const balance = await contract.balanceOf(address);
-          newBalances[normalized] = ethers.utils.formatUnits(balance, decimals);
-        }
-      } catch {
-        newBalances[tokenAddress] = "0";
-      }
+for (const tokenAddress of Object.values(TOKENS)) {
+  try {
+    const normalized = ethersUtils.getAddress(tokenAddress);
+    if (normalized === NATIVE_TOKEN_ADDRESS) {
+      const balance = await provider.getBalance(address);
+      newBalances[normalized] = ethers.utils.formatEther(balance);
+    } else {
+      const contract = new ethers.Contract(normalized, ERC20_ABI, provider);
+      const decimals = TOKEN_METADATA[normalized]?.decimals ?? 18;
+      const balance = await contract.balanceOf(address);
+      newBalances[normalized] = ethers.utils.formatUnits(balance, decimals);
     }
+  } catch {
+    newBalances[tokenAddress] = "0";
+  }
+}
 
     const prev = previousBalancesRef.current;
     const changed = Object.keys(newBalances).some(
