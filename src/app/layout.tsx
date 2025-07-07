@@ -12,6 +12,7 @@ import {
   APP_URL,
   APP_BUTTON_TEXT,
 } from "~/lib/constants";
+import { AddMiniAppPrompt } from "~/components/AddMiniAppPrompt";
 
 export const metadata: Metadata = {
   title: APP_NAME,
@@ -24,6 +25,9 @@ export const metadata: Metadata = {
     type: "website",
   },
 };
+
+
+export const dynamic = "force-dynamic";
 
 export default async function RootLayout({
   children,
@@ -64,24 +68,18 @@ export default async function RootLayout({
           strategy="beforeInteractive"
         />
 
-        {/* ✅ Load Farcaster Mini App SDK */}
+        {/* ✅ Load Farcaster Mini App SDK (بدون onLoad) */}
         <Script
           src="https://miniapps.farcaster.xyz/sdk/v0"
           strategy="afterInteractive"
-          onLoad={() => {
-            if (typeof window !== "undefined") {
-              const hasShown = localStorage.getItem("miniapp_prompt_shown");
-              if (!hasShown && window.AddMiniApp?.show) {
-                window.AddMiniApp.show();
-                localStorage.setItem("miniapp_prompt_shown", "true");
-              }
-            }
-          }}
         />
       </head>
       <body>
         <noscript>You need to enable JavaScript to run this app.</noscript>
-        <Providers session={session}>{children}</Providers>
+        <Providers session={session}>
+          <AddMiniAppPrompt />
+          {children}
+        </Providers>
       </body>
     </html>
   );
