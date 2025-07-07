@@ -9,13 +9,15 @@ type Props = {
   value: string;
   onChange: (val: string) => void;
   balances: Record<string, string>;
-  tokenLogos: Record<string, string>;
 };
 
-export default function TokenSelect({ value, onChange, balances, tokenLogos }: Props) {
+function getTokenLogo(symbol: string): string {
+  return `/logos/${symbol.toLowerCase()}.png`;
+}
+
+export default function TokenSelect({ value, onChange, balances }: Props) {
   const normalizedValue = ethersUtils.getAddress(value);
   const symbol = Object.entries(TOKENS).find(([, addr]) => ethersUtils.getAddress(addr) === normalizedValue)?.[0];
-  const logo = tokenLogos[normalizedValue];
 
   return (
     <Select.Root value={normalizedValue} onValueChange={onChange}>
@@ -36,14 +38,14 @@ export default function TokenSelect({ value, onChange, balances, tokenLogos }: P
       >
         <Select.Value asChild>
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            {logo ? (
+            {symbol ? (
               <Image
-                src={logo}
-                alt={symbol || "token"}
+                src={getTokenLogo(symbol)}
+                alt={symbol}
                 width={16}
                 height={16}
                 style={{ borderRadius: "50%" }}
-                onError={(e) => (e.currentTarget.src = "/logos/default.png")}
+                onError={(e) => (e.currentTarget as HTMLImageElement).src = "/logos/default.png"}
               />
             ) : (
               <div
@@ -87,7 +89,6 @@ export default function TokenSelect({ value, onChange, balances, tokenLogos }: P
           <Select.Viewport>
             {Object.entries(TOKENS).map(([symbol, addr]) => {
               const normalized = ethersUtils.getAddress(addr);
-              const logo = tokenLogos[normalized];
               const balance = parseFloat(balances[normalized] || "0").toFixed(3);
 
               return (
@@ -102,33 +103,14 @@ export default function TokenSelect({ value, onChange, balances, tokenLogos }: P
                     cursor: "pointer"
                   }}
                 >
-                  {logo ? (
-                    <Image
-                      src={logo}
-                      alt={symbol}
-                      width={20}
-                      height={20}
-                      style={{ marginRight: 8, borderRadius: "50%" }}
-                      onError={(e) => (e.currentTarget.src = "/logos/default.png")}
-                    />
-                  ) : (
-                    <div
-                      style={{
-                        width: 20,
-                        height: 20,
-                        marginRight: 8,
-                        borderRadius: "50%",
-                        background: "#eee",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontSize: 12,
-                        color: "#999"
-                      }}
-                    >
-                      ?
-                    </div>
-                  )}
+                  <Image
+                    src={getTokenLogo(symbol)}
+                    alt={symbol}
+                    width={20}
+                    height={20}
+                    style={{ marginRight: 8, borderRadius: "50%" }}
+                    onError={(e) => (e.currentTarget as HTMLImageElement).src = "/logos/default.png"}
+                  />
                   <span style={{ fontSize: 14 }}>{symbol}</span>
                   <span style={{ marginLeft: "auto", fontSize: 12, color: "#888" }}>
                     {balance}
@@ -141,4 +123,4 @@ export default function TokenSelect({ value, onChange, balances, tokenLogos }: P
       </Select.Portal>
     </Select.Root>
   );
- }
+}
