@@ -45,22 +45,22 @@ export function useSwapLogic() {
 
     const newBalances: Record<string, string> = {};
 
-for (const tokenAddress of Object.values(TOKENS)) {
-  try {
-    const normalized = ethersUtils.getAddress(tokenAddress);
-    if (normalized === NATIVE_TOKEN_ADDRESS) {
-      const balance = await provider.getBalance(address);
-      newBalances[normalized] = ethers.utils.formatEther(balance);
-    } else {
-      const contract = new ethers.Contract(normalized, ERC20_ABI, provider);
-      const decimals = TOKEN_METADATA[normalized]?.decimals ?? 18;
-      const balance = await contract.balanceOf(address);
-      newBalances[normalized] = ethers.utils.formatUnits(balance, decimals);
+    for (const [, tokenAddress] of Object.entries(TOKENS)) {
+      try {
+        const normalized = ethersUtils.getAddress(tokenAddress);
+        if (normalized === NATIVE_TOKEN_ADDRESS) {
+          const balance = await provider.getBalance(address);
+          newBalances[normalized] = ethers.utils.formatEther(balance);
+        } else {
+          const contract = new ethers.Contract(normalized, ERC20_ABI, provider);
+          const decimals = TOKEN_METADATA[normalized]?.decimals ?? 18;
+          const balance = await contract.balanceOf(address);
+          newBalances[normalized] = ethers.utils.formatUnits(balance, decimals);
+        }
+      } catch {
+        newBalances[tokenAddress] = "0";
+      }
     }
-  } catch {
-    newBalances[tokenAddress] = "0";
-  }
-}
 
     const prev = previousBalancesRef.current;
     const changed = Object.keys(newBalances).some(
@@ -107,7 +107,11 @@ for (const tokenAddress of Object.values(TOKENS)) {
     const amountInUnits = ethers.utils.parseUnits(parsedAmount.toString(), decimals);
 
     try {
-      const baseTokens = Object.values(TOKENS).map((address) => ({ address }));
+      const baseTokens = Object.entries(TOKENS).map(([symbol, address]) => ({
+        symbol,
+        address,
+      }));
+
       const pools = await poolFetcher.getAllPools(fromToken, toToken, baseTokens);
 
       if (!pools || pools.length === 0) {
