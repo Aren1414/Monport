@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { ethers, utils as ethersUtils } from "ethers";
 import { useAccount, useConnect } from "wagmi";
 import {
@@ -34,6 +34,8 @@ export function useSwapLogic() {
   const [balances, setBalances] = useState<Record<string, string>>({});
   const [approvalNeeded, setApprovalNeeded] = useState(false);
 
+  const previousBalancesRef = useRef<Record<string, string>>({});
+
   const fetchBalances = useCallback(async () => {
     if (!isConnected || !address) return;
 
@@ -55,31 +57,26 @@ export function useSwapLogic() {
           const balance = await contract.balanceOf(address);
           newBalances[normalized] = ethers.utils.formatUnits(balance, decimals);
         }
-      } catch (err) {
-        console.error(`Failed to fetch balance for ${symbol}:`, err);
+      } catch {
         newBalances[tokenAddress] = "0";
       }
     }
 
-    setBalances(newBalances);
+    // فقط اگه موجودی تغییر کرده بود، state رو آپدیت کن
+    const prev = previousBalancesRef.current;
+    const changed = Object.keys(newBalances).some(
+      (key) => newBalances[key] !== prev[key]
+    );
+
+    if (changed) {
+      previousBalancesRef.current = newBalances;
+      setBalances(newBalances);
+    }
   }, [isConnected, address]);
 
   useEffect(() => {
-    fetchBalances();
+    fetchBalances(); 
   }, [fetchBalances]);
-
-  useEffect(() => {
-    if (!isConnected || !address) return;
-
-    const provider = new ethers.providers.Web3Provider(
-      (window as EthereumWindow).ethereum!
-    );
-
-    provider.on("block", fetchBalances);
-    return () => {
-      provider.off("block", fetchBalances);
-    };
-  }, [isConnected, address, fetchBalances]);
 
   useEffect(() => {
     const ethereum = (window as EthereumWindow).ethereum;
@@ -150,15 +147,13 @@ export function useSwapLogic() {
 
           const needsApproval = allowance.lt(amountInUnits);
           setApprovalNeeded((prev) => (prev !== needsApproval ? needsApproval : prev));
-        } catch (err) {
-          console.error("❌ Failed to check allowance:", err);
+        } catch {
           setApprovalNeeded(false);
         }
       } else {
         setApprovalNeeded(false);
       }
-    } catch (err) {
-      console.error("❌ Quote error:", err);
+    } catch {
       setQuote(null);
       setBestPath(null);
       setApprovalNeeded(false);
@@ -206,13 +201,8 @@ export function useSwapLogic() {
         inputDecimals,
         outputDecimals,
         1,
-        !isNative,
-        (txHash) => {
-          console.log("🔁 Swap tx hash:", txHash);
-        }
+        !isNative
       );
-
-      console.log("📦 Swap receipt:", receipt);
 
       if (!receipt || typeof receipt.status === "undefined") {
         alert("⚠️ Swap may have completed, but no receipt was returned.");
@@ -229,7 +219,6 @@ export function useSwapLogic() {
         alert("⚠️ Swap transaction failed or was reverted.");
       }
     } catch (err) {
-      console.error("❌ Swap error:", err);
       alert("❌ Swap failed: " + (err as Error).message);
     } finally {
       setAmountIn("");
