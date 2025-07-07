@@ -26,11 +26,11 @@ export default function WelcomeTab() {
   const totalPriceMon = (NFT_PRICE * selectedAmount).toFixed(2)
 
   useEffect(() => {
-    sdk.on('ready', () => {
+    (sdk as any).on('ready', () => {
       console.log('✅ SDK is ready')
     })
 
-    sdk.on('error', (err) => {
+    (sdk as any).on('error', (err: any) => {
       console.error('❌ SDK error:', err)
     })
 
