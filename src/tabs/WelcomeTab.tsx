@@ -26,7 +26,15 @@ export default function WelcomeTab() {
   const totalPriceMon = (NFT_PRICE * selectedAmount).toFixed(2)
 
   useEffect(() => {
-    sdk.actions.ready() 
+    sdk.on('ready', () => {
+      console.log('✅ SDK is ready')
+    })
+
+    sdk.on('error', (err) => {
+      console.error('❌ SDK error:', err)
+    })
+
+    sdk.actions.ready()
   }, [])
 
   useEffect(() => {
@@ -59,6 +67,15 @@ export default function WelcomeTab() {
       alert('❌ Mint failed. Please check your wallet balance or network status.')
     } finally {
       setIsMinting(false)
+    }
+  }
+
+  const tryAddMiniApp = async () => {
+    try {
+      await sdk.actions.addMiniApp()
+    } catch (err) {
+      console.error('❌ Add Mini App failed:', err)
+      alert('❌ Add Mini App failed. Check console for details.')
     }
   }
 
@@ -177,6 +194,23 @@ export default function WelcomeTab() {
         type="button"
       >
         Follow X (+200 points)
+      </button>
+
+      <button
+        onClick={tryAddMiniApp}
+        style={{
+          width: '100%',
+          padding: '12px',
+          background: '#ff9800',
+          color: 'white',
+          marginTop: 12,
+          border: 'none',
+          borderRadius: 8,
+          cursor: 'pointer',
+        }}
+        type="button"
+      >
+        Try Add Mini App
       </button>
 
       <div style={{ marginTop: 20, fontSize: 14 }}>
