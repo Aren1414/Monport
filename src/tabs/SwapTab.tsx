@@ -17,7 +17,6 @@ export default function SwapTab() {
     loading,
     approvalNeeded,
     balances,
-    tokenLogos,
     isConnected,
     address,
     setFromToken,
@@ -96,7 +95,6 @@ export default function SwapTab() {
           <TokenSelect
             value={fromToken}
             onChange={setFromToken}
-            tokenLogos={tokenLogos}
             balances={balances}
           />
           <input
@@ -180,7 +178,6 @@ export default function SwapTab() {
           <TokenSelect
             value={toToken}
             onChange={setToToken}
-            tokenLogos={tokenLogos}
             balances={balances}
           />
           <input
@@ -252,4 +249,4 @@ export default function SwapTab() {
       </button>
     </div>
   );
-}
+ }
