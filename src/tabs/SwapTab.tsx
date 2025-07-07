@@ -4,6 +4,7 @@ import React from "react";
 import { ethers } from "ethers";
 import { useSwapLogic } from "@/features/swap/useSwapLogic";
 import TokenSelect from "@/features/swap/TokenSelect";
+import { useTokenLogos } from "@/features/swap/useTokenLogos"; 
 import ERC20_ABI from "@/abis/ERC20.json";
 import { ROUTER_ADDRESS } from "@/lib/constants";
 import type { EthereumWindow } from "@/features/swap/types";
@@ -28,6 +29,7 @@ export default function SwapTab() {
     connectors
   } = useSwapLogic();
 
+  const tokenLogos = useTokenLogos(); // ← لوگوها فقط یک بار اینجا گرفته می‌شن
   const isAmountValid = !!amountIn && parseFloat(amountIn) > 0;
 
   return (
@@ -96,6 +98,7 @@ export default function SwapTab() {
             value={fromToken}
             onChange={setFromToken}
             balances={balances}
+            tokenLogos={tokenLogos} // ← اضافه شد
           />
           <input
             type="number"
@@ -179,6 +182,7 @@ export default function SwapTab() {
             value={toToken}
             onChange={setToToken}
             balances={balances}
+            tokenLogos={tokenLogos} 
           />
           <input
             value={quote ? parseFloat(quote).toFixed(3) : ""}
@@ -249,4 +253,4 @@ export default function SwapTab() {
       </button>
     </div>
   );
- }
+}
