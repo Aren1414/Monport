@@ -7,7 +7,7 @@ export async function GET() {
         version: "1",
         name: "Monport",
         description: "A Farcaster Mini App for exploring decentralized ports",
-        iconUrl: "https://raw.githubusercontent.com/Aren1414/Monport/main/public/icon.png",
+        iconUrl: "https://monport-three.vercel.app/icon.png",
         homeUrl: "https://monport-three.vercel.app",
         splashImageUrl: "https://monport-three.vercel.app/splash.png",
         splashBackgroundColor: "#ffffff",
