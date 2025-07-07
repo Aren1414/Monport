@@ -91,76 +91,76 @@ export function useSwapLogic() {
     };
   }, [fetchBalances]);
 
-  const getQuote = useCallback(async () => {
-    const parsedAmount = parseFloat(amountIn);
-    if (!fromToken || !toToken || isNaN(parsedAmount) || parsedAmount <= 0 || !isConnected || !address) {
+const getQuote = useCallback(async () => {
+  const parsedAmount = parseFloat(amountIn);
+  if (!fromToken || !toToken || isNaN(parsedAmount) || parsedAmount <= 0 || !isConnected || !address) {
+    setQuote(null);
+    setBestPath(null);
+    setApprovalNeeded(false);
+    return;
+  }
+
+  setLoading(true);
+  const provider = new ethers.providers.JsonRpcProvider(RPC_URL);
+  const poolFetcher = new PoolFetcher("https://api.testnet.kuru.io");
+
+  const decimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
+  const amountInUnits = ethers.utils.parseUnits(parsedAmount.toString(), decimals);
+
+  try {
+    const baseTokens = Object.values(TOKENS).map((address) => ({ address }));
+    const pools = await poolFetcher.getAllPools(fromToken, toToken, baseTokens);
+
+    if (!pools || pools.length === 0) {
       setQuote(null);
       setBestPath(null);
       setApprovalNeeded(false);
       return;
     }
 
-    setLoading(true);
-    const provider = new ethers.providers.JsonRpcProvider(RPC_URL);
-    const poolFetcher = new PoolFetcher("https://api.testnet.kuru.io");
+    const path = await PathFinder.findBestPath(
+      provider,
+      fromToken,
+      toToken,
+      parseFloat(ethers.utils.formatUnits(amountInUnits, decimals)),
+      "amountIn",
+      poolFetcher,
+      pools
+    );
 
-    const decimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
-    const amountInUnits = ethers.utils.parseUnits(parsedAmount.toString(), decimals);
-
-    try {
-      const baseTokens = Object.entries(TOKENS).map(([symbol, address]) => ({ symbol, address }));
-      const pools = await poolFetcher.getAllPools(fromToken, toToken, baseTokens);
-
-      if (!pools || pools.length === 0) {
-        setQuote(null);
-        setBestPath(null);
-        setApprovalNeeded(false);
-        return;
-      }
-
-      const path = await PathFinder.findBestPath(
-        provider,
-        fromToken,
-        toToken,
-        parseFloat(ethers.utils.formatUnits(amountInUnits, decimals)),
-        "amountIn",
-        poolFetcher,
-        pools
-      );
-
-      if (!path || path.output <= 0) {
-        setQuote(null);
-        setBestPath(null);
-        setApprovalNeeded(false);
-        return;
-      }
-
-      setQuote(path.output.toString());
-      setBestPath(path);
-
-      if (fromToken !== NATIVE_TOKEN_ADDRESS && isConnected && window.ethereum) {
-        try {
-          const web3Provider = new ethers.providers.Web3Provider(window.ethereum);
-          const signer = web3Provider.getSigner();
-          const contract = new ethers.Contract(fromToken, ERC20_ABI, signer);
-          const allowance = await contract.allowance(address, ROUTER_ADDRESS);
-
-          const needsApproval = allowance.lt(amountInUnits);
-          setApprovalNeeded((prev) => (prev !== needsApproval ? needsApproval : prev));
-        } catch {
-          setApprovalNeeded(false);
-        }
-      } else {
-        setApprovalNeeded(false);
-      }
-    } catch {
+    if (!path || path.output <= 0) {
       setQuote(null);
       setBestPath(null);
       setApprovalNeeded(false);
-    } finally {
-      setLoading(false);
+      return;
     }
-  }, [fromToken, toToken, amountIn, isConnected, address]);
+
+    setQuote(path.output.toString());
+    setBestPath(path);
+
+    if (fromToken !== NATIVE_TOKEN_ADDRESS && isConnected && window.ethereum) {
+      try {
+        const web3Provider = new ethers.providers.Web3Provider(window.ethereum);
+        const signer = web3Provider.getSigner();
+        const contract = new ethers.Contract(fromToken, ERC20_ABI, signer);
+        const allowance = await contract.allowance(address, ROUTER_ADDRESS);
+
+        const needsApproval = allowance.lt(amountInUnits);
+        setApprovalNeeded((prev) => (prev !== needsApproval ? needsApproval : prev));
+      } catch {
+        setApprovalNeeded(false);
+      }
+    } else {
+      setApprovalNeeded(false);
+    }
+  } catch {
+    setQuote(null);
+    setBestPath(null);
+    setApprovalNeeded(false);
+  } finally {
+    setLoading(false);
+  }
+}, [fromToken, toToken, amountIn, isConnected, address]);
 
   useEffect(() => {
     getQuote();
