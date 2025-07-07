@@ -5,6 +5,7 @@ import { useAccount, useChainId, useSwitchChain, useWalletClient } from 'wagmi'
 import { writeContract } from 'viem/actions'
 import { parseEther } from 'viem'
 import { sdk } from '@farcaster/frame-sdk'
+import { sdk as miniAppSdk } from '@farcaster/miniapp-sdk'
 import welcomeAbi from '~/abis/WelcomeNFT.json'
 
 const WELCOME_CONTRACT_ADDRESS = '0x40649af9dEE8bDB94Dc21BA2175AE8f5181f14AE'
@@ -73,6 +74,20 @@ export default function WelcomeTab() {
 
   const followOvero = () => {
     window.open('https://warpcast.com/overo.eth', '_blank')
+  }
+
+  const followX = () => {
+    window.open('https://x.com/Aren_ser?t=F-Lyay3vqtyuZSt9-q9gNQ&s=09', '_blank')
+  }
+
+  const addMiniApp = async () => {
+    try {
+      await miniAppSdk.actions.addMiniApp()
+      alert('✅ Mini App added successfully!')
+    } catch (error) {
+      console.error('Add Mini App error:', error)
+      alert('❌ Failed to add Mini App. Are you inside Warpcast?')
+    }
   }
 
   return (
@@ -177,11 +192,46 @@ export default function WelcomeTab() {
         Follow @overo.eth (+200 points)
       </button>
 
+      <button
+        onClick={followX}
+        style={{
+          width: '100%',
+          padding: '12px',
+          background: '#000000',
+          color: 'white',
+          marginTop: 12,
+          border: 'none',
+          borderRadius: 8,
+          cursor: 'pointer',
+        }}
+        type="button"
+      >
+        Follow X (+200 points)
+      </button>
+
+      <button
+        onClick={addMiniApp}
+        style={{
+          width: '100%',
+          padding: '12px',
+          background: '#ff9900',
+          color: 'white',
+          marginTop: 12,
+          border: 'none',
+          borderRadius: 8,
+          cursor: 'pointer',
+        }}
+        type="button"
+      >
+        Add Mini App
+      </button>
+
       <div style={{ marginTop: 20, fontSize: 14 }}>
         <h4>Earn Points:</h4>
         <ul style={{ paddingLeft: 20 }}>
           <li>+50 points per minted Welcome NFT</li>
           <li>+200 points for following @overo.eth</li>
+          <li>+200 points for following on X</li>
           <li>+30 points per successful referral (first-time mint only)</li>
         </ul>
       </div>
