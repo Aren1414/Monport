@@ -1,6 +1,4 @@
-import { NextRequest } from "next/server";
-
-export async function POST(_req: NextRequest) {
+export async function POST() {
   const html = `
     <!DOCTYPE html>
     <html>
