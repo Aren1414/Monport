@@ -6,7 +6,7 @@ export async function GET() {
       frame: {
         version: "1",
         name: "Monport",
-        description: "A Farcaster Mini App for exploring decentralized ports",
+        description: "Farcaster Mini App for exploring decentralized ports",
         iconUrl: "https://monport-three.vercel.app/icon.png",
         homeUrl: "https://monport-three.vercel.app",
         splashImageUrl: "https://monport-three.vercel.app/splash.png",
