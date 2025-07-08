@@ -1,5 +1,3 @@
-// src/app/layout.tsx
-
 import type { Metadata } from "next";
 import Script from "next/script";
 import { getSession } from "~/auth";
@@ -10,7 +8,6 @@ import {
   APP_DESCRIPTION,
   APP_OG_IMAGE_URL,
   APP_URL,
-  APP_BUTTON_TEXT,
 } from "~/lib/constants";
 import { AddMiniAppPrompt } from "~/components/AddMiniAppPrompt";
 
@@ -26,7 +23,6 @@ export const metadata: Metadata = {
   },
 };
 
-
 export const dynamic = "force-dynamic";
 
 export default async function RootLayout({
@@ -35,21 +31,6 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const session = await getSession();
-
-  const frameMeta = JSON.stringify({
-    version: "next",
-    imageUrl: APP_OG_IMAGE_URL,
-    button: {
-      title: APP_BUTTON_TEXT ?? "Open MonPort",
-      action: {
-        type: "launch_frame",
-        url: `${APP_URL}/?tab=welcome`,
-        name: APP_NAME,
-        splashImageUrl: `${APP_URL}/splash.png`,
-        splashBackgroundColor: "#ffffff",
-      },
-    },
-  });
 
   return (
     <html lang="en">
@@ -60,15 +41,11 @@ export default async function RootLayout({
         <meta name="theme-color" content="#2266ee" />
         <title>{APP_NAME}</title>
 
-        {/* ✅ Mini App Frame v2 metadata */}
-        <meta property="fc:frame" content={frameMeta} />
-
+        {/* ✅ Load Farcaster Mini App SDK */}
         <Script
           src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"
           strategy="beforeInteractive"
         />
-
-        {/* ✅ Load Farcaster Mini App SDK (بدون onLoad) */}
         <Script
           src="https://miniapps.farcaster.xyz/sdk/v0"
           strategy="afterInteractive"
