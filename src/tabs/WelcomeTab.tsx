@@ -26,17 +26,21 @@ export default function WelcomeTab() {
   const totalPriceMon = (NFT_PRICE * selectedAmount).toFixed(2)
 
   useEffect(() => {
-    // @ts-expect-error: SDK event types not exposed
-    sdk.on('ready', () => {
-      console.log('✅ SDK is ready')
+    
+    sdk.context.then((ctx) => {
+      console.log('🧠 Farcaster context:', ctx)
+      if (!ctx?.client?.added) {
+        sdk.actions.ready().then(() => {
+          sdk.actions.addMiniApp()
+            .then(() => console.log('✅ Mini App added'))
+            .catch((err) => console.error('❌ Add Mini App failed:', err))
+        })
+      } else {
+        console.log('ℹ️ Mini App already added')
+      }
+    }).catch((err) => {
+      console.error('❌ Failed to load Farcaster context:', err)
     })
-
-    // @ts-expect-error: SDK event types not exposed
-    sdk.on('error', (err) => {
-      console.error('❌ SDK error:', err)
-    })
-
-    sdk.actions.ready()
   }, [])
 
   useEffect(() => {
