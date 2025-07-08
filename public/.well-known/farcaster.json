@@ -1,0 +1,25 @@
+{
+  "miniapp": {
+    "version": "1",
+    "name": "Monport",
+    "iconUrl": "https://monport-three.vercel.app/icon.png",
+    "homeUrl": "https://monport-three.vercel.app",
+    "splashImageUrl": "https://monport-three.vercel.app/splash.png",
+    "splashBackgroundColor": "#ffffff",
+    "subtitle": "Explore decentralized ports",
+    "description": "Discover and interact with decentralized port ecosystems on Farcaster.",
+    "primaryCategory": "utility",
+    "tags": ["monport", "explore", "ports"],
+    "heroImageUrl": "https://mhz5j3u6p57zkqjpwsz5kixyp37p7vkwqoetwxbtzgjof6fyysgq.arweave.net/YfPU7p5_f5VBL7Sz1SL4fv7_1VaDiTtcM8mS4vi4xI0",
+    "tagline": "Explore decentralized ports",
+    "ogTitle": "Monport",
+    "ogDescription": "Discover and interact with decentralized port ecosystems.",
+    "ogImageUrl": "https://mhz5j3u6p57zkqjpwsz5kixyp37p7vkwqoetwxbtzgjof6fyysgq.arweave.net/YfPU7p5_f5VBL7Sz1SL4fv7_1VaDiTtcM8mS4vi4xI0",
+    "requiredChains": ["eip155:8453"],
+    "requiredCapabilities": [
+      "wallet.getEthereumProvider",
+      "actions.signIn",
+      "actions.composeCast"
+    ]
+  }
+}
