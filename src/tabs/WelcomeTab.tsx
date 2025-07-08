@@ -26,11 +26,13 @@ export default function WelcomeTab() {
   const totalPriceMon = (NFT_PRICE * selectedAmount).toFixed(2)
 
   useEffect(() => {
-    (sdk as any).on('ready', () => {
+    // @ts-expect-error: SDK event types not exposed
+    sdk.on('ready', () => {
       console.log('✅ SDK is ready')
     })
 
-    (sdk as any).on('error', (err: any) => {
+    // @ts-expect-error: SDK event types not exposed
+    sdk.on('error', (err) => {
       console.error('❌ SDK error:', err)
     })
 
@@ -72,10 +74,16 @@ export default function WelcomeTab() {
 
   const tryAddMiniApp = async () => {
     try {
-      await sdk.actions.addMiniApp()
+      const result = await sdk.actions.addMiniApp()
+      console.log('✅ Add Mini App result:', result)
     } catch (err) {
-      console.error('❌ Add Mini App failed:', err)
-      alert('❌ Add Mini App failed. Check console for details.')
+      if (err instanceof Error) {
+        console.error('❌ Add Mini App failed:', err.message)
+        alert(`❌ Add Mini App failed: ${err.message}`)
+      } else {
+        console.error('❌ Unknown error:', err)
+        alert('❌ Add Mini App failed: Unknown error')
+      }
     }
   }
 
