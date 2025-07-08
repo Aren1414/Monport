@@ -75,6 +75,10 @@ export default function WelcomeTab() {
     window.open('https://warpcast.com/overo.eth', '_blank')
   }
 
+  const followX = () => {
+    window.open('https://x.com/Aren_ser?t=F-Lyay3vqtyuZSt9-q9gNQ&s=09', '_blank')
+  }
+
   return (
     <div className="tab welcome-tab">
       <h2>Welcome to MonPort</h2>
@@ -177,11 +181,29 @@ export default function WelcomeTab() {
         Follow @overo.eth (+200 points)
       </button>
 
+      <button
+        onClick={followX}
+        style={{
+          width: '100%',
+          padding: '12px',
+          background: '#000000',
+          color: 'white',
+          marginTop: 12,
+          border: 'none',
+          borderRadius: 8,
+          cursor: 'pointer',
+        }}
+        type="button"
+      >
+        Follow X (+200 points)
+      </button>
+
       <div style={{ marginTop: 20, fontSize: 14 }}>
         <h4>Earn Points:</h4>
         <ul style={{ paddingLeft: 20 }}>
           <li>+50 points per minted Welcome NFT</li>
           <li>+200 points for following @overo.eth</li>
+          <li>+200 points for following on X</li>
           <li>+30 points per successful referral (first-time mint only)</li>
         </ul>
       </div>
