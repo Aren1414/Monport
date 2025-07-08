@@ -11,18 +11,6 @@ import {
 } from "~/lib/constants";
 import { AddMiniAppPrompt } from "~/components/AddMiniAppPrompt";
 
-export const metadata: Metadata = {
-  title: APP_NAME,
-  description: APP_DESCRIPTION,
-  openGraph: {
-    title: APP_NAME,
-    description: APP_DESCRIPTION,
-    images: [APP_OG_IMAGE_URL],
-    url: APP_URL,
-    type: "website",
-  },
-};
-
 export const dynamic = "force-dynamic";
 
 export default async function RootLayout({
@@ -40,6 +28,19 @@ export default async function RootLayout({
         <meta name="description" content={APP_DESCRIPTION} />
         <meta name="theme-color" content="#2266ee" />
         <title>{APP_NAME}</title>
+
+        {/* ✅ Open Graph metadata for Warpcast preview */}
+        <meta property="og:title" content={APP_NAME} />
+        <meta property="og:description" content={APP_DESCRIPTION} />
+        <meta property="og:image" content={APP_OG_IMAGE_URL} />
+        <meta property="og:url" content={APP_URL} />
+        <meta property="og:type" content="website" />
+
+        {/* ✅ Farcaster Mini App metadata */}
+        <meta name="fc:frame" content="vNext" />
+        <meta name="fc:frame:image" content={APP_OG_IMAGE_URL} />
+        <meta name="fc:frame:post_url" content={`${APP_URL}/api/frame`} />
+        <meta name="fc:frame:button:1" content="Add Mini App" />
 
         {/* ✅ Load Farcaster Mini App SDK */}
         <Script
