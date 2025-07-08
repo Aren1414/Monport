@@ -1,33 +1,52 @@
-import { Metadata } from "next";
-import ClientHome from "./ClientHome";
+"use client";
 
-export const revalidate = 300;
-
-export const metadata: Metadata = {
-  title: "Monport",
-  description: "Farcaster Mini App for exploring decentralized ports",
-  openGraph: {
-    title: "Monport",
-    description: "Farcaster Mini App for exploring decentralized ports",
-    images: [
-      {
-        url: "https://monport-three.vercel.app/og.png",
-        width: 1200,
-        height: 630,
-        alt: "Monport Preview",
-      },
-    ],
-    url: "https://monport-three.vercel.app",
-    type: "website",
-  },
-  other: {
-    "fc:frame": "vNext",
-    "fc:frame:image": "https://monport-three.vercel.app/og.png",
-    "fc:frame:post_url": "https://monport-three.vercel.app/api/frame",
-    "fc:frame:button:1": "Add Mini App",
-  },
-};
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import WelcomeTab from "~/tabs/WelcomeTab";
+import SwapTab from "~/tabs/SwapTab";
+import DeployTab from "~/tabs/DeployTab";
+import LeaderboardTab from "~/tabs/LeaderboardTab";
+import "~/styles/App.css";
 
 export default function Home() {
-  return <ClientHome />;
+  const router = useRouter();
+  const [tab, setTab] = useState<string>("welcome");
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const currentTab = new URLSearchParams(window.location.search).get("tab");
+    if (currentTab) setTab(currentTab);
+  }, []);
+
+  const renderTab = () => {
+    switch (tab) {
+      case "swap":
+        return <SwapTab />;
+      case "deploy":
+        return <DeployTab />;
+      case "leaderboard":
+        return <LeaderboardTab />;
+      case "welcome":
+      default:
+        return <WelcomeTab />;
+    }
+  };
+
+  const changeTab = (target: string) => {
+    router.push(`/?tab=${target}`);
+    setTab(target);
+  };
+
+  return (
+    <div className="app-container">
+      <main className="tab-content">{renderTab()}</main>
+
+      <nav className="tab-navigation">
+        <button onClick={() => changeTab("welcome")}>Welcome</button>
+        <button onClick={() => changeTab("swap")}>Swap</button>
+        <button onClick={() => changeTab("deploy")}>Deploy</button>
+        <button onClick={() => changeTab("leaderboard")}>Leaderboard</button>
+      </nav>
+    </div>
+  );
 }
