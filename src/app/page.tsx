@@ -1,6 +1,5 @@
 import { Metadata } from "next";
-import { getFlatFrameMetadata } from "~/lib/utils";
-import ClientHome from "./ClientHome"; 
+import ClientHome from "./ClientHome";
 
 export const revalidate = 300;
 
@@ -12,7 +11,12 @@ export async function generateMetadata(): Promise<Metadata> {
       description: "Farcaster Mini App for exploring decentralized ports",
       images: ["https://monport-three.vercel.app/og.png"],
     },
-    other: getFlatFrameMetadata(),
+    other: {
+      "fc:frame": "vNext",
+      "fc:frame:image": "https://monport-three.vercel.app/og.png",
+      "fc:frame:post_url": "https://monport-three.vercel.app/api/frame",
+      "fc:frame:button:1": "Add Mini App",
+    },
   };
 }
 
