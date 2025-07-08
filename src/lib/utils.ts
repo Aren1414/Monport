@@ -63,7 +63,7 @@ export function getFlatFrameMetadata(): Record<string, string> {
     "fc:frame": "vNext",
     "fc:frame:image": APP_OG_IMAGE_URL,
     "fc:frame:button:1": APP_BUTTON_TEXT ?? "Open Monport",
-    "fc:frame:post_url": `${APP_URL}/api/frame`, 
+    "fc:frame:post_url": `${APP_URL}/?tab=welcome`,
   };
 }
 
@@ -77,7 +77,7 @@ export function getFrameEmbedMetadata(imageUrl?: string) {
       title: APP_BUTTON_TEXT ?? "Open MonPort",
       action: {
         type: "launch_frame",
-        url: `${APP_URL}/api/frame`, 
+        url: `${APP_URL}/?tab=welcome`,
         name: APP_NAME ?? "MonPort",
         splashImageUrl: APP_SPLASH_URL,
         splashBackgroundColor: APP_SPLASH_BACKGROUND_COLOR ?? "#ffffff",
