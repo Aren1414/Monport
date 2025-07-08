@@ -8,6 +8,24 @@ import DeployTab from "~/tabs/DeployTab";
 import LeaderboardTab from "~/tabs/LeaderboardTab";
 import "~/styles/App.css";
 
+import { Metadata } from "next";
+import { getFlatFrameMetadata } from "~/lib/utils";
+
+
+export const revalidate = 300;
+
+export async function generateMetadata(): Promise<Metadata> {
+  return {
+    title: "Monport",
+    openGraph: {
+      title: "Monport",
+      description: "Farcaster Mini App for exploring decentralized ports",
+      images: ["https://monport-three.vercel.app/og.png"],
+    },
+    other: getFlatFrameMetadata(),
+  };
+}
+
 export default function Home() {
   const router = useRouter();
   const [tab, setTab] = useState<string>("welcome");
