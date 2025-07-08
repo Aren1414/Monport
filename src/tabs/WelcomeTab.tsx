@@ -4,7 +4,6 @@ import React, { useEffect, useState } from 'react'
 import { useAccount, useChainId, useSwitchChain, useWalletClient } from 'wagmi'
 import { writeContract } from 'viem/actions'
 import { parseEther } from 'viem'
-import { sdk } from '@farcaster/miniapp-sdk'
 import welcomeAbi from '~/abis/WelcomeNFT.json'
 
 const WELCOME_CONTRACT_ADDRESS = '0x40649af9dEE8bDB94Dc21BA2175AE8f5181f14AE'
@@ -24,24 +23,6 @@ export default function WelcomeTab() {
   const [isMinting, setIsMinting] = useState(false)
 
   const totalPriceMon = (NFT_PRICE * selectedAmount).toFixed(2)
-
-  useEffect(() => {
-    
-    sdk.context.then((ctx) => {
-      console.log('🧠 Farcaster context:', ctx)
-      if (!ctx?.client?.added) {
-        sdk.actions.ready().then(() => {
-          sdk.actions.addMiniApp()
-            .then(() => console.log('✅ Mini App added'))
-            .catch((err) => console.error('❌ Add Mini App failed:', err))
-        })
-      } else {
-        console.log('ℹ️ Mini App already added')
-      }
-    }).catch((err) => {
-      console.error('❌ Failed to load Farcaster context:', err)
-    })
-  }, [])
 
   useEffect(() => {
     if (isConnected && chainId !== MONAD_TESTNET_CHAIN_ID) {
@@ -73,21 +54,6 @@ export default function WelcomeTab() {
       alert('❌ Mint failed. Please check your wallet balance or network status.')
     } finally {
       setIsMinting(false)
-    }
-  }
-
-  const tryAddMiniApp = async () => {
-    try {
-      const result = await sdk.actions.addMiniApp()
-      console.log('✅ Add Mini App result:', result)
-    } catch (err) {
-      if (err instanceof Error) {
-        console.error('❌ Add Mini App failed:', err.message)
-        alert(`❌ Add Mini App failed: ${err.message}`)
-      } else {
-        console.error('❌ Unknown error:', err)
-        alert('❌ Add Mini App failed: Unknown error')
-      }
     }
   }
 
@@ -206,23 +172,6 @@ export default function WelcomeTab() {
         type="button"
       >
         Follow X (+200 points)
-      </button>
-
-      <button
-        onClick={tryAddMiniApp}
-        style={{
-          width: '100%',
-          padding: '12px',
-          background: '#ff9800',
-          color: 'white',
-          marginTop: 12,
-          border: 'none',
-          borderRadius: 8,
-          cursor: 'pointer',
-        }}
-        type="button"
-      >
-        Try Add Mini App
       </button>
 
       <div style={{ marginTop: 20, fontSize: 14 }}>
