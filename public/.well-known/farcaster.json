@@ -1,9 +1,4 @@
 {
-  "accountAssociation": {
-    "header": "eyJmaWQiOjM4NDQyOCwidHlwZSI6ImN1c3RvZHkiLCJrZXkiOiIweDcyNWJBQjMyMTFiNTg1NDk2OTBkNzNiYjc1OWI1QjBkRmQzZWVBOTYifQ",
-    "payload": "eyJkb21haW4iOiJtb25wb3J0LXRocmVlLnZlcmNlbC5hcHAifQ",
-    "signature": "MHg1NjJjN2Y2ZjUxMDZkN2ExODJmNDI1OWY0YTkyMDNiNWM2Y2EyOWVlOWNmMzRmZjBiYzg1NTIzZjZkZjE0YzNkMDM2MDkyZjg4YWVkMTkzNmIwYmIwY2E1MjA1ZjZmOGVhYjc3ZDBiMDAyYjcxZWZhYmFkMzg4MjkxN2IzYjllMTFi"
-  },
   "miniapp": {
     "version": "1",
     "name": "Monport",
@@ -20,7 +15,7 @@
     "ogTitle": "Monport",
     "ogDescription": "A simple Mini App to explore the Monad testnet.",
     "ogImageUrl": "https://mhz5j3u6p57zkqjpwsz5kixyp37p7vkwqoetwxbtzgjof6fyysgq.arweave.net/YfPU7p5_f5VBL7Sz1SL4fv7_1VaDiTtcM8mS4vi4xI0",
-    "castShareUrl": "https://monport-three.vercel.app/share"
+    "castShareUrl": "https://monport-three.vercel.app/share",
     "screenshotUrls": [
       "https://monport-three.vercel.app/screenshots/1.jpg",
       "https://monport-three.vercel.app/screenshots/2.jpg"
