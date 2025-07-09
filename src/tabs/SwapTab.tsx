@@ -27,7 +27,6 @@ export default function SwapTab() {
   } = useSwapLogic();
 
   const { data: walletClient } = useWalletClient();
-
   const isAmountValid = !!amountIn && parseFloat(amountIn) > 0;
 
   return (
@@ -108,29 +107,13 @@ export default function SwapTab() {
       </div>
 
       {/* TO SECTION */}
-      <div style={{
-        background: "#f5f5f5",
-        padding: 12,
-        borderRadius: 12,
-        marginBottom: 12,
-        boxSizing: "border-box"
-      }}>
+      <div style={{ background: "#f5f5f5", padding: 12, borderRadius: 12, marginBottom: 12 }}>
         <label style={{ fontWeight: "bold" }}>To</label>
         <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>
           Balance: {parseFloat(balances[toToken] || "0").toFixed(3)}
         </div>
-        <div style={{
-          display: "flex",
-          flexWrap: "wrap",
-          gap: 8,
-          alignItems: "center",
-          marginTop: 4
-        }}>
-          <TokenSelect
-            value={toToken}
-            onChange={setToToken}
-            balances={balances}
-          />
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", marginTop: 4 }}>
+          <TokenSelect value={toToken} onChange={setToToken} balances={balances} />
           <input
             value={quote ? parseFloat(quote).toFixed(3) : ""}
             readOnly
@@ -174,12 +157,7 @@ export default function SwapTab() {
             await doSwap();
           }
         }}
-        disabled={
-          loading ||
-          !isConnected ||
-          !isAmountValid ||
-          !quote
-        }
+        disabled={loading || !isConnected || !isAmountValid || !quote}
         style={{
           width: "100%",
           padding: 12,
