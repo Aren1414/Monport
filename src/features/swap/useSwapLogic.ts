@@ -4,10 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useAccount, useWalletClient } from "wagmi";
 import { writeContract } from "viem/actions";
 import { ethers } from "ethers";
-import {
-  PoolFetcher,
-  PathFinder
-} from "@kuru-labs/kuru-sdk";
+import { PoolFetcher, PathFinder } from "@kuru-labs/kuru-sdk";
 import type { RouteOutput } from "@kuru-labs/kuru-sdk";
 import {
   TOKEN_METADATA,
@@ -78,78 +75,77 @@ export function useSwapLogic() {
   }, [fetchBalances]);
 
   const getQuote = useCallback(async () => {
-  const parsedAmount = parseFloat(amountIn);
-  if (
-    !fromToken ||
-    !toToken ||
-    isNaN(parsedAmount) ||
-    parsedAmount <= 0 ||
-    !isConnected ||
-    !address ||
-    !walletClient
-  ) {
-    setQuote(null);
-    setBestPath(null);
-    setApprovalNeeded(false);
-    return;
-  }
-
-  setLoading(true);
-  const poolFetcher = new PoolFetcher("https://api.testnet.kuru.io");
-
-  try {
-    const provider = new ethers.providers.JsonRpcProvider(RPC_URL);
-
-    const baseTokens = Object.entries(TOKENS)
-      .filter(([symbol]) => symbol !== "MON")
-      .map(([symbol, addr]) => ({
-        symbol,
-        address: ethers.utils.getAddress(addr)  
-      }));
-
-    const fromAddress = ethers.utils.getAddress(fromToken);
-    const toAddress = ethers.utils.getAddress(toToken);
-
-    const pools = await poolFetcher.getAllPools(fromAddress, toAddress, baseTokens);
-
-    const path = await PathFinder.findBestPath(
-      provider,
-      fromAddress,
-      toAddress,
-      parsedAmount,
-      "amountIn",
-      poolFetcher,
-      pools
-    );
-
-    if (!path || path.output <= 0) {
+    const parsedAmount = parseFloat(amountIn);
+    if (
+      !fromToken ||
+      !toToken ||
+      isNaN(parsedAmount) ||
+      parsedAmount <= 0 ||
+      !isConnected ||
+      !address ||
+      !walletClient
+    ) {
       setQuote(null);
       setBestPath(null);
       setApprovalNeeded(false);
       return;
     }
 
-    setQuote(path.output.toString());
-    setBestPath(path);
+    setLoading(true);
+    try {
+      const provider = new ethers.providers.JsonRpcProvider(RPC_URL);
+      const poolFetcher = new PoolFetcher("https://api.testnet.kuru.io");
 
-    if (fromAddress !== ethers.utils.getAddress(NATIVE_TOKEN_ADDRESS)) {
-      const signer = provider.getSigner(address);
-      const contract = new ethers.Contract(fromAddress, ERC20_ABI, signer);
-      const decimals = TOKEN_METADATA[fromAddress]?.decimals ?? 18;
-      const parsedAmountIn = BigInt((parsedAmount * 10 ** decimals).toFixed(0));
-      const allowance = await contract.allowance(address, ROUTER_ADDRESS);
-      setApprovalNeeded(allowance < parsedAmountIn);
-    } else {
+      const fromAddress = ethers.utils.getAddress(fromToken);
+      const toAddress = ethers.utils.getAddress(toToken);
+
+      const baseTokens = Object.entries(TOKENS)
+        .map(([symbol, addr]) => ({
+          symbol,
+          address: ethers.utils.getAddress(addr)
+        }))
+        .filter(({ address }) => address !== ethers.utils.getAddress(NATIVE_TOKEN_ADDRESS));
+
+      const pools = await poolFetcher.getAllPools(fromAddress, toAddress, baseTokens);
+
+      const path = await PathFinder.findBestPath(
+        provider,
+        fromAddress,
+        toAddress,
+        parsedAmount,
+        "amountIn",
+        poolFetcher,
+        pools
+      );
+
+      if (!path || path.output <= 0) {
+        setQuote(null);
+        setBestPath(null);
+        setApprovalNeeded(false);
+        return;
+      }
+
+      setQuote(path.output.toString());
+      setBestPath(path);
+
+      if (fromAddress !== ethers.utils.getAddress(NATIVE_TOKEN_ADDRESS)) {
+        const signer = provider.getSigner(address);
+        const contract = new ethers.Contract(fromAddress, ERC20_ABI, signer);
+        const decimals = TOKEN_METADATA[fromAddress]?.decimals ?? 18;
+        const parsedAmountIn = BigInt((parsedAmount * 10 ** decimals).toFixed(0));
+        const allowance = await contract.allowance(address, ROUTER_ADDRESS);
+        setApprovalNeeded(allowance < parsedAmountIn);
+      } else {
+        setApprovalNeeded(false);
+      }
+    } catch {
+      setQuote(null);
+      setBestPath(null);
       setApprovalNeeded(false);
+    } finally {
+      setLoading(false);
     }
-  } catch {
-    setQuote(null);
-    setBestPath(null);
-    setApprovalNeeded(false);
-  } finally {
-    setLoading(false);
-  }
-}, [fromToken, toToken, amountIn, isConnected, address, walletClient]);
+  }, [fromToken, toToken, amountIn, isConnected, address, walletClient]);
 
   useEffect(() => {
     getQuote();
@@ -244,4 +240,4 @@ export function useSwapLogic() {
     doSwap,
     swapTokens
   };
-  }
+}
