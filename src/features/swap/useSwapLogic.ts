@@ -2,11 +2,10 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useAccount, useWalletClient } from "wagmi";
-import { walletClientToSigner } from "viem/utils";
+import { writeContract } from "viem/actions";
 import {
   PoolFetcher,
-  PathFinder,
-  TokenSwap
+  PathFinder
 } from "@kuru-labs/kuru-sdk";
 import type { RouteOutput } from "@kuru-labs/kuru-sdk";
 
@@ -17,6 +16,7 @@ import {
   ROUTER_ADDRESS,
   RPC_URL
 } from "@/lib/constants";
+import KURU_ROUTER_ABI from "@/lib/abi/kuruRouter.json";
 
 export function useSwapLogic() {
   const { isConnected, address } = useAccount();
@@ -139,51 +139,40 @@ export function useSwapLogic() {
   };
 
   const doSwap = useCallback(async () => {
-    if (!isConnected || !quote || !bestPath || bestPath.output <= 0) {
+    if (!isConnected || !quote || !bestPath || bestPath.output <= 0 || !walletClient || !address) {
       alert("⚠️ Please connect your wallet and enter a valid amount.");
-      return;
-    }
-
-    if (!walletClient) {
-      alert("❌ Wallet not connected.");
       return;
     }
 
     setLoading(true);
     try {
-      const signer = await walletClientToSigner(walletClient);
       const inputDecimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
       const outputDecimals = TOKEN_METADATA[toToken]?.decimals ?? 18;
-      const isNative = fromToken === NATIVE_TOKEN_ADDRESS;
 
-      const receipt = await TokenSwap.swap(
-        signer,
-        ROUTER_ADDRESS,
-        bestPath,
-        parseFloat(amountIn),
-        inputDecimals,
-        outputDecimals,
-        1,
-        !isNative,
-        (txHash) => {
-          console.log("🔁 Swap tx hash:", txHash);
-        }
+      const amountInParsed = BigInt(
+        (parseFloat(amountIn) * 10 ** inputDecimals).toFixed(0)
+      );
+      const minAmountOutParsed = BigInt(
+        (parseFloat(quote) * 10 ** outputDecimals).toFixed(0)
       );
 
-      if (!receipt || typeof receipt.status === "undefined") {
-        alert("⚠️ Swap may have completed, but no receipt was returned.");
-        await fetchBalances();
-        return;
-      }
+      const txHash = await writeContract(walletClient, {
+        address: ROUTER_ADDRESS,
+        abi: KURU_ROUTER_ABI,
+        functionName: "swapExactTokensForTokens",
+        args: [
+          amountInParsed,
+          minAmountOutParsed,
+          bestPath.path,
+          bestPath.pools.map((p) => p.address),
+          address,
+          BigInt(bestPath.deadline)
+        ]
+      });
 
-      if (receipt.status === 1) {
-        setQuote(null);
-        setBestPath(null);
-        await fetchBalances();
-        alert("✅ Swap completed successfully.");
-      } else {
-        alert("⚠️ Swap transaction failed or was reverted.");
-      }
+      console.log("🔁 Swap tx hash:", txHash);
+      alert("✅ Swap submitted: " + txHash);
+      await fetchBalances();
     } catch (err) {
       alert("❌ Swap failed: " + (err as Error).message);
     } finally {
@@ -193,7 +182,7 @@ export function useSwapLogic() {
       setApprovalNeeded(false);
       setLoading(false);
     }
-  }, [isConnected, amountIn, quote, bestPath, fromToken, toToken, fetchBalances, walletClient]);
+  }, [isConnected, amountIn, quote, bestPath, fromToken, toToken, fetchBalances, walletClient, address]);
 
   return {
     fromToken,
