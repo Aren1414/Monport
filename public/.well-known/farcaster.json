@@ -1,4 +1,9 @@
 {
+  "accountAssociation": {
+    "header": "eyJmaWQiOjM4NDQyOCwidHlwZSI6ImN1c3RvZHkiLCJrZXkiOiIweDcyNWJBQjMyMTFiNTg1NDk2OTBkNzNiYjc1OWI1QjBkRmQzZWVBOTYifQ",
+    "payload": "eyJkb21haW4iOiJtb25wb3J0LXRocmVlLnZlcmNlbC5hcHAifQ",
+    "signature": "MHg1NjJjN2Y2ZjUxMDZkN2ExODJmNDI1OWY0YTkyMDNiNWM2Y2EyOWVlOWNmMzRmZjBiYzg1NTIzZjZkZjE0YzNkMDM2MDkyZjg4YWVkMTkzNmIwYmIwY2E1MjA1ZjZmOGVhYjc3ZDBiMDAyYjcxZWZhYmFkMzg4MjkxN2IzYjllMTFi"
+  },
   "miniapp": {
     "version": "1",
     "name": "Monport",
