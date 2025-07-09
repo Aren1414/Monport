@@ -9,7 +9,7 @@ import {
   PathFinder
 } from "@kuru-labs/kuru-sdk";
 import type { RouteOutput } from "@kuru-labs/kuru-sdk";
-import { TOKEN_METADATA, TOKENS, NATIVE_TOKEN_ADDRESS, ROUTER_ADDRESS } from "@/lib/constants";
+import { TOKEN_METADATA, TOKENS, NATIVE_TOKEN_ADDRESS, ROUTER_ADDRESS, RPC_URL } from "@/lib/constants";
 import { KURU_ROUTER_ABI } from "@/lib/abi/kuruRouterAbi";
 import ERC20_ABI from "@/abis/ERC20.json";
 
@@ -87,7 +87,8 @@ export function useSwapLogic() {
     const poolFetcher = new PoolFetcher("https://api.testnet.kuru.io");
 
     try {
-      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      const provider = new ethers.providers.JsonRpcProvider(RPC_URL); // 👈 استفاده از RPC مستقیم Monad
+
       const baseTokens = Object.entries(TOKENS).map(([symbol, addr]) => ({
         symbol,
         address: addr
@@ -116,7 +117,7 @@ export function useSwapLogic() {
       setBestPath(path);
 
       if (fromToken !== NATIVE_TOKEN_ADDRESS) {
-        const signer = provider.getSigner();
+        const signer = provider.getSigner(address);
         const contract = new ethers.Contract(fromToken, ERC20_ABI, signer);
         const decimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
         const parsedAmountIn = BigInt((parsedAmount * 10 ** decimals).toFixed(0));
