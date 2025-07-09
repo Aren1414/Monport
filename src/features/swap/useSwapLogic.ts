@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { ethers, utils as ethersUtils } from "ethers";
-import { useAccount } from "wagmi";
+import { useAccount, useWalletClient } from "wagmi";
 import {
   PoolFetcher,
   PathFinder,
@@ -22,6 +22,7 @@ import ERC20_ABI from "@/abis/ERC20.json";
 
 export function useSwapLogic() {
   const { isConnected, address } = useAccount();
+  const { data: walletClient } = useWalletClient();
 
   const [fromToken, setFromToken] = useState(TOKENS.MON);
   const [toToken, setToToken] = useState(TOKENS.USDC);
@@ -152,11 +153,14 @@ export function useSwapLogic() {
       return;
     }
 
+    if (!walletClient) {
+      alert("❌ Wallet not connected.");
+      return;
+    }
+
     setLoading(true);
     try {
-      const provider = new ethers.providers.Web3Provider(window.ethereum);
-      await provider.send("eth_requestAccounts", []);
-      const signer = provider.getSigner();
+      const signer = await walletClient.getSigner();
 
       const inputDecimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
       const outputDecimals = TOKEN_METADATA[toToken]?.decimals ?? 18;
@@ -199,7 +203,7 @@ export function useSwapLogic() {
       setApprovalNeeded(false);
       setLoading(false);
     }
-  }, [isConnected, amountIn, quote, bestPath, fromToken, toToken, fetchBalances]);
+  }, [isConnected, amountIn, quote, bestPath, fromToken, toToken, fetchBalances, walletClient]);
 
   return {
     fromToken,
