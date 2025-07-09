@@ -37,7 +37,7 @@ export const RPC_URL = MONAD_CHAIN_PARAMS.rpcUrls[0];
 export const NATIVE_TOKEN_ADDRESS = "0x0000000000000000000000000000000000000000";
 
 // ✅ Kuru Router Address (from official docs)
-export const ROUTER_ADDRESS = "0xc816865f172d640d93712C68a7E1F83F3fA63235";
+export const ROUTER_ADDRESS = "0xc816865f172d640d93712C68a7E1F83F3fA63235" as `0x${string}`;
 
 // ✅ Token Addresses on Monad Testnet (checksum format)
 export const TOKENS = {
