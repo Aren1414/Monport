@@ -3,11 +3,10 @@
 import React from "react";
 import { useWalletClient } from "wagmi";
 import { writeContract } from "viem/actions";
-import { parseUnits } from "viem";
 import { useSwapLogic } from "@/features/swap/useSwapLogic";
 import TokenSelect from "@/features/swap/TokenSelect";
 import ERC20_ABI from "@/abis/ERC20.json";
-import { ROUTER_ADDRESS, TOKEN_METADATA } from "@/lib/constants";
+import { ROUTER_ADDRESS } from "@/lib/constants";
 
 export default function SwapTab() {
   const {
@@ -32,16 +31,7 @@ export default function SwapTab() {
   const isAmountValid = !!amountIn && parseFloat(amountIn) > 0;
 
   return (
-    <div
-      className="tab swap-tab"
-      style={{
-        maxWidth: 420,
-        margin: "0 auto",
-        padding: 16,
-        boxSizing: "border-box",
-        width: "100%",
-      }}
-    >
+    <div className="tab swap-tab" style={{ maxWidth: 420, margin: "0 auto", padding: 16, width: "100%" }}>
       <h2 style={{ textAlign: "center", marginBottom: 24 }}>🔄 Swap</h2>
 
       {isConnected && (
@@ -51,29 +41,13 @@ export default function SwapTab() {
       )}
 
       {/* FROM SECTION */}
-      <div style={{
-        background: "#f5f5f5",
-        padding: 12,
-        borderRadius: 12,
-        marginBottom: 12,
-        boxSizing: "border-box"
-      }}>
+      <div style={{ background: "#f5f5f5", padding: 12, borderRadius: 12, marginBottom: 12 }}>
         <label style={{ fontWeight: "bold" }}>From</label>
         <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>
           Balance: {parseFloat(balances[fromToken] || "0").toFixed(3)}
         </div>
-        <div style={{
-          display: "flex",
-          flexWrap: "wrap",
-          gap: 8,
-          alignItems: "center",
-          marginTop: 4
-        }}>
-          <TokenSelect
-            value={fromToken}
-            onChange={setFromToken}
-            balances={balances}
-          />
+        <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 4 }}>
+          <TokenSelect value={fromToken} onChange={setFromToken} balances={balances} />
           <input
             type="number"
             step="any"
@@ -186,7 +160,6 @@ export default function SwapTab() {
 
           if (approvalNeeded) {
             try {
-              const decimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
               await writeContract(walletClient, {
                 address: fromToken,
                 abi: ERC20_ABI,
