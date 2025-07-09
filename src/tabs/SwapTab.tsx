@@ -23,9 +23,7 @@ export default function SwapTab() {
     setToToken,
     setAmountIn,
     doSwap,
-    swapTokens,
-    connect,
-    connectors
+    swapTokens
   } = useSwapLogic();
 
   const isAmountValid = !!amountIn && parseFloat(amountIn) > 0;
@@ -43,31 +41,7 @@ export default function SwapTab() {
     >
       <h2 style={{ textAlign: "center", marginBottom: 24 }}>🔄 Swap</h2>
 
-      {!isConnected ? (
-        <button
-          onClick={() => {
-            const injectedConnector = connectors.find(c => c.id === "injected");
-            if (injectedConnector) {
-              connect({ connector: injectedConnector });
-            } else {
-              alert("No injected wallet found.");
-            }
-          }}
-          style={{
-            width: "100%",
-            padding: 12,
-            marginBottom: 16,
-            background: "#0070f3",
-            color: "white",
-            fontWeight: "bold",
-            border: "none",
-            borderRadius: 8,
-            cursor: "pointer"
-          }}
-        >
-          🔌 Connect Wallet
-        </button>
-      ) : (
+      {isConnected && (
         <div style={{ marginBottom: 16, textAlign: "center", fontSize: 14 }}>
           ✅ Connected: {address?.slice(0, 6)}...{address?.slice(-4)}
         </div>
