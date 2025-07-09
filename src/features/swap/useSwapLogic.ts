@@ -44,11 +44,12 @@ export function useSwapLogic() {
 
     for (const [, tokenAddress] of Object.entries(TOKENS)) {
       try {
-        const balance = await walletClient.transport.request({
+        const balanceHex = await walletClient.transport.request({
           method: "eth_getBalance",
           params: [address, "latest"]
-        });
-        newBalances[tokenAddress.toLowerCase()] = (parseInt(balance, 16) / 1e18).toString();
+        }) as string;
+
+        newBalances[tokenAddress.toLowerCase()] = (parseInt(balanceHex, 16) / 1e18).toString();
       } catch {
         newBalances[tokenAddress.toLowerCase()] = "0";
       }
