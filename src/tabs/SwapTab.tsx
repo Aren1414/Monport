@@ -2,11 +2,12 @@
 
 import React from "react";
 import { useWalletClient } from "wagmi";
-import { ethers } from "ethers";
+import { writeContract } from "viem/actions";
+import { parseUnits } from "viem";
 import { useSwapLogic } from "@/features/swap/useSwapLogic";
 import TokenSelect from "@/features/swap/TokenSelect";
 import ERC20_ABI from "@/abis/ERC20.json";
-import { ROUTER_ADDRESS } from "@/lib/constants";
+import { ROUTER_ADDRESS, TOKEN_METADATA } from "@/lib/constants";
 
 export default function SwapTab() {
   const {
@@ -185,13 +186,13 @@ export default function SwapTab() {
 
           if (approvalNeeded) {
             try {
-              const signer = await walletClient.getSigner();
-              const contract = new ethers.Contract(fromToken, ERC20_ABI, signer);
-              const tx = await contract.approve(
-                ROUTER_ADDRESS,
-                ethers.constants.MaxUint256
-              );
-              await tx.wait();
+              const decimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
+              await writeContract(walletClient, {
+                address: fromToken,
+                abi: ERC20_ABI,
+                functionName: "approve",
+                args: [ROUTER_ADDRESS, BigInt("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")],
+              });
               alert("✅ Token approved successfully.");
             } catch (err) {
               alert("❌ Approval failed: " + (err as Error).message);
