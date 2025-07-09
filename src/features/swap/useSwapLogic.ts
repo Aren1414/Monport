@@ -19,6 +19,11 @@ import {
 import { KURU_ROUTER_ABI } from "@/lib/abi/kuruRouterAbi";
 import ERC20_ABI from "@/abis/ERC20.json";
 
+type KuruRouteLike = {
+  path?: string[];
+  pools?: { address: string }[];
+};
+
 export function useSwapLogic() {
   const { isConnected, address } = useAccount();
   const { data: walletClient } = useWalletClient();
@@ -171,13 +176,8 @@ export function useSwapLogic() {
       const minAmountOutParsed = BigInt((parseFloat(quote) * 10 ** outputDecimals).toFixed(0));
       const deadline = Math.floor(Date.now() / 1000) + 60 * 10;
 
-      const routePath = Array.isArray((bestPath as any).path)
-        ? (bestPath as any).path
-        : [];
-
-      const poolAddresses = Array.isArray((bestPath as any).pools)
-        ? (bestPath as any).pools.map((p: { address: string }) => p.address)
-        : [];
+      const { path: routePath = [], pools = [] } = bestPath as KuruRouteLike;
+      const poolAddresses = pools.map((p) => p.address);
 
       const txHash = await writeContract(walletClient, {
         address: ROUTER_ADDRESS,
