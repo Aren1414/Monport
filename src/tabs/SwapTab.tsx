@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useSigner, useAccount } from "wagmi";
+import { useWalletClient, useAccount } from "wagmi";
 import { ethers } from "ethers";
 import { useSwapLogic } from "@/features/swap/useSwapLogic";
 import TokenSelect from "@/features/swap/TokenSelect";
@@ -9,8 +9,15 @@ import ERC20_ABI from "@/abis/ERC20.json";
 import { ROUTER_ADDRESS } from "@/lib/constants";
 
 export default function SwapTab() {
-  const { data: signer } = useSigner();
+  const { data: walletClient } = useWalletClient();
   const { address, isConnected } = useAccount();
+
+  // ساخت signer با استفاده از walletClient
+  const signer = React.useMemo(() => {
+    if (!walletClient) return undefined;
+    const provider = new ethers.providers.Web3Provider(walletClient);
+    return provider.getSigner();
+  }, [walletClient]);
 
   const {
     fromToken,
