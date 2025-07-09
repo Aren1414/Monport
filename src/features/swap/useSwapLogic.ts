@@ -16,7 +16,7 @@ import {
   ROUTER_ADDRESS,
   RPC_URL
 } from "@/lib/constants";
-import KURU_ROUTER_ABI from "@/lib/abi/kuruRouter.json";
+import { KURU_ROUTER_ABI } from "@/lib/abi/kuruRouterAbi";
 
 export function useSwapLogic() {
   const { isConnected, address } = useAccount();
