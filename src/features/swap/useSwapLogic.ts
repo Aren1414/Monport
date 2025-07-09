@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { ethers, utils as ethersUtils } from "ethers";
 import { useAccount, useWalletClient } from "wagmi";
+import { writeContract } from "viem/actions";
+import { parseUnits } from "viem";
 import {
   PoolFetcher,
   PathFinder,
@@ -38,20 +39,23 @@ export function useSwapLogic() {
   const fetchBalances = useCallback(async () => {
     if (!isConnected || !address) return;
 
-    const provider = new ethers.providers.JsonRpcProvider(RPC_URL);
+    const provider = new window.ethereum.constructor(RPC_URL);
     const newBalances: Record<string, string> = {};
 
     for (const [, tokenAddress] of Object.entries(TOKENS)) {
       try {
-        const normalized = ethersUtils.getAddress(tokenAddress);
-        if (normalized === NATIVE_TOKEN_ADDRESS) {
-          const balance = await provider.getBalance(address);
-          newBalances[normalized] = ethers.utils.formatEther(balance);
+        const normalized = tokenAddress.toLowerCase();
+        if (normalized === NATIVE_TOKEN_ADDRESS.toLowerCase()) {
+          const balance = await provider.request({
+            method: "eth_getBalance",
+            params: [address, "latest"],
+          });
+          newBalances[normalized] = (parseInt(balance, 16) / 1e18).toString();
         } else {
-          const contract = new ethers.Contract(normalized, ERC20_ABI, provider);
+          const contract = new (window as any).ethers.Contract(normalized, ERC20_ABI, provider);
           const decimals = TOKEN_METADATA[normalized]?.decimals ?? 18;
           const balance = await contract.balanceOf(address);
-          newBalances[normalized] = ethers.utils.formatUnits(balance, decimals);
+          newBalances[normalized] = (parseInt(balance.toString()) / 10 ** decimals).toString();
         }
       } catch {
         newBalances[tokenAddress] = "0";
@@ -83,11 +87,11 @@ export function useSwapLogic() {
     }
 
     setLoading(true);
-    const provider = new ethers.providers.JsonRpcProvider(RPC_URL);
+    const provider = new window.ethereum.constructor(RPC_URL);
     const poolFetcher = new PoolFetcher("https://api.testnet.kuru.io");
 
     const decimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
-    const amountInUnits = ethers.utils.parseUnits(parsedAmount.toString(), decimals);
+    const amountInUnits = parseUnits(parsedAmount.toString(), decimals);
 
     try {
       const baseTokens = Object.entries(TOKENS).map(([symbol, address]) => ({
@@ -108,7 +112,7 @@ export function useSwapLogic() {
         provider,
         fromToken,
         toToken,
-        parseFloat(ethers.utils.formatUnits(amountInUnits, decimals)),
+        parsedAmount,
         "amountIn",
         poolFetcher,
         pools
@@ -160,14 +164,12 @@ export function useSwapLogic() {
 
     setLoading(true);
     try {
-      const signer = await walletClient.getSigner();
-
       const inputDecimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
       const outputDecimals = TOKEN_METADATA[toToken]?.decimals ?? 18;
       const isNative = fromToken === NATIVE_TOKEN_ADDRESS;
 
-      const receipt = await TokenSwap.swap(
-        signer,
+      const txHash = await TokenSwap.swap(
+        walletClient,
         ROUTER_ADDRESS,
         bestPath,
         parseFloat(amountIn),
@@ -180,20 +182,16 @@ export function useSwapLogic() {
         }
       );
 
-      if (!receipt || typeof receipt.status === "undefined") {
-        alert("⚠️ Swap may have completed, but no receipt was returned.");
+      if (!txHash) {
+        alert("⚠️ Swap may have completed, but no tx hash was returned.");
         await fetchBalances();
         return;
       }
 
-      if (receipt.status === 1) {
-        setQuote(null);
-        setBestPath(null);
-        await fetchBalances();
-        alert("✅ Swap completed successfully.");
-      } else {
-        alert("⚠️ Swap transaction failed or was reverted.");
-      }
+      setQuote(null);
+      setBestPath(null);
+      await fetchBalances();
+      alert("✅ Swap completed successfully.");
     } catch (err) {
       alert("❌ Swap failed: " + (err as Error).message);
     } finally {
