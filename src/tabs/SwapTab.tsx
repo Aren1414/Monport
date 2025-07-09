@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useWalletClient, useAccount } from "wagmi";
+import { useWalletClient } from "wagmi";
 import { ethers } from "ethers";
 import { useSwapLogic } from "@/features/swap/useSwapLogic";
 import TokenSelect from "@/features/swap/TokenSelect";
@@ -9,16 +9,6 @@ import ERC20_ABI from "@/abis/ERC20.json";
 import { ROUTER_ADDRESS } from "@/lib/constants";
 
 export default function SwapTab() {
-  const { data: walletClient } = useWalletClient();
-  const { address, isConnected } = useAccount();
-
-  // ساخت signer با استفاده از walletClient
-  const signer = React.useMemo(() => {
-    if (!walletClient) return undefined;
-    const provider = new ethers.providers.Web3Provider(walletClient);
-    return provider.getSigner();
-  }, [walletClient]);
-
   const {
     fromToken,
     toToken,
@@ -27,41 +17,18 @@ export default function SwapTab() {
     loading,
     approvalNeeded,
     balances,
+    isConnected,
+    address,
     setFromToken,
     setToToken,
     setAmountIn,
     doSwap,
     swapTokens
-  } = useSwapLogic(signer, address);
+  } = useSwapLogic();
+
+  const { data: walletClient } = useWalletClient();
 
   const isAmountValid = !!amountIn && parseFloat(amountIn) > 0;
-
-  async function handleApprove() {
-    if (!signer) {
-      alert("❌ Wallet not connected.");
-      return;
-    }
-    try {
-      const contract = new ethers.Contract(fromToken, ERC20_ABI, signer);
-      const tx = await contract.approve(ROUTER_ADDRESS, ethers.constants.MaxUint256);
-      await tx.wait();
-      alert("✅ Token approved successfully.");
-    } catch (err) {
-      alert("❌ Approval failed: " + (err?.message || err));
-    }
-  }
-
-  async function handleSwap() {
-    if (!signer) {
-      alert("❌ Wallet not connected.");
-      return;
-    }
-    try {
-      await doSwap();
-    } catch (err) {
-      alert("❌ Swap failed: " + (err?.message || err));
-    }
-  }
 
   return (
     <div
@@ -210,7 +177,29 @@ export default function SwapTab() {
 
       {/* APPROVE / SWAP BUTTON */}
       <button
-        onClick={approvalNeeded ? handleApprove : handleSwap}
+        onClick={async () => {
+          if (!walletClient) {
+            alert("❌ Wallet not connected.");
+            return;
+          }
+
+          if (approvalNeeded) {
+            try {
+              const signer = await walletClient.getSigner();
+              const contract = new ethers.Contract(fromToken, ERC20_ABI, signer);
+              const tx = await contract.approve(
+                ROUTER_ADDRESS,
+                ethers.constants.MaxUint256
+              );
+              await tx.wait();
+              alert("✅ Token approved successfully.");
+            } catch (err) {
+              alert("❌ Approval failed: " + (err as Error).message);
+            }
+          } else {
+            await doSwap();
+          }
+        }}
         disabled={
           loading ||
           !isConnected ||
