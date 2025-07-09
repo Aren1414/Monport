@@ -33,7 +33,12 @@ export default function WelcomeTab() {
   }, [isConnected, chainId, switchChain])
 
   useEffect(() => {
-    sdk.actions.ready()
+    const init = async () => {
+      await sdk.actions.ready()
+      await sdk.actions.addMiniApp()
+    }
+
+    init()
   }, [])
 
   const mintNFT = async () => {
