@@ -87,7 +87,7 @@ export function useSwapLogic() {
     const poolFetcher = new PoolFetcher("https://api.testnet.kuru.io");
 
     try {
-      const provider = new ethers.providers.JsonRpcProvider(RPC_URL); // 👈 استفاده از RPC مستقیم Monad
+      const provider = new ethers.providers.JsonRpcProvider(RPC_URL); 
 
       const baseTokens = Object.entries(TOKENS).map(([symbol, addr]) => ({
         symbol,
@@ -149,48 +149,52 @@ export function useSwapLogic() {
   };
 
   const doSwap = useCallback(async () => {
-    if (!isConnected || !quote || !bestPath || bestPath.output <= 0 || !walletClient || !address) {
-      alert("⚠️ Please connect your wallet and enter a valid amount.");
-      return;
-    }
+  if (!isConnected || !quote || !bestPath || bestPath.output <= 0 || !walletClient || !address) {
+    alert("⚠️ Please connect your wallet and enter a valid amount.");
+    return;
+  }
 
-    setLoading(true);
-    try {
-      const inputDecimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
-      const outputDecimals = TOKEN_METADATA[toToken]?.decimals ?? 18;
+  setLoading(true);
+  try {
+    const inputDecimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
+    const outputDecimals = TOKEN_METADATA[toToken]?.decimals ?? 18;
 
-      const amountInParsed = BigInt((parseFloat(amountIn) * 10 ** inputDecimals).toFixed(0));
-      const minAmountOutParsed = BigInt((parseFloat(quote) * 10 ** outputDecimals).toFixed(0));
-      const deadline = Math.floor(Date.now() / 1000) + 60 * 10;
-      const route = bestPath as unknown as KuruRoute;
+    const amountInParsed = BigInt((parseFloat(amountIn) * 10 ** inputDecimals).toFixed(0));
+    const minAmountOutParsed = BigInt((parseFloat(quote) * 10 ** outputDecimals).toFixed(0));
+    const deadline = Math.floor(Date.now() / 1000) + 60 * 10;
 
-      const txHash = await writeContract(walletClient, {
-        address: ROUTER_ADDRESS,
-        abi: KURU_ROUTER_ABI,
-        functionName: "swapExactTokensForTokens",
-        args: [
-          amountInParsed,
-          minAmountOutParsed,
-          route.path,
-          route.pools.map((p) => p.address),
-          address,
-          BigInt(deadline)
-        ]
-      });
+    const routePath = bestPath.path ?? [];
+    const poolAddresses = Array.isArray(bestPath.pools)
+      ? bestPath.pools.map((p: { address: string }) => p.address)
+      : [];
 
-      console.log("🔁 Swap tx hash:", txHash);
-      alert("✅ Swap submitted: " + txHash);
-      await fetchBalances();
-    } catch (err) {
-      alert("❌ Swap failed: " + (err as Error).message);
-    } finally {
-      setAmountIn("");
-      setQuote(null);
-      setBestPath(null);
-      setApprovalNeeded(false);
-      setLoading(false);
-    }
-  }, [isConnected, amountIn, quote, bestPath, fromToken, toToken, fetchBalances, walletClient, address]);
+    const txHash = await writeContract(walletClient, {
+      address: ROUTER_ADDRESS,
+      abi: KURU_ROUTER_ABI,
+      functionName: "swapExactTokensForTokens",
+      args: [
+        amountInParsed,
+        minAmountOutParsed,
+        routePath,
+        poolAddresses,
+        address,
+        BigInt(deadline)
+      ]
+    });
+
+    console.log("🔁 Swap tx hash:", txHash);
+    alert("✅ Swap submitted: " + txHash);
+    await fetchBalances();
+  } catch (err) {
+    alert("❌ Swap failed: " + (err as Error).message);
+  } finally {
+    setAmountIn("");
+    setQuote(null);
+    setBestPath(null);
+    setApprovalNeeded(false);
+    setLoading(false);
+  }
+}, [isConnected, amountIn, quote, bestPath, fromToken, toToken, fetchBalances, walletClient, address]);
 
   return {
     fromToken,
