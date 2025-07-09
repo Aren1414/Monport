@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useAccount, useWalletClient } from "wagmi";
+import { walletClientToSigner } from "viem/utils";
 import {
   PoolFetcher,
   PathFinder,
@@ -150,12 +151,13 @@ export function useSwapLogic() {
 
     setLoading(true);
     try {
+      const signer = await walletClientToSigner(walletClient);
       const inputDecimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
       const outputDecimals = TOKEN_METADATA[toToken]?.decimals ?? 18;
       const isNative = fromToken === NATIVE_TOKEN_ADDRESS;
 
-      const txHash = await TokenSwap.swap(
-        walletClient,
+      const receipt = await TokenSwap.swap(
+        signer,
         ROUTER_ADDRESS,
         bestPath,
         parseFloat(amountIn),
@@ -168,16 +170,20 @@ export function useSwapLogic() {
         }
       );
 
-      if (!txHash) {
-        alert("⚠️ Swap may have completed, but no tx hash was returned.");
+      if (!receipt || typeof receipt.status === "undefined") {
+        alert("⚠️ Swap may have completed, but no receipt was returned.");
         await fetchBalances();
         return;
       }
 
-      setQuote(null);
-      setBestPath(null);
-      await fetchBalances();
-      alert("✅ Swap completed successfully.");
+      if (receipt.status === 1) {
+        setQuote(null);
+        setBestPath(null);
+        await fetchBalances();
+        alert("✅ Swap completed successfully.");
+      } else {
+        alert("⚠️ Swap transaction failed or was reverted.");
+      }
     } catch (err) {
       alert("❌ Swap failed: " + (err as Error).message);
     } finally {
