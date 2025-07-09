@@ -1,23 +1,28 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { ethers } from "ethers";
 import { useAccount, useWalletClient } from "wagmi";
+import { writeContract } from "viem/actions";
+import { ethers } from "ethers";
 import {
   PoolFetcher,
-  PathFinder,
-  TokenSwap
+  PathFinder
 } from "@kuru-labs/kuru-sdk";
 import type { RouteOutput } from "@kuru-labs/kuru-sdk";
-
 import {
-  TOKENS,
   TOKEN_METADATA,
+  TOKENS,
   NATIVE_TOKEN_ADDRESS,
   ROUTER_ADDRESS,
   RPC_URL
 } from "@/lib/constants";
+import { KURU_ROUTER_ABI } from "@/lib/abi/kuruRouterAbi";
 import ERC20_ABI from "@/abis/ERC20.json";
+
+type KuruRouteLike = {
+  path?: string[];
+  pools?: { address: string }[];
+};
 
 export function useSwapLogic() {
   const { isConnected, address } = useAccount();
@@ -37,23 +42,18 @@ export function useSwapLogic() {
   const fetchBalances = useCallback(async () => {
     if (!isConnected || !address || !walletClient) return;
 
-    const provider = new ethers.providers.JsonRpcProvider(RPC_URL);
     const newBalances: Record<string, string> = {};
 
     for (const [, tokenAddress] of Object.entries(TOKENS)) {
       try {
-        const normalized = ethers.utils.getAddress(tokenAddress);
-        if (normalized === NATIVE_TOKEN_ADDRESS) {
-          const balance = await provider.getBalance(address);
-          newBalances[normalized] = ethers.utils.formatEther(balance);
-        } else {
-          const contract = new ethers.Contract(normalized, ERC20_ABI, provider);
-          const decimals = TOKEN_METADATA[normalized]?.decimals ?? 18;
-          const balance = await contract.balanceOf(address);
-          newBalances[normalized] = ethers.utils.formatUnits(balance, decimals);
-        }
+        const balanceHex = await walletClient.transport.request({
+          method: "eth_getBalance",
+          params: [address, "latest"]
+        }) as string;
+
+        newBalances[tokenAddress.toLowerCase()] = (parseInt(balanceHex, 16) / 1e18).toString();
       } catch {
-        newBalances[tokenAddress] = "0";
+        newBalances[tokenAddress.toLowerCase()] = "0";
       }
     }
 
@@ -74,7 +74,15 @@ export function useSwapLogic() {
 
   const getQuote = useCallback(async () => {
     const parsedAmount = parseFloat(amountIn);
-    if (!fromToken || !toToken || isNaN(parsedAmount) || parsedAmount <= 0 || !isConnected || !address || !walletClient) {
+    if (
+      !fromToken ||
+      !toToken ||
+      isNaN(parsedAmount) ||
+      parsedAmount <= 0 ||
+      !isConnected ||
+      !address ||
+      !walletClient
+    ) {
       setQuote(null);
       setBestPath(null);
       setApprovalNeeded(false);
@@ -82,32 +90,23 @@ export function useSwapLogic() {
     }
 
     setLoading(true);
-    const provider = new ethers.providers.JsonRpcProvider(RPC_URL);
     const poolFetcher = new PoolFetcher("https://api.testnet.kuru.io");
 
-    const decimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
-    const amountInUnits = ethers.utils.parseUnits(parsedAmount.toString(), decimals);
-
     try {
-      const baseTokens = Object.entries(TOKENS).map(([symbol, address]) => ({
+      const provider = new ethers.providers.JsonRpcProvider(RPC_URL);
+
+      const baseTokens = Object.entries(TOKENS).map(([symbol, addr]) => ({
         symbol,
-        address,
+        address: addr
       }));
 
       const pools = await poolFetcher.getAllPools(fromToken, toToken, baseTokens);
-
-      if (!pools || pools.length === 0) {
-        setQuote(null);
-        setBestPath(null);
-        setApprovalNeeded(false);
-        return;
-      }
 
       const path = await PathFinder.findBestPath(
         provider,
         fromToken,
         toToken,
-        parseFloat(ethers.utils.formatUnits(amountInUnits, decimals)),
+        parsedAmount,
         "amountIn",
         poolFetcher,
         pools
@@ -124,12 +123,12 @@ export function useSwapLogic() {
       setBestPath(path);
 
       if (fromToken !== NATIVE_TOKEN_ADDRESS) {
-        const signerProvider = new ethers.providers.JsonRpcProvider(walletClient.transport as any);
-        const signer = signerProvider.getSigner(address);
+        const signer = provider.getSigner(address);
         const contract = new ethers.Contract(fromToken, ERC20_ABI, signer);
+        const decimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
+        const parsedAmountIn = BigInt((parsedAmount * 10 ** decimals).toFixed(0));
         const allowance = await contract.allowance(address, ROUTER_ADDRESS);
-        const needsApproval = allowance.lt(amountInUnits);
-        setApprovalNeeded((prev) => (prev !== needsApproval ? needsApproval : prev));
+        setApprovalNeeded(allowance.lt(parsedAmountIn));
       } else {
         setApprovalNeeded(false);
       }
@@ -156,7 +155,14 @@ export function useSwapLogic() {
   };
 
   const doSwap = useCallback(async () => {
-    if (!isConnected || !quote || !bestPath || bestPath.output <= 0 || !walletClient || !address) {
+    if (
+      !isConnected ||
+      !quote ||
+      !bestPath ||
+      bestPath.output <= 0 ||
+      !walletClient ||
+      !address
+    ) {
       alert("⚠️ Please connect your wallet and enter a valid amount.");
       return;
     }
@@ -165,39 +171,31 @@ export function useSwapLogic() {
     try {
       const inputDecimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
       const outputDecimals = TOKEN_METADATA[toToken]?.decimals ?? 18;
-      const isNative = fromToken === NATIVE_TOKEN_ADDRESS;
 
-      const signerProvider = new ethers.providers.JsonRpcProvider(walletClient.transport as any);
-      const signer = signerProvider.getSigner(address);
+      const amountInParsed = BigInt((parseFloat(amountIn) * 10 ** inputDecimals).toFixed(0));
+      const minAmountOutParsed = BigInt((parseFloat(quote) * 10 ** outputDecimals).toFixed(0));
+      const deadline = Math.floor(Date.now() / 1000) + 60 * 10;
 
-      const receipt = await TokenSwap.swap(
-        signer,
-        ROUTER_ADDRESS,
-        bestPath,
-        parseFloat(amountIn),
-        inputDecimals,
-        outputDecimals,
-        1,
-        !isNative,
-        (txHash) => {
-          console.log("🔁 Swap tx hash:", txHash);
-        }
-      );
+      const { path: routePath = [], pools = [] } = bestPath as KuruRouteLike;
+      const poolAddresses = pools.map((p) => p.address);
 
-      if (!receipt || typeof receipt.status === "undefined") {
-        alert("⚠️ Swap may have completed, but no receipt was returned.");
-        await fetchBalances();
-        return;
-      }
+      const txHash = await writeContract(walletClient, {
+        address: ROUTER_ADDRESS,
+        abi: KURU_ROUTER_ABI,
+        functionName: "swapExactTokensForTokens",
+        args: [
+          amountInParsed,
+          minAmountOutParsed,
+          routePath,
+          poolAddresses,
+          address,
+          BigInt(deadline)
+        ]
+      });
 
-      if (receipt.status === 1) {
-        setQuote(null);
-        setBestPath(null);
-        await fetchBalances();
-        alert("✅ Swap completed successfully.");
-      } else {
-        alert("⚠️ Swap transaction failed or was reverted.");
-      }
+      console.log("🔁 Swap tx hash:", txHash);
+      alert("✅ Swap submitted: " + txHash);
+      await fetchBalances();
     } catch (err) {
       alert("❌ Swap failed: " + (err as Error).message);
     } finally {
@@ -207,7 +205,17 @@ export function useSwapLogic() {
       setApprovalNeeded(false);
       setLoading(false);
     }
-  }, [isConnected, amountIn, quote, bestPath, fromToken, toToken, fetchBalances, walletClient, address]);
+  }, [
+    isConnected,
+    amountIn,
+    quote,
+    bestPath,
+    fromToken,
+    toToken,
+    fetchBalances,
+    walletClient,
+    address
+  ]);
 
   return {
     fromToken,
