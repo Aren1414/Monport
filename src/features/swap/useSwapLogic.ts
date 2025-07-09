@@ -163,7 +163,7 @@ export function useSwapLogic() {
         args: [
           amountInParsed,
           minAmountOutParsed,
-          bestPath.path,
+          bestPath.tokenAddresses, 
           bestPath.pools.map((p) => p.address),
           address,
           BigInt(bestPath.deadline)
