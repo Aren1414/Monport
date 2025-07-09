@@ -100,10 +100,12 @@ export function useSwapLogic() {
     try {
       const provider = new ethers.providers.JsonRpcProvider(RPC_URL);
 
-      const baseTokens = Object.entries(TOKENS).map(([symbol, addr]) => ({
-        symbol,
-        address: addr
-      }));
+      const baseTokens = Object.entries(TOKENS)
+        .filter(([symbol]) => symbol !== "MON")
+        .map(([symbol, addr]) => ({
+          symbol,
+          address: addr
+        }));
 
       const pools = await poolFetcher.getAllPools(fromToken, toToken, baseTokens);
 
@@ -133,7 +135,7 @@ export function useSwapLogic() {
         const decimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
         const parsedAmountIn = BigInt((parsedAmount * 10 ** decimals).toFixed(0));
         const allowance = await contract.allowance(address, ROUTER_ADDRESS);
-        setApprovalNeeded(allowance.lt(parsedAmountIn));
+        setApprovalNeeded(allowance < parsedAmountIn);
       } else {
         setApprovalNeeded(false);
       }
@@ -179,7 +181,7 @@ export function useSwapLogic() {
 
       const amountInParsed = BigInt((parseFloat(amountIn) * 10 ** inputDecimals).toFixed(0));
       const minAmountOutParsed = BigInt((parseFloat(quote) * 10 ** outputDecimals).toFixed(0));
-      const deadline = Math.floor(Date.now() / 1000) + 60 * 10;
+      const deadline = Math.floor(Date.now() / 1000) + 600;
 
       const { path: routePath = [], pools = [] } = bestPath as KuruRouteLike;
       const poolAddresses = pools.map((p) => p.address);
@@ -239,4 +241,4 @@ export function useSwapLogic() {
     doSwap,
     swapTokens
   };
-}
+  }
