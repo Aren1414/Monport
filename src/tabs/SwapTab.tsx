@@ -1,7 +1,8 @@
 "use client";
 
 import React from "react";
-import { ethers } from "ethers";
+import { useWalletClient } from "wagmi";
+import { writeContract } from "viem/actions";
 import { useSwapLogic } from "@/features/swap/useSwapLogic";
 import TokenSelect from "@/features/swap/TokenSelect";
 import ERC20_ABI from "@/abis/ERC20.json";
@@ -18,85 +19,34 @@ export default function SwapTab() {
     balances,
     isConnected,
     address,
-    walletClient,
     setFromToken,
     setToToken,
     setAmountIn,
     doSwap,
-    swapTokens,
-    connect,
-    connectors
+    swapTokens
   } = useSwapLogic();
 
+  const { data: walletClient } = useWalletClient();
   const isAmountValid = !!amountIn && parseFloat(amountIn) > 0;
 
   return (
-    <div
-      className="tab swap-tab"
-      style={{
-        maxWidth: 420,
-        margin: "0 auto",
-        padding: 16,
-        boxSizing: "border-box",
-        width: "100%",
-      }}
-    >
+    <div className="tab swap-tab" style={{ maxWidth: 420, margin: "0 auto", padding: 16, width: "100%" }}>
       <h2 style={{ textAlign: "center", marginBottom: 24 }}>🔄 Swap</h2>
 
-      {!isConnected ? (
-        <button
-          onClick={() => {
-            const injectedConnector = connectors.find(c => c.id === "injected");
-            if (injectedConnector) {
-              connect({ connector: injectedConnector });
-            } else {
-              alert("No injected wallet found.");
-            }
-          }}
-          style={{
-            width: "100%",
-            padding: 12,
-            marginBottom: 16,
-            background: "#0070f3",
-            color: "white",
-            fontWeight: "bold",
-            border: "none",
-            borderRadius: 8,
-            cursor: "pointer"
-          }}
-        >
-          🔌 Connect Wallet
-        </button>
-      ) : (
+      {isConnected && (
         <div style={{ marginBottom: 16, textAlign: "center", fontSize: 14 }}>
           ✅ Connected: {address?.slice(0, 6)}...{address?.slice(-4)}
         </div>
       )}
 
       {/* FROM SECTION */}
-      <div style={{
-        background: "#f5f5f5",
-        padding: 12,
-        borderRadius: 12,
-        marginBottom: 12,
-        boxSizing: "border-box"
-      }}>
+      <div style={{ background: "#f5f5f5", padding: 12, borderRadius: 12, marginBottom: 12 }}>
         <label style={{ fontWeight: "bold" }}>From</label>
         <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>
           Balance: {parseFloat(balances[fromToken] || "0").toFixed(3)}
         </div>
-        <div style={{
-          display: "flex",
-          flexWrap: "wrap",
-          gap: 8,
-          alignItems: "center",
-          marginTop: 4
-        }}>
-          <TokenSelect
-            value={fromToken}
-            onChange={setFromToken}
-            balances={balances}
-          />
+        <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 4 }}>
+          <TokenSelect value={fromToken} onChange={setFromToken} balances={balances} />
           <input
             type="number"
             step="any"
@@ -157,29 +107,13 @@ export default function SwapTab() {
       </div>
 
       {/* TO SECTION */}
-      <div style={{
-        background: "#f5f5f5",
-        padding: 12,
-        borderRadius: 12,
-        marginBottom: 12,
-        boxSizing: "border-box"
-      }}>
+      <div style={{ background: "#f5f5f5", padding: 12, borderRadius: 12, marginBottom: 12 }}>
         <label style={{ fontWeight: "bold" }}>To</label>
         <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>
           Balance: {parseFloat(balances[toToken] || "0").toFixed(3)}
         </div>
-        <div style={{
-          display: "flex",
-          flexWrap: "wrap",
-          gap: 8,
-          alignItems: "center",
-          marginTop: 4
-        }}>
-          <TokenSelect
-            value={toToken}
-            onChange={setToToken}
-            balances={balances}
-          />
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", marginTop: 4 }}>
+          <TokenSelect value={toToken} onChange={setToToken} balances={balances} />
           <input
             value={quote ? parseFloat(quote).toFixed(3) : ""}
             readOnly
@@ -202,18 +136,19 @@ export default function SwapTab() {
       {/* APPROVE / SWAP BUTTON */}
       <button
         onClick={async () => {
-          if (!walletClient || !address) return;
+          if (!walletClient) {
+            alert("❌ Wallet not connected.");
+            return;
+          }
 
           if (approvalNeeded) {
             try {
-              const signerProvider = new ethers.providers.JsonRpcProvider(walletClient.transport as any);
-              const signer = signerProvider.getSigner(address);
-              const contract = new ethers.Contract(fromToken, ERC20_ABI, signer);
-              const tx = await contract.approve(
-                ROUTER_ADDRESS,
-                ethers.constants.MaxUint256
-              );
-              await tx.wait();
+              await writeContract(walletClient, {
+                address: fromToken as `0x${string}`,
+                abi: ERC20_ABI,
+                functionName: "approve",
+                args: [ROUTER_ADDRESS, BigInt("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")],
+              });
               alert("✅ Token approved successfully.");
             } catch (err) {
               alert("❌ Approval failed: " + (err as Error).message);
@@ -222,12 +157,7 @@ export default function SwapTab() {
             await doSwap();
           }
         }}
-        disabled={
-          loading ||
-          !isConnected ||
-          !isAmountValid ||
-          !quote
-        }
+        disabled={loading || !isConnected || !isAmountValid || !quote}
         style={{
           width: "100%",
           padding: 12,
