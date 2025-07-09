@@ -1,12 +1,12 @@
 "use client";
 
 import React from "react";
+import { useWalletClient } from "wagmi";
 import { ethers } from "ethers";
 import { useSwapLogic } from "@/features/swap/useSwapLogic";
 import TokenSelect from "@/features/swap/TokenSelect";
 import ERC20_ABI from "@/abis/ERC20.json";
 import { ROUTER_ADDRESS } from "@/lib/constants";
-import type { EthereumWindow } from "@/features/swap/types";
 
 export default function SwapTab() {
   const {
@@ -25,6 +25,8 @@ export default function SwapTab() {
     doSwap,
     swapTokens
   } = useSwapLogic();
+
+  const { data: walletClient } = useWalletClient();
 
   const isAmountValid = !!amountIn && parseFloat(amountIn) > 0;
 
@@ -176,13 +178,18 @@ export default function SwapTab() {
       {/* APPROVE / SWAP BUTTON */}
       <button
         onClick={async () => {
+          if (!walletClient) {
+            alert("❌ Wallet not connected.");
+            return;
+          }
+
           if (approvalNeeded) {
             try {
-              const provider = new ethers.providers.Web3Provider(
-                (window as EthereumWindow).ethereum!
+              const contract = new ethers.Contract(
+                fromToken,
+                ERC20_ABI,
+                walletClient
               );
-              const signer = provider.getSigner();
-              const contract = new ethers.Contract(fromToken, ERC20_ABI, signer);
               const tx = await contract.approve(
                 ROUTER_ADDRESS,
                 ethers.constants.MaxUint256
