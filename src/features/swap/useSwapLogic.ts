@@ -3,19 +3,15 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useAccount, useWalletClient } from "wagmi";
 import { writeContract } from "viem/actions";
+import { ethers } from "ethers";
 import {
   PoolFetcher,
   PathFinder
 } from "@kuru-labs/kuru-sdk";
 import type { RouteOutput } from "@kuru-labs/kuru-sdk";
-
-import {
-  TOKENS,
-  TOKEN_METADATA,
-  NATIVE_TOKEN_ADDRESS,
-  ROUTER_ADDRESS
-} from "@/lib/constants";
+import { TOKEN_METADATA, TOKENS, NATIVE_TOKEN_ADDRESS, ROUTER_ADDRESS } from "@/lib/constants";
 import { KURU_ROUTER_ABI } from "@/lib/abi/kuruRouterAbi";
+import ERC20_ABI from "@/abis/ERC20.json";
 
 type KuruRoute = {
   path: string[];
@@ -57,7 +53,7 @@ export function useSwapLogic() {
 
     const prev = previousBalancesRef.current;
     const changed = Object.keys(newBalances).some(
-      key => newBalances[key] !== prev[key]
+      (key) => newBalances[key] !== prev[key]
     );
 
     if (changed) {
@@ -72,7 +68,15 @@ export function useSwapLogic() {
 
   const getQuote = useCallback(async () => {
     const parsedAmount = parseFloat(amountIn);
-    if (!fromToken || !toToken || isNaN(parsedAmount) || parsedAmount <= 0 || !isConnected || !address || !walletClient) {
+    if (
+      !fromToken ||
+      !toToken ||
+      isNaN(parsedAmount) ||
+      parsedAmount <= 0 ||
+      !isConnected ||
+      !address ||
+      !walletClient
+    ) {
       setQuote(null);
       setBestPath(null);
       setApprovalNeeded(false);
@@ -80,26 +84,19 @@ export function useSwapLogic() {
     }
 
     setLoading(true);
-
     const poolFetcher = new PoolFetcher("https://api.testnet.kuru.io");
 
     try {
-      const baseTokens = Object.entries(TOKENS).map(([symbol, address]) => ({
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      const baseTokens = Object.entries(TOKENS).map(([symbol, addr]) => ({
         symbol,
-        address
+        address: addr
       }));
 
       const pools = await poolFetcher.getAllPools(fromToken, toToken, baseTokens);
 
-      if (!pools || pools.length === 0) {
-        setQuote(null);
-        setBestPath(null);
-        setApprovalNeeded(false);
-        return;
-      }
-
       const path = await PathFinder.findBestPath(
-        walletClient.transport,
+        provider,
         fromToken,
         toToken,
         parsedAmount,
@@ -117,7 +114,17 @@ export function useSwapLogic() {
 
       setQuote(path.output.toString());
       setBestPath(path);
-      setApprovalNeeded(fromToken !== NATIVE_TOKEN_ADDRESS);
+
+      if (fromToken !== NATIVE_TOKEN_ADDRESS) {
+        const signer = provider.getSigner();
+        const contract = new ethers.Contract(fromToken, ERC20_ABI, signer);
+        const decimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
+        const parsedAmountIn = BigInt((parsedAmount * 10 ** decimals).toFixed(0));
+        const allowance = await contract.allowance(address, ROUTER_ADDRESS);
+        setApprovalNeeded(allowance.lt(parsedAmountIn));
+      } else {
+        setApprovalNeeded(false);
+      }
     } catch {
       setQuote(null);
       setBestPath(null);
@@ -153,7 +160,6 @@ export function useSwapLogic() {
 
       const amountInParsed = BigInt((parseFloat(amountIn) * 10 ** inputDecimals).toFixed(0));
       const minAmountOutParsed = BigInt((parseFloat(quote) * 10 ** outputDecimals).toFixed(0));
-
       const deadline = Math.floor(Date.now() / 1000) + 60 * 10;
       const route = bestPath as unknown as KuruRoute;
 
@@ -165,7 +171,7 @@ export function useSwapLogic() {
           amountInParsed,
           minAmountOutParsed,
           route.path,
-          route.pools.map(p => p.address),
+          route.pools.map((p) => p.address),
           address,
           BigInt(deadline)
         ]
