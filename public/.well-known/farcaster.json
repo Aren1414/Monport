@@ -15,6 +15,12 @@
     "ogTitle": "Monport",
     "ogDescription": "A simple Mini App to explore the Monad testnet.",
     "ogImageUrl": "https://mhz5j3u6p57zkqjpwsz5kixyp37p7vkwqoetwxbtzgjof6fyysgq.arweave.net/YfPU7p5_f5VBL7Sz1SL4fv7_1VaDiTtcM8mS4vi4xI0",
+    "castShareUrl": "https://warpcast.com/~/compose?text=%F0%9F%9A%80%20Just%20minted%20a%20Welcome%20NFT%20on%20Monad!%0A%0AJoin%20the%20Mini%20App%20and%20mint%20yours%20now%20%F0%9F%91%87%0A%0ACreated%20by%20@overo.eth&embeds[]=https%3A%2F%2Fmonport-three.vercel.app",
+    "screenshotUrls": [
+      "https://monport-three.vercel.app/screenshots/1.jpg",
+      "https://monport-three.vercel.app/screenshots/2.jpg"
+    ],
+    "webhookUrl": "https://monport-three.vercel.app/api/webhook",
     "requiredChains": ["eip155:8453"],
     "requiredCapabilities": [
       "wallet.getEthereumProvider",
