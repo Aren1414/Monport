@@ -18,6 +18,12 @@ import {
 } from "@/lib/constants";
 import { KURU_ROUTER_ABI } from "@/lib/abi/kuruRouterAbi";
 
+
+type KuruRoute = {
+  path: string[];
+  pools: { address: string }[];
+};
+
 export function useSwapLogic() {
   const { isConnected, address } = useAccount();
   const { data: walletClient } = useWalletClient();
@@ -156,7 +162,10 @@ export function useSwapLogic() {
         (parseFloat(quote) * 10 ** outputDecimals).toFixed(0)
       );
 
-      const deadline = Math.floor(Date.now() / 1000) + 60 * 10; 
+      const deadline = Math.floor(Date.now() / 1000) + 60 * 10;
+
+      
+      const route = bestPath as unknown as KuruRoute;
 
       const txHash = await writeContract(walletClient, {
         address: ROUTER_ADDRESS,
@@ -165,8 +174,8 @@ export function useSwapLogic() {
         args: [
           amountInParsed,
           minAmountOutParsed,
-          (bestPath as any).path,
-          bestPath.pools.map((p) => p.address),
+          route.path,
+          route.pools.map((p) => p.address),
           address,
           BigInt(deadline)
         ]
