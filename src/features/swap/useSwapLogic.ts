@@ -13,10 +13,6 @@ import { TOKEN_METADATA, TOKENS, NATIVE_TOKEN_ADDRESS, ROUTER_ADDRESS, RPC_URL }
 import { KURU_ROUTER_ABI } from "@/lib/abi/kuruRouterAbi";
 import ERC20_ABI from "@/abis/ERC20.json";
 
-type KuruRoute = {
-  path: string[];
-  pools: { address: string }[];
-};
 
 export function useSwapLogic() {
   const { isConnected, address } = useAccount();
