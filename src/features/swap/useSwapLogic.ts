@@ -45,7 +45,7 @@ export function useSwapLogic() {
     for (const [, tokenAddress] of Object.entries(TOKENS)) {
       try {
         const normalized = ethers.utils.getAddress(tokenAddress);
-        if (normalized === ethers.utils.getAddress(NATIVE_TOKEN_ADDRESS)) {
+        if (normalized === NATIVE_TOKEN_ADDRESS) {
           const balance = await rpcProvider.getBalance(address);
           newBalances[normalized] = ethers.utils.formatEther(balance);
         } else {
@@ -98,13 +98,14 @@ export function useSwapLogic() {
 
       const fromAddress = ethers.utils.getAddress(fromToken);
       const toAddress = ethers.utils.getAddress(toToken);
+      const inputDecimals = TOKEN_METADATA[fromAddress]?.decimals ?? 18;
 
       const baseTokens = Object.entries(TOKENS)
         .map(([symbol, addr]) => ({
           symbol,
           address: ethers.utils.getAddress(addr)
         }))
-        .filter(({ address }) => address !== ethers.utils.getAddress(NATIVE_TOKEN_ADDRESS));
+        .filter(({ address }) => address !== NATIVE_TOKEN_ADDRESS);
 
       const pools = await poolFetcher.getAllPools(fromAddress, toAddress, baseTokens);
 
@@ -128,13 +129,13 @@ export function useSwapLogic() {
       setQuote(path.output.toString());
       setBestPath(path);
 
-      if (fromAddress !== ethers.utils.getAddress(NATIVE_TOKEN_ADDRESS)) {
+      // Allowance Check
+      if (fromAddress !== NATIVE_TOKEN_ADDRESS) {
         const signer = provider.getSigner(address);
         const contract = new ethers.Contract(fromAddress, ERC20_ABI, signer);
-        const decimals = TOKEN_METADATA[fromAddress]?.decimals ?? 18;
-        const parsedAmountIn = BigInt((parsedAmount * 10 ** decimals).toFixed(0));
+        const parsedAmountIn = ethers.utils.parseUnits(parsedAmount.toString(), inputDecimals);
         const allowance = await contract.allowance(address, ROUTER_ADDRESS);
-        setApprovalNeeded(allowance < parsedAmountIn);
+        setApprovalNeeded(allowance.lt(parsedAmountIn));
       } else {
         setApprovalNeeded(false);
       }
@@ -178,9 +179,12 @@ export function useSwapLogic() {
       const inputDecimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
       const outputDecimals = TOKEN_METADATA[toToken]?.decimals ?? 18;
 
-      const amountInParsed = BigInt((parseFloat(amountIn) * 10 ** inputDecimals).toFixed(0));
-      const minAmountOutParsed = BigInt((parseFloat(quote) * 10 ** outputDecimals).toFixed(0));
-      const deadline = Math.floor(Date.now() / 1000) + 600;
+      const amountInParsed = ethers.utils.parseUnits(amountIn, inputDecimals);
+      const minAmountOutParsed = ethers.utils.parseUnits(
+        (parseFloat(quote) * 0.99).toFixed(6), // slippage 1%
+        outputDecimals
+      );
+      const deadline = BigInt(Math.floor(Date.now() / 1000) + 600);
 
       const { path: routePath = [], pools = [] } = bestPath as KuruRouteLike;
       const poolAddresses = pools.map((p) => p.address);
@@ -195,7 +199,7 @@ export function useSwapLogic() {
           routePath,
           poolAddresses,
           address,
-          BigInt(deadline)
+          deadline
         ]
       });
 
