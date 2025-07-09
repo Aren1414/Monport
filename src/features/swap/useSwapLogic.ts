@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { ethers, utils as ethersUtils } from "ethers";
-import { useAccount, useConnect } from "wagmi";
+import { useAccount } from "wagmi";
 import {
   PoolFetcher,
   PathFinder,
@@ -19,11 +19,9 @@ import {
 } from "@/lib/constants";
 
 import ERC20_ABI from "@/abis/ERC20.json";
-import type { EthereumWindow } from "./types";
 
 export function useSwapLogic() {
   const { isConnected, address } = useAccount();
-  const { connect, connectors } = useConnect();
 
   const [fromToken, setFromToken] = useState(TOKENS.MON);
   const [toToken, setToToken] = useState(TOKENS.USDC);
@@ -39,10 +37,7 @@ export function useSwapLogic() {
   const fetchBalances = useCallback(async () => {
     if (!isConnected || !address) return;
 
-    const provider = new ethers.providers.Web3Provider(
-      (window as EthereumWindow).ethereum!
-    );
-
+    const provider = new ethers.providers.JsonRpcProvider(RPC_URL);
     const newBalances: Record<string, string> = {};
 
     for (const [, tokenAddress] of Object.entries(TOKENS)) {
@@ -75,19 +70,6 @@ export function useSwapLogic() {
 
   useEffect(() => {
     fetchBalances();
-  }, [fetchBalances]);
-
-  useEffect(() => {
-    const ethereum = (window as EthereumWindow).ethereum;
-    if (!ethereum) return;
-
-    ethereum.on("accountsChanged", fetchBalances);
-    ethereum.on("chainChanged", fetchBalances);
-
-    return () => {
-      ethereum.removeListener("accountsChanged", fetchBalances);
-      ethereum.removeListener("chainChanged", fetchBalances);
-    };
   }, [fetchBalances]);
 
   const getQuote = useCallback(async () => {
@@ -141,21 +123,7 @@ export function useSwapLogic() {
       setQuote(path.output.toString());
       setBestPath(path);
 
-      if (fromToken !== NATIVE_TOKEN_ADDRESS && isConnected && window.ethereum) {
-        try {
-          const web3Provider = new ethers.providers.Web3Provider(window.ethereum);
-          const signer = web3Provider.getSigner();
-          const contract = new ethers.Contract(fromToken, ERC20_ABI, signer);
-          const allowance = await contract.allowance(address, ROUTER_ADDRESS);
-
-          const needsApproval = allowance.lt(amountInUnits);
-          setApprovalNeeded((prev) => (prev !== needsApproval ? needsApproval : prev));
-        } catch {
-          setApprovalNeeded(false);
-        }
-      } else {
-        setApprovalNeeded(false);
-      }
+      setApprovalNeeded(fromToken !== NATIVE_TOKEN_ADDRESS);
     } catch {
       setQuote(null);
       setBestPath(null);
@@ -186,9 +154,7 @@ export function useSwapLogic() {
 
     setLoading(true);
     try {
-      const provider = new ethers.providers.Web3Provider(
-        (window as EthereumWindow).ethereum!
-      );
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
       await provider.send("eth_requestAccounts", []);
       const signer = provider.getSigner();
 
@@ -249,8 +215,6 @@ export function useSwapLogic() {
     setToToken,
     setAmountIn,
     doSwap,
-    swapTokens,
-    connect,
-    connectors
+    swapTokens
   };
 }
