@@ -2,8 +2,6 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useAccount, useWalletClient } from "wagmi";
-import { writeContract } from "viem/actions";
-import { parseUnits } from "viem";
 import {
   PoolFetcher,
   PathFinder,
@@ -18,8 +16,6 @@ import {
   ROUTER_ADDRESS,
   RPC_URL
 } from "@/lib/constants";
-
-import ERC20_ABI from "@/abis/ERC20.json";
 
 export function useSwapLogic() {
   const { isConnected, address } = useAccount();
@@ -45,18 +41,11 @@ export function useSwapLogic() {
     for (const [, tokenAddress] of Object.entries(TOKENS)) {
       try {
         const normalized = tokenAddress.toLowerCase();
-        if (normalized === NATIVE_TOKEN_ADDRESS.toLowerCase()) {
-          const balance = await provider.request({
-            method: "eth_getBalance",
-            params: [address, "latest"],
-          });
-          newBalances[normalized] = (parseInt(balance, 16) / 1e18).toString();
-        } else {
-          const contract = new (window as any).ethers.Contract(normalized, ERC20_ABI, provider);
-          const decimals = TOKEN_METADATA[normalized]?.decimals ?? 18;
-          const balance = await contract.balanceOf(address);
-          newBalances[normalized] = (parseInt(balance.toString()) / 10 ** decimals).toString();
-        }
+        const balance = await provider.request({
+          method: "eth_getBalance",
+          params: [address, "latest"],
+        });
+        newBalances[normalized] = (parseInt(balance, 16) / 1e18).toString();
       } catch {
         newBalances[tokenAddress] = "0";
       }
@@ -89,9 +78,6 @@ export function useSwapLogic() {
     setLoading(true);
     const provider = new window.ethereum.constructor(RPC_URL);
     const poolFetcher = new PoolFetcher("https://api.testnet.kuru.io");
-
-    const decimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
-    const amountInUnits = parseUnits(parsedAmount.toString(), decimals);
 
     try {
       const baseTokens = Object.entries(TOKENS).map(([symbol, address]) => ({
