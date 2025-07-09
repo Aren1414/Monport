@@ -13,11 +13,9 @@ import {
   TOKENS,
   TOKEN_METADATA,
   NATIVE_TOKEN_ADDRESS,
-  ROUTER_ADDRESS,
-  RPC_URL
+  ROUTER_ADDRESS
 } from "@/lib/constants";
 import { KURU_ROUTER_ABI } from "@/lib/abi/kuruRouterAbi";
-
 
 type KuruRoute = {
   path: string[];
@@ -40,34 +38,32 @@ export function useSwapLogic() {
   const previousBalancesRef = useRef<Record<string, string>>({});
 
   const fetchBalances = useCallback(async () => {
-    if (!isConnected || !address) return;
+    if (!isConnected || !address || !walletClient) return;
 
-    const provider = new window.ethereum.constructor(RPC_URL);
     const newBalances: Record<string, string> = {};
 
     for (const [, tokenAddress] of Object.entries(TOKENS)) {
       try {
-        const normalized = tokenAddress.toLowerCase();
-        const balance = await provider.request({
+        const balance = await walletClient.transport.request({
           method: "eth_getBalance",
-          params: [address, "latest"],
+          params: [address, "latest"]
         });
-        newBalances[normalized] = (parseInt(balance, 16) / 1e18).toString();
+        newBalances[tokenAddress.toLowerCase()] = (parseInt(balance, 16) / 1e18).toString();
       } catch {
-        newBalances[tokenAddress] = "0";
+        newBalances[tokenAddress.toLowerCase()] = "0";
       }
     }
 
     const prev = previousBalancesRef.current;
     const changed = Object.keys(newBalances).some(
-      (key) => newBalances[key] !== prev[key]
+      key => newBalances[key] !== prev[key]
     );
 
     if (changed) {
       previousBalancesRef.current = newBalances;
       setBalances(newBalances);
     }
-  }, [isConnected, address]);
+  }, [isConnected, address, walletClient]);
 
   useEffect(() => {
     fetchBalances();
@@ -75,7 +71,7 @@ export function useSwapLogic() {
 
   const getQuote = useCallback(async () => {
     const parsedAmount = parseFloat(amountIn);
-    if (!fromToken || !toToken || isNaN(parsedAmount) || parsedAmount <= 0 || !isConnected || !address) {
+    if (!fromToken || !toToken || isNaN(parsedAmount) || parsedAmount <= 0 || !isConnected || !address || !walletClient) {
       setQuote(null);
       setBestPath(null);
       setApprovalNeeded(false);
@@ -83,13 +79,13 @@ export function useSwapLogic() {
     }
 
     setLoading(true);
-    const provider = new window.ethereum.constructor(RPC_URL);
+
     const poolFetcher = new PoolFetcher("https://api.testnet.kuru.io");
 
     try {
       const baseTokens = Object.entries(TOKENS).map(([symbol, address]) => ({
         symbol,
-        address,
+        address
       }));
 
       const pools = await poolFetcher.getAllPools(fromToken, toToken, baseTokens);
@@ -102,7 +98,7 @@ export function useSwapLogic() {
       }
 
       const path = await PathFinder.findBestPath(
-        provider,
+        walletClient.transport,
         fromToken,
         toToken,
         parsedAmount,
@@ -120,7 +116,6 @@ export function useSwapLogic() {
 
       setQuote(path.output.toString());
       setBestPath(path);
-
       setApprovalNeeded(fromToken !== NATIVE_TOKEN_ADDRESS);
     } catch {
       setQuote(null);
@@ -129,7 +124,7 @@ export function useSwapLogic() {
     } finally {
       setLoading(false);
     }
-  }, [fromToken, toToken, amountIn, isConnected, address]);
+  }, [fromToken, toToken, amountIn, isConnected, address, walletClient]);
 
   useEffect(() => {
     getQuote();
@@ -155,16 +150,10 @@ export function useSwapLogic() {
       const inputDecimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
       const outputDecimals = TOKEN_METADATA[toToken]?.decimals ?? 18;
 
-      const amountInParsed = BigInt(
-        (parseFloat(amountIn) * 10 ** inputDecimals).toFixed(0)
-      );
-      const minAmountOutParsed = BigInt(
-        (parseFloat(quote) * 10 ** outputDecimals).toFixed(0)
-      );
+      const amountInParsed = BigInt((parseFloat(amountIn) * 10 ** inputDecimals).toFixed(0));
+      const minAmountOutParsed = BigInt((parseFloat(quote) * 10 ** outputDecimals).toFixed(0));
 
       const deadline = Math.floor(Date.now() / 1000) + 60 * 10;
-
-      
       const route = bestPath as unknown as KuruRoute;
 
       const txHash = await writeContract(walletClient, {
@@ -175,7 +164,7 @@ export function useSwapLogic() {
           amountInParsed,
           minAmountOutParsed,
           route.path,
-          route.pools.map((p) => p.address),
+          route.pools.map(p => p.address),
           address,
           BigInt(deadline)
         ]
