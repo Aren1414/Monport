@@ -156,6 +156,8 @@ export function useSwapLogic() {
         (parseFloat(quote) * 10 ** outputDecimals).toFixed(0)
       );
 
+      const deadline = Math.floor(Date.now() / 1000) + 60 * 10; 
+
       const txHash = await writeContract(walletClient, {
         address: ROUTER_ADDRESS,
         abi: KURU_ROUTER_ABI,
@@ -163,10 +165,10 @@ export function useSwapLogic() {
         args: [
           amountInParsed,
           minAmountOutParsed,
-          bestPath.tokenAddresses, 
+          (bestPath as any).path,
           bestPath.pools.map((p) => p.address),
           address,
-          BigInt(bestPath.deadline)
+          BigInt(deadline)
         ]
       });
 
