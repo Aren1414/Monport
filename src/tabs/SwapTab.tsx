@@ -161,7 +161,7 @@ export default function SwapTab() {
           if (approvalNeeded) {
             try {
               await writeContract(walletClient, {
-                address: fromToken,
+                address: fromToken as `0x${string}`,
                 abi: ERC20_ABI,
                 functionName: "approve",
                 args: [ROUTER_ADDRESS, BigInt("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")],
