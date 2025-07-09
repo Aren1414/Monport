@@ -43,17 +43,22 @@ export function useSwapLogic() {
     if (!isConnected || !address || !walletClient) return;
 
     const newBalances: Record<string, string> = {};
+    const rpcProvider = new ethers.providers.JsonRpcProvider(RPC_URL);
 
     for (const [, tokenAddress] of Object.entries(TOKENS)) {
       try {
-        const balanceHex = await walletClient.transport.request({
-          method: "eth_getBalance",
-          params: [address, "latest"]
-        }) as string;
-
-        newBalances[tokenAddress.toLowerCase()] = (parseInt(balanceHex, 16) / 1e18).toString();
+        const normalized = ethers.utils.getAddress(tokenAddress);
+        if (normalized === ethers.utils.getAddress(NATIVE_TOKEN_ADDRESS)) {
+          const balance = await rpcProvider.getBalance(address);
+          newBalances[normalized] = ethers.utils.formatEther(balance);
+        } else {
+          const contract = new ethers.Contract(normalized, ERC20_ABI, rpcProvider);
+          const decimals = TOKEN_METADATA[normalized]?.decimals ?? 18;
+          const balance = await contract.balanceOf(address);
+          newBalances[normalized] = ethers.utils.formatUnits(balance, decimals);
+        }
       } catch {
-        newBalances[tokenAddress.toLowerCase()] = "0";
+        newBalances[tokenAddress] = "0";
       }
     }
 
@@ -227,6 +232,7 @@ export function useSwapLogic() {
     balances,
     isConnected,
     address,
+    walletClient,
     setFromToken,
     setToToken,
     setAmountIn,
