@@ -2,17 +2,12 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useAccount, useWalletClient } from "wagmi";
-import { createPublicClient, custom } from "viem"; 
+import { createPublicClient, custom } from "viem";
 import { monadTestnet } from "wagmi/chains";
 import { PoolFetcher, PathFinder, TokenSwap } from "@kuru-labs/kuru-sdk";
 import type { RouteOutput } from "@kuru-labs/kuru-sdk";
-import {
-  TOKENS,
-  TOKEN_METADATA,
-  NATIVE_TOKEN_ADDRESS,
-  ROUTER_ADDRESS,
-  RPC_URL
-} from "@/lib/constants";
+import { TOKENS, TOKEN_METADATA, NATIVE_TOKEN_ADDRESS, ROUTER_ADDRESS, RPC_URL } from "@/lib/constants";
+import { ethers } from "ethers"; 
 import ERC20_ABI from "@/abis/ERC20.json";
 
 export function useSwapLogic() {
@@ -87,7 +82,7 @@ export function useSwapLogic() {
 
     setLoading(true);
     try {
-      const provider = new window.ethers.providers.JsonRpcProvider(RPC_URL);
+      const provider = new ethers.providers.JsonRpcProvider(RPC_URL);
       const poolFetcher = new PoolFetcher("https://api.testnet.kuru.io");
       const inputDecimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
       const baseTokens = Object.entries(TOKENS).map(([symbol, addr]) => ({ symbol, address: addr }));
@@ -114,8 +109,8 @@ export function useSwapLogic() {
       setBestPath(path);
 
       if (fromToken !== NATIVE_TOKEN_ADDRESS) {
-        const contract = new window.ethers.Contract(fromToken, ERC20_ABI, provider.getSigner());
-        const parsedAmountIn = window.ethers.utils.parseUnits(parsedAmount.toString(), inputDecimals);
+        const contract = new ethers.Contract(fromToken, ERC20_ABI, provider.getSigner());
+        const parsedAmountIn = ethers.utils.parseUnits(parsedAmount.toString(), inputDecimals);
         const allowance = await contract.allowance(address, ROUTER_ADDRESS);
         setApprovalNeeded(allowance.lt(parsedAmountIn));
       } else {
