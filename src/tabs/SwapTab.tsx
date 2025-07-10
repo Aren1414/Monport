@@ -1,12 +1,11 @@
 "use client";
 
 import React from "react";
-import { writeContract } from "viem/actions";
 import { useSwapLogic } from "@/features/swap/useSwapLogic";
 import TokenSelect from "@/features/swap/TokenSelect";
 import ERC20_ABI from "@/abis/ERC20.json";
 import { ROUTER_ADDRESS, NATIVE_TOKEN_ADDRESS } from "@/lib/constants";
-import { ethers } from "ethers"; 
+import { ethers } from "ethers";
 
 export default function SwapTab() {
   const {
@@ -25,7 +24,7 @@ export default function SwapTab() {
     doSwap,
     swapTokens,
     getQuote
-  } = useSwapLogic(); 
+  } = useSwapLogic();
 
   const isAmountValid = !!amountIn && parseFloat(amountIn) > 0;
   const isNative = fromToken === NATIVE_TOKEN_ADDRESS;
@@ -149,22 +148,17 @@ export default function SwapTab() {
             return;
           }
 
-          // ✅ Approve if needed
           if (!isNative && approvalNeeded) {
             try {
               const provider = new ethers.providers.Web3Provider(window.ethereum);
               await provider.send("eth_requestAccounts", []);
               const signer = provider.getSigner();
+              const contract = new ethers.Contract(fromToken, ERC20_ABI, signer);
 
-              await writeContract(signer, {
-                address: fromToken,
-                abi: ERC20_ABI,
-                functionName: "approve",
-                args: [
-                  ROUTER_ADDRESS,
-                  BigInt("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")
-                ]
-              });
+              await contract.approve(
+                ROUTER_ADDRESS,
+                ethers.constants.MaxUint256
+              );
 
               alert("✅ Token approved successfully.");
               await getQuote();
@@ -174,7 +168,6 @@ export default function SwapTab() {
             return;
           }
 
-          // ✅ Execute Swap via SDK
           await doSwap();
         }}
         disabled={loading || !isConnected || !isAmountValid || !quote}
