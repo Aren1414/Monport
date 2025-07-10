@@ -41,7 +41,7 @@ export function useSwapLogic() {
     if (!isConnected || !address || !walletClient) return;
 
     const newBalances: Record<string, string> = {};
-    const rpcProvider = new ethers.providers.JsonRpcProvider(RPC_URL);
+    const provider = new ethers.providers.JsonRpcProvider(RPC_URL);
 
     for (const [, tokenAddress] of Object.entries(TOKENS)) {
       try {
@@ -49,10 +49,10 @@ export function useSwapLogic() {
         const decimals = TOKEN_METADATA[normalized]?.decimals ?? 18;
 
         if (normalized === NATIVE_TOKEN_ADDRESS) {
-          const balance = await rpcProvider.getBalance(address);
+          const balance = await provider.getBalance(address);
           newBalances[normalized] = ethers.utils.formatEther(balance);
         } else {
-          const contract = new ethers.Contract(normalized, ERC20_ABI, rpcProvider);
+          const contract = new ethers.Contract(normalized, ERC20_ABI, provider);
           const balance = await contract.balanceOf(address);
           newBalances[normalized] = ethers.utils.formatUnits(balance, decimals);
         }
@@ -190,18 +190,16 @@ export function useSwapLogic() {
       const routePath = rawPath.map((addr) => ethers.utils.getAddress(addr)) as `0x${string}`[];
       const poolAddresses = pools.map((p) => ethers.utils.getAddress(p.address)) as `0x${string}`[];
 
+      const isNative = fromToken === NATIVE_TOKEN_ADDRESS;
+
       const txHash = await writeContract(walletClient, {
         address: ROUTER_ADDRESS,
         abi: KURU_ROUTER_ABI,
-        functionName: "swapExactTokensForTokens",
-        args: [
-          amountInParsed,
-          minAmountOutParsed,
-          routePath,
-          poolAddresses,
-          address as `0x${string}`,
-          deadline
-        ]
+        functionName: isNative ? "swapExactETHForTokens" : "swapExactTokensForTokens",
+        args: isNative
+          ? [minAmountOutParsed, routePath, poolAddresses, address as `0x${string}`, deadline]
+          : [amountInParsed, minAmountOutParsed, routePath, poolAddresses, address as `0x${string}`, deadline],
+        ...(isNative ? { value: amountInParsed } : {})
       });
 
       console.log("🔁 Swap tx hash:", txHash);
