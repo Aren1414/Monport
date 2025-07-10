@@ -101,12 +101,11 @@ export function useSwapLogic() {
       const inputDecimals = TOKEN_METADATA[fromAddress]?.decimals ?? 18;
 
       const baseTokens = Object.entries(TOKENS)
-        .map(([, addr]) => ({
-          address: ethers.utils.getAddress(addr)
-        }))
-        .filter(({ address }) => address !== NATIVE_TOKEN_ADDRESS);
-
-      const pools = await poolFetcher.getAllPools(fromAddress, toAddress, baseTokens);
+  .map(([symbol, addr]) => ({
+    symbol,
+    address: ethers.utils.getAddress(addr)
+  }))
+  .filter(({ address }) => address !== NATIVE_TOKEN_ADDRESS);
 
       const path = await PathFinder.findBestPath(
         provider,
