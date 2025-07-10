@@ -181,12 +181,13 @@ export function useSwapLogic() {
       const inputDecimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
       const outputDecimals = TOKEN_METADATA[toToken]?.decimals ?? 18;
 
-      const amountInParsed = ethers.utils.parseUnits(amountIn, inputDecimals);
-      const minAmountOutParsed = ethers.utils.parseUnits((parsedQuote * 0.99).toFixed(6), outputDecimals);
+      const amountInParsed = BigInt(ethers.utils.parseUnits(amountIn, inputDecimals).toString());
+      const minAmountOutParsed = BigInt(ethers.utils.parseUnits((parsedQuote * 0.99).toFixed(6), outputDecimals).toString());
       const deadline = BigInt(Math.floor(Date.now() / 1000) + 600);
 
-      const { path: routePath = [], pools = [] } = bestPath as KuruRouteLike;
-      const poolAddresses = pools.map((p) => p.address);
+      const { path: rawPath = [], pools = [] } = bestPath as KuruRouteLike;
+      const routePath = rawPath.map((addr) => ethers.utils.getAddress(addr)) as `0x${string}`[];
+      const poolAddresses = pools.map((p) => ethers.utils.getAddress(p.address)) as `0x${string}`[];
 
       const txHash = await writeContract(walletClient, {
         address: ROUTER_ADDRESS,
@@ -197,7 +198,7 @@ export function useSwapLogic() {
           minAmountOutParsed,
           routePath,
           poolAddresses,
-          address,
+          address as `0x${string}`,
           deadline
         ]
       });
