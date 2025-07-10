@@ -6,6 +6,7 @@ import { useSwapLogic } from "@/features/swap/useSwapLogic";
 import TokenSelect from "@/features/swap/TokenSelect";
 import ERC20_ABI from "@/abis/ERC20.json";
 import { ROUTER_ADDRESS, NATIVE_TOKEN_ADDRESS } from "@/lib/constants";
+import { ethers } from "ethers"; 
 
 export default function SwapTab() {
   const {
@@ -23,9 +24,8 @@ export default function SwapTab() {
     setAmountIn,
     doSwap,
     swapTokens,
-    walletClient,
     getQuote
-  } = useSwapLogic();
+  } = useSwapLogic(); 
 
   const isAmountValid = !!amountIn && parseFloat(amountIn) > 0;
   const isNative = fromToken === NATIVE_TOKEN_ADDRESS;
@@ -144,7 +144,7 @@ export default function SwapTab() {
       {/* Approve & Swap Button */}
       <button
         onClick={async () => {
-          if (!walletClient) {
+          if (!isConnected || !address) {
             alert("❌ Wallet not connected.");
             return;
           }
@@ -152,7 +152,11 @@ export default function SwapTab() {
           // ✅ Approve if needed
           if (!isNative && approvalNeeded) {
             try {
-              await writeContract(walletClient, {
+              const provider = new ethers.providers.Web3Provider(window.ethereum);
+              await provider.send("eth_requestAccounts", []);
+              const signer = provider.getSigner();
+
+              await writeContract(signer, {
                 address: fromToken,
                 abi: ERC20_ABI,
                 functionName: "approve",
@@ -161,6 +165,7 @@ export default function SwapTab() {
                   BigInt("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")
                 ]
               });
+
               alert("✅ Token approved successfully.");
               await getQuote();
             } catch (err) {
