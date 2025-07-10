@@ -23,10 +23,11 @@ export default function SwapTab() {
     setToToken,
     setAmountIn,
     doSwap,
-    swapTokens
+    swapTokens,
+    walletClient,
+    getQuote
   } = useSwapLogic();
 
-  const { data: walletClient } = useWalletClient();
   const isAmountValid = !!amountIn && parseFloat(amountIn) > 0;
   const isNative = fromToken === NATIVE_TOKEN_ADDRESS;
 
@@ -162,6 +163,7 @@ export default function SwapTab() {
                 ]
               });
               alert("✅ Token approved successfully.");
+              await getQuote(); // refresh state after approval
             } catch (err) {
               alert("❌ Approval failed: " + (err as Error).message);
             }
