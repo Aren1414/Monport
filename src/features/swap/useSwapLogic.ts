@@ -33,7 +33,7 @@ export function useSwapLogic() {
   const [bestPath, setBestPath] = useState<RouteOutput | null>(null);
   const [balances, setBalances] = useState<Record<string, string>>({});
   const [approvalNeeded, setApprovalNeeded] = useState(false);
-  const [slippage, setSlippage] = useState(1);
+  const [slippage, setSlippage] = useState(0.5); // ✅ تنظیم شده روی 0.5٪
 
   const previousBalancesRef = useRef<Record<string, string>>({});
 
