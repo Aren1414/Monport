@@ -33,7 +33,7 @@ export function useSwapLogic() {
   const [bestPath, setBestPath] = useState<RouteOutput | null>(null);
   const [balances, setBalances] = useState<Record<string, string>>({});
   const [approvalNeeded, setApprovalNeeded] = useState(false);
-  const [slippage, setSlippage] = useState(0.5); // ✅ تنظیم شده روی 0.5٪
+  const [slippage, setSlippage] = useState(0.5); 
 
   const previousBalancesRef = useRef<Record<string, string>>({});
 
@@ -142,70 +142,84 @@ export function useSwapLogic() {
   };
 
   const doSwap = useCallback(async () => {
-    const parsedQuote = parseFloat(quote ?? "0");
-    if (!isConnected || !quote || !bestPath || bestPath.output <= 0 || parsedQuote <= 0 || !walletClient || !address) {
-      alert("❌ Swap aborted. Missing quote or connection.");
-      return;
-    }
+  const parsedQuote = parseFloat(quote ?? "0");
+  if (
+    !isConnected ||
+    !quote ||
+    !bestPath ||
+    bestPath.output <= 0 ||
+    parsedQuote <= 0 ||
+    !walletClient ||
+    !address
+  ) {
+    alert("❌ Swap aborted. Missing quote or connection.");
+    return;
+  }
 
-    setLoading(true);
-    try {
-      const inputDecimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
-      const outputDecimals = TOKEN_METADATA[toToken]?.decimals ?? 18;
-      const amountInParsed = BigInt(ethers.utils.parseUnits(amountIn, inputDecimals).toString());
-      const slippageFactor = 1 - slippage / 100;
-      const minAmountOutParsed = BigInt(
-        ethers.utils.parseUnits((parsedQuote * slippageFactor).toFixed(6), outputDecimals).toString()
-      );
-      const deadline = BigInt(Math.floor(Date.now() / 1000) + 600);
-      const isNative = fromToken === NATIVE_TOKEN_ADDRESS;
+  const { path: rawPath = [], pools = [] } = bestPath as KuruRouteLike;
+  if (rawPath.length === 0 || pools.length === 0) {
+    alert("❌ Swap aborted. No valid route found.");
+    console.log("🛑 Swap blocked: routePath or poolAddresses empty");
+    return;
+  }
 
-      const { path: rawPath = [], pools = [] } = bestPath as KuruRouteLike;
-      const routePath = rawPath.map((addr) => ethers.utils.getAddress(addr)) as `0x${string}`[];
-      const poolAddresses = pools.map((p) => ethers.utils.getAddress(p.address)) as `0x${string}`[];
+  setLoading(true);
+  try {
+    const inputDecimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
+    const outputDecimals = TOKEN_METADATA[toToken]?.decimals ?? 18;
+    const amountInParsed = BigInt(ethers.utils.parseUnits(amountIn, inputDecimals).toString());
+    const slippageFactor = 0.995; 
+    const minAmountOutParsed = BigInt(
+      ethers.utils.parseUnits((parsedQuote * slippageFactor).toFixed(6), outputDecimals).toString()
+    );
+    const deadline = BigInt(Math.floor(Date.now() / 1000) + 600);
+    const isNative = fromToken === NATIVE_TOKEN_ADDRESS;
 
-      console.log("🔍 Swap Params:");
-      console.log("amountInParsed:", amountInParsed.toString());
-      console.log("minAmountOutParsed:", minAmountOutParsed.toString());
-      console.log("routePath:", routePath);
-      console.log("poolAddresses:", poolAddresses);
-      console.log("isNative:", isNative);
+    const routePath = rawPath.map((addr) => ethers.utils.getAddress(addr)) as `0x${string}`[];
+    const poolAddresses = pools.map((p) => ethers.utils.getAddress(p.address)) as `0x${string}`[];
 
-      const txHash = await writeContract(walletClient, {
-        address: ROUTER_ADDRESS,
-        abi: KURU_ROUTER_ABI,
-        functionName: isNative ? "swapExactETHForTokens" : "swapExactTokensForTokens",
-        args: isNative
-          ? [minAmountOutParsed, routePath, poolAddresses, address, deadline]
-          : [amountInParsed, minAmountOutParsed, routePath, poolAddresses, address, deadline],
-        ...(isNative ? { value: amountInParsed } : {})
-      });
+    console.log("🔍 Swap Params:");
+    console.log("amountInParsed:", amountInParsed.toString());
+    console.log("minAmountOutParsed:", minAmountOutParsed.toString());
+    console.log("routePath:", routePath);
+    console.log("poolAddresses:", poolAddresses);
+    console.log("isNative:", isNative);
 
-      console.log("🔁 Swap tx hash:", txHash);
-      alert("✅ Swap submitted: " + txHash);
-      await fetchBalances();
-    } catch (err) {
-      console.error("❌ Swap failed:", err);
-      alert("❌ Swap failed: " + (err as Error).message);
-    } finally {
-      setAmountIn("");
-      setQuote(null);
-      setBestPath(null);
-      setApprovalNeeded(false);
-      setLoading(false);
-    }
-  }, [
-    isConnected,
-    amountIn,
-    quote,
-    bestPath,
-    fromToken,
-    toToken,
-    fetchBalances,
-    walletClient,
-    slippage,
-    address
-  ]);
+    const txHash = await writeContract(walletClient, {
+      address: ROUTER_ADDRESS,
+      abi: KURU_ROUTER_ABI,
+      functionName: isNative ? "swapExactETHForTokens" : "swapExactTokensForTokens",
+      args: isNative
+        ? [minAmountOutParsed, routePath, poolAddresses, address, deadline]
+        : [amountInParsed, minAmountOutParsed, routePath, poolAddresses, address, deadline],
+      ...(isNative ? { value: amountInParsed } : {})
+    });
+
+    console.log("🔁 Swap tx hash:", txHash);
+    alert("✅ Swap submitted: " + txHash);
+    await fetchBalances();
+  } catch (err) {
+    console.error("❌ Swap failed:", err);
+    alert("❌ Swap failed: " + (err as Error).message);
+  } finally {
+    setAmountIn("");
+    setQuote(null);
+    setBestPath(null);
+    setApprovalNeeded(false);
+    setLoading(false);
+  }
+}, [
+  isConnected,
+  amountIn,
+  quote,
+  bestPath,
+  fromToken,
+  toToken,
+  fetchBalances,
+  walletClient,
+  slippage,
+  address
+]);
 
   return {
     fromToken,
