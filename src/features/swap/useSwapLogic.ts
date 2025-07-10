@@ -101,8 +101,7 @@ export function useSwapLogic() {
       const inputDecimals = TOKEN_METADATA[fromAddress]?.decimals ?? 18;
 
       const baseTokens = Object.entries(TOKENS)
-        .map(([symbol, addr]) => ({
-          symbol,
+        .map(([, addr]) => ({
           address: ethers.utils.getAddress(addr)
         }))
         .filter(({ address }) => address !== NATIVE_TOKEN_ADDRESS);
@@ -129,7 +128,6 @@ export function useSwapLogic() {
       setQuote(path.output.toString());
       setBestPath(path);
 
-      // Allowance Check
       if (fromAddress !== NATIVE_TOKEN_ADDRESS) {
         const signer = provider.getSigner(address);
         const contract = new ethers.Contract(fromAddress, ERC20_ABI, signer);
@@ -181,7 +179,7 @@ export function useSwapLogic() {
 
       const amountInParsed = ethers.utils.parseUnits(amountIn, inputDecimals);
       const minAmountOutParsed = ethers.utils.parseUnits(
-        (parseFloat(quote) * 0.99).toFixed(6), // slippage 1%
+        (parseFloat(quote) * 0.99).toFixed(6),
         outputDecimals
       );
       const deadline = BigInt(Math.floor(Date.now() / 1000) + 600);
