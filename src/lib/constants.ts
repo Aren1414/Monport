@@ -34,31 +34,32 @@ export const MONAD_CHAIN_PARAMS = {
 export const RPC_URL = MONAD_CHAIN_PARAMS.rpcUrls[0];
 
 // ✅ Native Token Address (used as placeholder for native token in SDKs)
-export const NATIVE_TOKEN_ADDRESS = "0x0000000000000000000000000000000000000000";
+export const NATIVE_TOKEN_ADDRESS: `0x${string}` = "0x0000000000000000000000000000000000000000";
 
-// ✅ Kuru Router Address (from official docs)
-export const ROUTER_ADDRESS = "0xc816865f172d640d93712C68a7E1F83F3fA63235" as `0x${string}`;
+// ✅ Kuru Router Address (used in swap tx)
+export const ROUTER_ADDRESS: `0x${string}` = "0xc816865f172d640d93712C68a7E1F83F3fA63235";
 
 // ✅ Token Addresses on Monad Testnet (checksum format)
-export const TOKENS = {
+export const TOKENS: Record<string, `0x${string}`> = {
   MON: NATIVE_TOKEN_ADDRESS,
-  USDC: ethersUtils.getAddress("0xf817257fed379853cDe0fa4F97AB987181B1E5Ea"),
-  USDT: ethersUtils.getAddress("0x88b8E2161DEDC77EF4ab7585569D2415a1C1055D"),
-  DAK: ethersUtils.getAddress("0x0F0BDEbF0F83cD1EE3974779Bcb7315f9808c714"),
-  CHOG: ethersUtils.getAddress("0xE0590015A873bF326bd645c3E1266d4db41C4E6B"),
-  YAKI: ethersUtils.getAddress("0xfe140e1dCe99Be9F4F15d657CD9b7BF622270C50"),
+  USDC: ethersUtils.getAddress("0xf817257fed379853cDe0fa4F97AB987181B1E5Ea") as `0x${string}`,
+  USDT: ethersUtils.getAddress("0x88b8E2161DEDC77EF4ab7585569D2415a1C1055D") as `0x${string}`,
+  DAK: ethersUtils.getAddress("0x0F0BDEbF0F83cD1EE3974779Bcb7315f9808c714") as `0x${string}`,
+  CHOG: ethersUtils.getAddress("0xE0590015A873bF326bd645c3E1266d4db41C4E6B") as `0x${string}`,
+  YAKI: ethersUtils.getAddress("0xfe140e1dCe99Be9F4F15d657CD9b7BF622270C50") as `0x${string}`,
 };
 
-// ✅ Token Metadata (only for ERC20 tokens — exclude MON)
-export const TOKEN_METADATA: Record<string, { decimals: number }> = {
+// ✅ Token Metadata (ERC20 decimals only)
+export const TOKEN_METADATA: Record<`0x${string}`, { decimals: number }> = {
   [TOKENS.USDC]: { decimals: 6 },
   [TOKENS.USDT]: { decimals: 6 },
   [TOKENS.DAK]: { decimals: 18 },
   [TOKENS.CHOG]: { decimals: 18 },
   [TOKENS.YAKI]: { decimals: 18 },
+  [TOKENS.MON]: { decimals: 18 }, 
 };
 
-// Smart Contract Addresses
+// Smart Contract Addresses (⛔ NOT used in swap)
 export const WELCOME_NFT_ADDRESS = "0x40649af9dEE8bDB94Dc21BA2175AE8f5181f14AE";
 export const MONPORT_FACTORY_ADDRESS = "0x3FFA88641129f4Ac39287Bd2768A165Ac6055e31";
 
