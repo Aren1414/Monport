@@ -45,12 +45,13 @@ export function useSwapLogic() {
     for (const [, tokenAddress] of Object.entries(TOKENS)) {
       try {
         const normalized = ethers.utils.getAddress(tokenAddress);
+        const decimals = TOKEN_METADATA[normalized]?.decimals ?? 18;
+
         if (normalized === NATIVE_TOKEN_ADDRESS) {
           const balance = await rpcProvider.getBalance(address);
           newBalances[normalized] = ethers.utils.formatEther(balance);
         } else {
           const contract = new ethers.Contract(normalized, ERC20_ABI, rpcProvider);
-          const decimals = TOKEN_METADATA[normalized]?.decimals ?? 18;
           const balance = await contract.balanceOf(address);
           newBalances[normalized] = ethers.utils.formatUnits(balance, decimals);
         }
@@ -100,11 +101,10 @@ export function useSwapLogic() {
       const toAddress = ethers.utils.getAddress(toToken);
       const inputDecimals = TOKEN_METADATA[fromAddress]?.decimals ?? 18;
 
-      const baseTokens = Object.entries(TOKENS)
-        .map(([symbol, addr]) => ({
-          symbol,
-          address: ethers.utils.getAddress(addr)
-        })); 
+      const baseTokens = Object.entries(TOKENS).map(([symbol, addr]) => ({
+        symbol,
+        address: ethers.utils.getAddress(addr)
+      }));
 
       const pools = await poolFetcher.getAllPools(fromAddress, toAddress, baseTokens);
 
@@ -137,7 +137,8 @@ export function useSwapLogic() {
       } else {
         setApprovalNeeded(false);
       }
-    } catch {
+    } catch (err) {
+      console.error("❌ getQuote error:", err);
       setQuote(null);
       setBestPath(null);
       setApprovalNeeded(false);
@@ -160,15 +161,18 @@ export function useSwapLogic() {
   };
 
   const doSwap = useCallback(async () => {
+    const parsedQuote = parseFloat(quote ?? "0");
+
     if (
       !isConnected ||
       !quote ||
       !bestPath ||
       bestPath.output <= 0 ||
+      parsedQuote <= 0 ||
       !walletClient ||
       !address
     ) {
-      alert("⚠️ Please connect your wallet and enter a valid amount.");
+      alert("❌ Swap aborted. Missing quote or connection.");
       return;
     }
 
@@ -178,10 +182,7 @@ export function useSwapLogic() {
       const outputDecimals = TOKEN_METADATA[toToken]?.decimals ?? 18;
 
       const amountInParsed = ethers.utils.parseUnits(amountIn, inputDecimals);
-      const minAmountOutParsed = ethers.utils.parseUnits(
-        (parseFloat(quote) * 0.99).toFixed(6),
-        outputDecimals
-      );
+      const minAmountOutParsed = ethers.utils.parseUnits((parsedQuote * 0.99).toFixed(6), outputDecimals);
       const deadline = BigInt(Math.floor(Date.now() / 1000) + 600);
 
       const { path: routePath = [], pools = [] } = bestPath as KuruRouteLike;
