@@ -40,6 +40,7 @@ export default function SwapTab() {
         </div>
       )}
 
+      {/* From Token Section */}
       <div style={{ background: "#f5f5f5", padding: 12, borderRadius: 12, marginBottom: 12 }}>
         <label style={{ fontWeight: "bold" }}>From</label>
         <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>
@@ -93,6 +94,7 @@ export default function SwapTab() {
         </div>
       </div>
 
+      {/* Swap Direction Toggle */}
       <div style={{ textAlign: "center", margin: "8px 0" }}>
         <button
           onClick={swapTokens}
@@ -108,6 +110,7 @@ export default function SwapTab() {
         </button>
       </div>
 
+      {/* To Token Section */}
       <div style={{ background: "#f5f5f5", padding: 12, borderRadius: 12, marginBottom: 12 }}>
         <label style={{ fontWeight: "bold" }}>To</label>
         <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>
@@ -138,6 +141,7 @@ export default function SwapTab() {
         </div>
       </div>
 
+      {/* Approve & Swap Button */}
       <button
         onClick={async () => {
           if (!walletClient) {
@@ -145,6 +149,7 @@ export default function SwapTab() {
             return;
           }
 
+          // ✅ Approve if needed
           if (!isNative && approvalNeeded) {
             try {
               await writeContract(walletClient, {
@@ -164,6 +169,7 @@ export default function SwapTab() {
             return;
           }
 
+          // ✅ Execute Swap via SDK
           await doSwap();
         }}
         disabled={loading || !isConnected || !isAmountValid || !quote}
