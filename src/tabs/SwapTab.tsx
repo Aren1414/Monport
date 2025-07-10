@@ -46,7 +46,11 @@ export default function SwapTab() {
           Balance: {parseFloat(balances[fromToken] || "0").toFixed(3)}
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 4 }}>
-          <TokenSelect value={fromToken} onChange={setFromToken} balances={balances} />
+          <TokenSelect
+            value={fromToken}
+            onChange={(val: string) => setFromToken(val as `0x${string}`)}
+            balances={balances}
+          />
           <input
             type="number"
             step="any"
@@ -113,7 +117,11 @@ export default function SwapTab() {
           Balance: {parseFloat(balances[toToken] || "0").toFixed(3)}
         </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", marginTop: 4 }}>
-          <TokenSelect value={toToken} onChange={setToToken} balances={balances} />
+          <TokenSelect
+            value={toToken}
+            onChange={(val: string) => setToToken(val as `0x${string}`)}
+            balances={balances}
+          />
           <input
             value={quote ? parseFloat(quote).toFixed(3) : ""}
             readOnly
@@ -144,10 +152,13 @@ export default function SwapTab() {
           if (approvalNeeded) {
             try {
               await writeContract(walletClient, {
-                address: fromToken as `0x${string}`,
+                address: fromToken,
                 abi: ERC20_ABI,
                 functionName: "approve",
-                args: [ROUTER_ADDRESS, BigInt("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")],
+                args: [
+                  ROUTER_ADDRESS,
+                  BigInt("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")
+                ]
               });
               alert("✅ Token approved successfully.");
             } catch (err) {
