@@ -210,6 +210,6 @@ export function useSwapLogic() {
     setToToken,
     setAmountIn,
     doSwap,
-    swapTokens
+    swapTokens,
   };
 }
