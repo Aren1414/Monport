@@ -33,7 +33,7 @@ export function useSwapLogic() {
   const [bestPath, setBestPath] = useState<RouteOutput | null>(null);
   const [balances, setBalances] = useState<Record<string, string>>({});
   const [approvalNeeded, setApprovalNeeded] = useState(false);
-  const [slippage, setSlippage] = useState(1); // درصد قابل تنظیم
+  const [slippage, setSlippage] = useState(1);
 
   const previousBalancesRef = useRef<Record<string, string>>({});
 
@@ -45,7 +45,7 @@ export function useSwapLogic() {
 
     for (const [, tokenAddress] of Object.entries(TOKENS)) {
       try {
-        const normalized = ethers.utils.getAddress(tokenAddress);
+        const normalized = ethers.utils.getAddress(tokenAddress) as `0x${string}`;
         const decimals = TOKEN_METADATA[normalized]?.decimals ?? 18;
 
         if (normalized === NATIVE_TOKEN_ADDRESS) {
@@ -96,13 +96,13 @@ export function useSwapLogic() {
       const provider = new ethers.providers.JsonRpcProvider(RPC_URL);
       const poolFetcher = new PoolFetcher("https://api.testnet.kuru.io");
 
-      const fromAddress = ethers.utils.getAddress(fromToken);
-      const toAddress = ethers.utils.getAddress(toToken);
+      const fromAddress = ethers.utils.getAddress(fromToken) as `0x${string}`;
+      const toAddress = ethers.utils.getAddress(toToken) as `0x${string}`;
       const inputDecimals = TOKEN_METADATA[fromAddress]?.decimals ?? 18;
 
       const baseTokens = Object.entries(TOKENS).map(([symbol, addr]) => ({
         symbol,
-        address: ethers.utils.getAddress(addr)
+        address: ethers.utils.getAddress(addr) as `0x${string}`
       }));
 
       const pools = await poolFetcher.getAllPools(fromAddress, toAddress, baseTokens);
@@ -176,8 +176,8 @@ export function useSwapLogic() {
 
     setLoading(true);
     try {
-      const inputDecimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
-      const outputDecimals = TOKEN_METADATA[toToken]?.decimals ?? 18;
+      const inputDecimals = TOKEN_METADATA[fromToken as `0x${string}`]?.decimals ?? 18;
+      const outputDecimals = TOKEN_METADATA[toToken as `0x${string}`]?.decimals ?? 18;
 
       const amountInParsed = BigInt(ethers.utils.parseUnits(amountIn, inputDecimals).toString());
       const slippageFactor = 1 - slippage / 100;
@@ -220,32 +220,33 @@ export function useSwapLogic() {
   }, [
     isConnected,
     amountIn,
-    quote, bestPath,
-  fromToken,
-  toToken,
-  fetchBalances,
-  walletClient,
-  address,
-  slippage
-]);
+    quote,
+    bestPath,
+    fromToken,
+    toToken,
+    fetchBalances,
+    walletClient,
+    address,
+    slippage
+  ]);
 
-return {
-  fromToken,
-  toToken,
-  amountIn,
-  quote,
-  loading,
-  approvalNeeded,
-  balances,
-  isConnected,
-  address,
-  walletClient,
-  slippage,
-  setSlippage,
-  setFromToken,
-  setToToken,
-  setAmountIn,
-  doSwap,
-  swapTokens
-};
+  return {
+    fromToken,
+    toToken,
+    amountIn,
+    quote,
+    loading,
+    approvalNeeded,
+    balances,
+    isConnected,
+    address,
+    walletClient,
+    slippage,
+    setSlippage,
+    setFromToken,
+    setToToken,
+    setAmountIn,
+    doSwap,
+    swapTokens
+  };
 }
