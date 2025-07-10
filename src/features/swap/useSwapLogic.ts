@@ -33,6 +33,7 @@ export function useSwapLogic() {
   const [bestPath, setBestPath] = useState<RouteOutput | null>(null);
   const [balances, setBalances] = useState<Record<string, string>>({});
   const [approvalNeeded, setApprovalNeeded] = useState(false);
+  const [slippage, setSlippage] = useState(1); // درصد قابل تنظیم
 
   const previousBalancesRef = useRef<Record<string, string>>({});
 
@@ -61,9 +62,7 @@ export function useSwapLogic() {
     }
 
     const prev = previousBalancesRef.current;
-    const changed = Object.keys(newBalances).some(
-      (key) => newBalances[key] !== prev[key]
-    );
+    const changed = Object.keys(newBalances).some((key) => newBalances[key] !== prev[key]);
 
     if (changed) {
       previousBalancesRef.current = newBalances;
@@ -162,7 +161,6 @@ export function useSwapLogic() {
 
   const doSwap = useCallback(async () => {
     const parsedQuote = parseFloat(quote ?? "0");
-
     if (
       !isConnected ||
       !quote ||
@@ -182,7 +180,10 @@ export function useSwapLogic() {
       const outputDecimals = TOKEN_METADATA[toToken]?.decimals ?? 18;
 
       const amountInParsed = BigInt(ethers.utils.parseUnits(amountIn, inputDecimals).toString());
-      const minAmountOutParsed = BigInt(ethers.utils.parseUnits((parsedQuote * 0.99).toFixed(6), outputDecimals).toString());
+      const slippageFactor = 1 - slippage / 100;
+      const minAmountOutParsed = BigInt(
+        ethers.utils.parseUnits((parsedQuote * slippageFactor).toFixed(6), outputDecimals).toString()
+      );
       const deadline = BigInt(Math.floor(Date.now() / 1000) + 600);
 
       const { path: rawPath = [], pools = [] } = bestPath as KuruRouteLike;
@@ -207,6 +208,7 @@ export function useSwapLogic() {
       alert("✅ Swap submitted: " + txHash);
       await fetchBalances();
     } catch (err) {
+      console.error("❌ Swap failed:", err);
       alert("❌ Swap failed: " + (err as Error).message);
     } finally {
       setAmountIn("");
@@ -218,30 +220,32 @@ export function useSwapLogic() {
   }, [
     isConnected,
     amountIn,
-    quote,
-    bestPath,
-    fromToken,
-    toToken,
-    fetchBalances,
-    walletClient,
-    address
-  ]);
+    quote, bestPath,
+  fromToken,
+  toToken,
+  fetchBalances,
+  walletClient,
+  address,
+  slippage
+]);
 
-  return {
-    fromToken,
-    toToken,
-    amountIn,
-    quote,
-    loading,
-    approvalNeeded,
-    balances,
-    isConnected,
-    address,
-    walletClient,
-    setFromToken,
-    setToToken,
-    setAmountIn,
-    doSwap,
-    swapTokens
-  };
+return {
+  fromToken,
+  toToken,
+  amountIn,
+  quote,
+  loading,
+  approvalNeeded,
+  balances,
+  isConnected,
+  address,
+  walletClient,
+  slippage,
+  setSlippage,
+  setFromToken,
+  setToToken,
+  setAmountIn,
+  doSwap,
+  swapTokens
+};
 }
