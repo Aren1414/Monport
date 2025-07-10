@@ -2,17 +2,18 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useAccount, useWalletClient } from "wagmi";
-import { createPublicClient, createWalletClient, custom } from "viem";
+import { createPublicClient, custom } from "viem"; 
 import { monadTestnet } from "wagmi/chains";
 import { PoolFetcher, PathFinder, TokenSwap } from "@kuru-labs/kuru-sdk";
 import type { RouteOutput } from "@kuru-labs/kuru-sdk";
-import { TOKENS, TOKEN_METADATA, NATIVE_TOKEN_ADDRESS, ROUTER_ADDRESS, RPC_URL } from "@/lib/constants";
+import {
+  TOKENS,
+  TOKEN_METADATA,
+  NATIVE_TOKEN_ADDRESS,
+  ROUTER_ADDRESS,
+  RPC_URL
+} from "@/lib/constants";
 import ERC20_ABI from "@/abis/ERC20.json";
-
-type KuruRouteLike = {
-  path?: string[];
-  pools?: { address: string }[];
-};
 
 export function useSwapLogic() {
   const { isConnected, address } = useAccount();
@@ -88,16 +89,14 @@ export function useSwapLogic() {
     try {
       const provider = new window.ethers.providers.JsonRpcProvider(RPC_URL);
       const poolFetcher = new PoolFetcher("https://api.testnet.kuru.io");
-      const fromAddress = fromToken;
-      const toAddress = toToken;
-      const inputDecimals = TOKEN_METADATA[fromAddress]?.decimals ?? 18;
+      const inputDecimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
       const baseTokens = Object.entries(TOKENS).map(([symbol, addr]) => ({ symbol, address: addr }));
 
-      const pools = await poolFetcher.getAllPools(fromAddress, toAddress, baseTokens);
+      const pools = await poolFetcher.getAllPools(fromToken, toToken, baseTokens);
       const path = await PathFinder.findBestPath(
         provider,
-        fromAddress,
-        toAddress,
+        fromToken,
+        toToken,
         parsedAmount,
         "amountIn",
         poolFetcher,
@@ -114,8 +113,8 @@ export function useSwapLogic() {
       setQuote(path.output.toString());
       setBestPath(path);
 
-      if (fromAddress !== NATIVE_TOKEN_ADDRESS) {
-        const contract = new window.ethers.Contract(fromAddress, ERC20_ABI, provider.getSigner());
+      if (fromToken !== NATIVE_TOKEN_ADDRESS) {
+        const contract = new window.ethers.Contract(fromToken, ERC20_ABI, provider.getSigner());
         const parsedAmountIn = window.ethers.utils.parseUnits(parsedAmount.toString(), inputDecimals);
         const allowance = await contract.allowance(address, ROUTER_ADDRESS);
         setApprovalNeeded(allowance.lt(parsedAmountIn));
@@ -167,7 +166,7 @@ export function useSwapLogic() {
       const isNative = fromToken === NATIVE_TOKEN_ADDRESS;
 
       const receipt = await TokenSwap.swap(
-        walletClient, // signer از wagmi
+        walletClient,
         ROUTER_ADDRESS,
         bestPath,
         parseFloat(amountIn),
