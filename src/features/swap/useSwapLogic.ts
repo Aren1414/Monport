@@ -6,7 +6,6 @@ import { writeContract } from "viem/actions";
 import { ethers } from "ethers";
 import { PoolFetcher, PathFinder } from "@kuru-labs/kuru-sdk";
 import type { RouteOutput } from "@kuru-labs/kuru-sdk";
-
 import {
   TOKEN_METADATA,
   TOKENS,
@@ -205,11 +204,27 @@ export function useSwapLogic() {
     fetchBalances,
     walletClient,
     slippage,
+    address
+  ]);
+
+  return {
+    fromToken,
+    toToken,
+    amountIn,
+    quote,
+    loading,
+    approvalNeeded,
+    balances,
+    isConnected,
+    address,
+    walletClient,
+    slippage,
     setSlippage,
     setFromToken,
     setToToken,
     setAmountIn,
     doSwap,
     swapTokens,
+    getQuote
   };
 }
