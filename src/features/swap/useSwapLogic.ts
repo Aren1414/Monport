@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useAccount, useWalletClient } from "wagmi";
-import { createPublicClient, custom } from "viem";
+import { createPublicClient } from "viem"; 
 import { monadTestnet } from "wagmi/chains";
 import { PoolFetcher, PathFinder, TokenSwap } from "@kuru-labs/kuru-sdk";
 import type { RouteOutput } from "@kuru-labs/kuru-sdk";
@@ -17,7 +17,7 @@ import ERC20_ABI from "@/abis/ERC20.json";
 
 export function useSwapLogic() {
   const { isConnected, address } = useAccount();
-  const { data: walletClient } = useWalletClient(); // ✅ wagmi signer
+  const { data: walletClient } = useWalletClient();
 
   const [fromToken, setFromToken] = useState(TOKENS.MON);
   const [toToken, setToToken] = useState(TOKENS.USDC);
@@ -88,7 +88,7 @@ export function useSwapLogic() {
 
     setLoading(true);
     try {
-      const provider = new ethers.providers.Web3Provider(walletClient.transport); // ✅ سازگار با MiniApp
+      const provider = new ethers.providers.Web3Provider(walletClient.transport);
       const poolFetcher = new PoolFetcher("https://api.testnet.kuru.io");
       const inputDecimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
       const baseTokens = Object.entries(TOKENS).map(([symbol, addr]) => ({ symbol, address: addr }));
