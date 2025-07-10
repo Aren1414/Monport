@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import { useWalletClient } from "wagmi";
 import { writeContract } from "viem/actions";
 import { useSwapLogic } from "@/features/swap/useSwapLogic";
 import TokenSelect from "@/features/swap/TokenSelect";
@@ -41,7 +40,6 @@ export default function SwapTab() {
         </div>
       )}
 
-      {/* FROM SECTION */}
       <div style={{ background: "#f5f5f5", padding: 12, borderRadius: 12, marginBottom: 12 }}>
         <label style={{ fontWeight: "bold" }}>From</label>
         <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>
@@ -69,7 +67,6 @@ export default function SwapTab() {
             }}
           />
         </div>
-
         <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8 }}>
           {[10, 20, 50, 100].map((percent) => {
             const balance = parseFloat(balances[fromToken] || "0");
@@ -96,7 +93,6 @@ export default function SwapTab() {
         </div>
       </div>
 
-      {/* SWAP ICON */}
       <div style={{ textAlign: "center", margin: "8px 0" }}>
         <button
           onClick={swapTokens}
@@ -112,7 +108,6 @@ export default function SwapTab() {
         </button>
       </div>
 
-      {/* TO SECTION */}
       <div style={{ background: "#f5f5f5", padding: 12, borderRadius: 12, marginBottom: 12 }}>
         <label style={{ fontWeight: "bold" }}>To</label>
         <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>
@@ -143,7 +138,6 @@ export default function SwapTab() {
         </div>
       </div>
 
-      {/* APPROVE / SWAP BUTTON */}
       <button
         onClick={async () => {
           if (!walletClient) {
@@ -163,7 +157,7 @@ export default function SwapTab() {
                 ]
               });
               alert("✅ Token approved successfully.");
-              await getQuote(); // refresh state after approval
+              await getQuote();
             } catch (err) {
               alert("❌ Approval failed: " + (err as Error).message);
             }
