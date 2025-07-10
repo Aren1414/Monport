@@ -1,18 +1,23 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useAccount, useWalletClient } from "wagmi";
+import { useAccount } from "wagmi";
 import { createPublicClient, custom } from "viem";
 import { monadTestnet } from "wagmi/chains";
 import { PoolFetcher, PathFinder, TokenSwap } from "@kuru-labs/kuru-sdk";
 import type { RouteOutput } from "@kuru-labs/kuru-sdk";
-import { TOKENS, TOKEN_METADATA, NATIVE_TOKEN_ADDRESS, ROUTER_ADDRESS, RPC_URL } from "@/lib/constants";
-import { ethers } from "ethers"; 
+import {
+  TOKENS,
+  TOKEN_METADATA,
+  NATIVE_TOKEN_ADDRESS,
+  ROUTER_ADDRESS,
+  RPC_URL
+} from "@/lib/constants";
+import { ethers } from "ethers";
 import ERC20_ABI from "@/abis/ERC20.json";
 
 export function useSwapLogic() {
   const { isConnected, address } = useAccount();
-  const { data: walletClient } = useWalletClient();
 
   const [fromToken, setFromToken] = useState(TOKENS.MON);
   const [toToken, setToToken] = useState(TOKENS.USDC);
@@ -73,7 +78,7 @@ export function useSwapLogic() {
 
   const getQuote = useCallback(async () => {
     const parsedAmount = parseFloat(amountIn);
-    if (!fromToken || !toToken || isNaN(parsedAmount) || parsedAmount <= 0 || !isConnected || !address || !walletClient) {
+    if (!fromToken || !toToken || isNaN(parsedAmount) || parsedAmount <= 0 || !isConnected || !address) {
       setQuote(null);
       setBestPath(null);
       setApprovalNeeded(false);
@@ -109,7 +114,8 @@ export function useSwapLogic() {
       setBestPath(path);
 
       if (fromToken !== NATIVE_TOKEN_ADDRESS) {
-        const contract = new ethers.Contract(fromToken, ERC20_ABI, provider.getSigner());
+        const signer = provider.getSigner();
+        const contract = new ethers.Contract(fromToken, ERC20_ABI, signer);
         const parsedAmountIn = ethers.utils.parseUnits(parsedAmount.toString(), inputDecimals);
         const allowance = await contract.allowance(address, ROUTER_ADDRESS);
         setApprovalNeeded(allowance.lt(parsedAmountIn));
@@ -124,7 +130,7 @@ export function useSwapLogic() {
     } finally {
       setLoading(false);
     }
-  }, [fromToken, toToken, amountIn, isConnected, address, walletClient]);
+  }, [fromToken, toToken, amountIn, isConnected, address]);
 
   useEffect(() => {
     getQuote();
@@ -147,7 +153,6 @@ export function useSwapLogic() {
       !bestPath ||
       bestPath.output <= 0 ||
       parsedQuote <= 0 ||
-      !walletClient ||
       !address
     ) {
       alert("❌ Swap aborted. Missing quote or connection.");
@@ -156,12 +161,16 @@ export function useSwapLogic() {
 
     setLoading(true);
     try {
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      await provider.send("eth_requestAccounts", []);
+      const signer = provider.getSigner();
+
       const inputDecimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
       const outputDecimals = TOKEN_METADATA[toToken]?.decimals ?? 18;
       const isNative = fromToken === NATIVE_TOKEN_ADDRESS;
 
       const receipt = await TokenSwap.swap(
-        walletClient,
+        signer,
         ROUTER_ADDRESS,
         bestPath,
         parseFloat(amountIn),
@@ -192,7 +201,7 @@ export function useSwapLogic() {
       setApprovalNeeded(false);
       setLoading(false);
     }
-  }, [isConnected, amountIn, quote, bestPath, fromToken, toToken, fetchBalances, walletClient, slippage, address]);
+  }, [isConnected, amountIn, quote, bestPath, fromToken, toToken, fetchBalances, slippage, address]);
 
   return {
     fromToken,
@@ -204,7 +213,6 @@ export function useSwapLogic() {
     balances,
     isConnected,
     address,
-    walletClient,
     slippage,
     setSlippage,
     setFromToken,
