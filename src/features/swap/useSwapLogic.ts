@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useAccount } from "wagmi";
+import { useAccount, useWalletClient } from "wagmi";
 import { createPublicClient, custom } from "viem";
 import { monadTestnet } from "wagmi/chains";
 import { PoolFetcher, PathFinder, TokenSwap } from "@kuru-labs/kuru-sdk";
@@ -10,14 +10,14 @@ import {
   TOKENS,
   TOKEN_METADATA,
   NATIVE_TOKEN_ADDRESS,
-  ROUTER_ADDRESS,
-  RPC_URL
+  ROUTER_ADDRESS
 } from "@/lib/constants";
 import { ethers } from "ethers";
 import ERC20_ABI from "@/abis/ERC20.json";
 
 export function useSwapLogic() {
   const { isConnected, address } = useAccount();
+  const { data: walletClient } = useWalletClient(); // ✅ wagmi signer
 
   const [fromToken, setFromToken] = useState(TOKENS.MON);
   const [toToken, setToToken] = useState(TOKENS.USDC);
@@ -32,10 +32,11 @@ export function useSwapLogic() {
   const previousBalancesRef = useRef<Record<string, string>>({});
 
   const fetchBalances = useCallback(async () => {
-    if (!isConnected || !address) return;
+    if (!isConnected || !address || !walletClient) return;
 
     const publicClient = createPublicClient({
-      transport: custom(window.ethereum),
+      transport: walletClient.transport,
+      account: walletClient.account,
       chain: monadTestnet
     });
 
@@ -70,7 +71,7 @@ export function useSwapLogic() {
       previousBalancesRef.current = newBalances;
       setBalances(newBalances);
     }
-  }, [isConnected, address]);
+  }, [isConnected, address, walletClient]);
 
   useEffect(() => {
     fetchBalances();
@@ -78,7 +79,7 @@ export function useSwapLogic() {
 
   const getQuote = useCallback(async () => {
     const parsedAmount = parseFloat(amountIn);
-    if (!fromToken || !toToken || isNaN(parsedAmount) || parsedAmount <= 0 || !isConnected || !address) {
+    if (!fromToken || !toToken || isNaN(parsedAmount) || parsedAmount <= 0 || !isConnected || !address || !walletClient) {
       setQuote(null);
       setBestPath(null);
       setApprovalNeeded(false);
@@ -87,7 +88,7 @@ export function useSwapLogic() {
 
     setLoading(true);
     try {
-      const provider = new ethers.providers.JsonRpcProvider(RPC_URL);
+      const provider = new ethers.providers.Web3Provider(walletClient.transport); // ✅ سازگار با MiniApp
       const poolFetcher = new PoolFetcher("https://api.testnet.kuru.io");
       const inputDecimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
       const baseTokens = Object.entries(TOKENS).map(([symbol, addr]) => ({ symbol, address: addr }));
@@ -130,7 +131,7 @@ export function useSwapLogic() {
     } finally {
       setLoading(false);
     }
-  }, [fromToken, toToken, amountIn, isConnected, address]);
+  }, [fromToken, toToken, amountIn, isConnected, address, walletClient]);
 
   useEffect(() => {
     getQuote();
@@ -153,7 +154,8 @@ export function useSwapLogic() {
       !bestPath ||
       bestPath.output <= 0 ||
       parsedQuote <= 0 ||
-      !address
+      !address ||
+      !walletClient
     ) {
       alert("❌ Swap aborted. Missing quote or connection.");
       return;
@@ -161,8 +163,7 @@ export function useSwapLogic() {
 
     setLoading(true);
     try {
-      const provider = new ethers.providers.Web3Provider(window.ethereum);
-      await provider.send("eth_requestAccounts", []);
+      const provider = new ethers.providers.Web3Provider(walletClient.transport);
       const signer = provider.getSigner();
 
       const inputDecimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
@@ -201,7 +202,7 @@ export function useSwapLogic() {
       setApprovalNeeded(false);
       setLoading(false);
     }
-  }, [isConnected, amountIn, quote, bestPath, fromToken, toToken, fetchBalances, slippage, address]);
+  }, [isConnected, amountIn, quote, bestPath, fromToken, toToken, fetchBalances, walletClient, slippage, address]);
 
   return {
     fromToken,
