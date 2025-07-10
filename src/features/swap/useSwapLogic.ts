@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useAccount, useWalletClient } from "wagmi";
-import { createPublicClient, custom } from "viem"; 
+import { createPublicClient, custom } from "viem";
 import { monadTestnet } from "wagmi/chains";
 import { PoolFetcher, PathFinder, TokenSwap } from "@kuru-labs/kuru-sdk";
 import type { RouteOutput } from "@kuru-labs/kuru-sdk";
@@ -36,7 +36,6 @@ export function useSwapLogic() {
 
     const publicClient = createPublicClient({
       transport: custom(walletClient.transport), 
-      account: walletClient.account,
       chain: monadTestnet
     });
 
