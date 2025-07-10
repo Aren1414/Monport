@@ -6,7 +6,7 @@ import { writeContract } from "viem/actions";
 import { useSwapLogic } from "@/features/swap/useSwapLogic";
 import TokenSelect from "@/features/swap/TokenSelect";
 import ERC20_ABI from "@/abis/ERC20.json";
-import { ROUTER_ADDRESS } from "@/lib/constants";
+import { ROUTER_ADDRESS, NATIVE_TOKEN_ADDRESS } from "@/lib/constants";
 
 export default function SwapTab() {
   const {
@@ -28,6 +28,7 @@ export default function SwapTab() {
 
   const { data: walletClient } = useWalletClient();
   const isAmountValid = !!amountIn && parseFloat(amountIn) > 0;
+  const isNative = fromToken === NATIVE_TOKEN_ADDRESS;
 
   return (
     <div className="tab swap-tab" style={{ maxWidth: 420, margin: "0 auto", padding: 16, width: "100%" }}>
@@ -149,7 +150,7 @@ export default function SwapTab() {
             return;
           }
 
-          if (approvalNeeded) {
+          if (!isNative && approvalNeeded) {
             try {
               await writeContract(walletClient, {
                 address: fromToken,
@@ -164,15 +165,16 @@ export default function SwapTab() {
             } catch (err) {
               alert("❌ Approval failed: " + (err as Error).message);
             }
-          } else {
-            await doSwap();
+            return;
           }
+
+          await doSwap();
         }}
         disabled={loading || !isConnected || !isAmountValid || !quote}
         style={{
           width: "100%",
           padding: 12,
-          background: approvalNeeded ? "#ffc107" : "#28a745",
+          background: approvalNeeded && !isNative ? "#ffc107" : "#28a745",
           color: "white",
           fontWeight: "bold",
           border: "none",
@@ -182,7 +184,7 @@ export default function SwapTab() {
       >
         {loading
           ? "Processing…"
-          : approvalNeeded
+          : approvalNeeded && !isNative
           ? "Approve"
           : !isAmountValid
           ? "Enter Amount"
