@@ -1,7 +1,7 @@
 import { ethers } from "ethers";
 import { KURU_ROUTER_ABI } from "@/lib/abi/kuruRouterAbi";
 import { ROUTER_ADDRESS } from "@/lib/constants";
-import { TOKEN_METADATA, NATIVE_TOKEN_ADDRESS } from "@/lib/constants";
+import { TOKEN_METADATA } from "@/lib/constants";
 
 export async function performSwap({
   signer,
