@@ -154,7 +154,7 @@ export function useSwapLogic() {
       const isNative = fromToken === NATIVE_TOKEN_ADDRESS;
 
       if (!isNative) {
-        const contract = new ethers.Contract(fromToken, ERC20_ABI, signer); 
+        const contract = new ethers.Contract(fromToken, ERC20_ABI, signer);
         const parsedAmountIn = ethers.utils.parseUnits(amountIn, inputDecimals);
         const allowance = await contract.allowance(address, ROUTER_ADDRESS);
 
@@ -166,15 +166,15 @@ export function useSwapLogic() {
       }
 
       const receipt = await TokenSwap.swap(
-        signer, 
+        signer,
         ROUTER_ADDRESS,
         bestPath,
         parseFloat(amountIn),
         inputDecimals,
         outputDecimals,
         slippage,
-        false, 
-        null,
+        false,
+        (_txHash: string | null) => {}, 
         {},
         null
       );
