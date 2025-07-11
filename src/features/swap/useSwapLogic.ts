@@ -173,7 +173,7 @@ export function useSwapLogic() {
           from: txRaw.from,
           to: txRaw.to,
           data: txRaw.data,
-          value: txRaw.value ? txRaw.value.toHexString() : "0x0" 
+          value: ethers.BigNumber.from(txRaw.value || 0).toHexString() 
         }]
       });
 
