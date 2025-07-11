@@ -148,14 +148,14 @@ export function useSwapLogic() {
     try {
       const provider = new ethers.providers.Web3Provider(window.ethereum);
       await provider.send("eth_requestAccounts", []);
-      const signer = provider.getSigner();
+      const signer = provider.getSigner().connect(provider); 
 
       const inputDecimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
       const outputDecimals = TOKEN_METADATA[toToken]?.decimals ?? 18;
       const isNative = fromToken === NATIVE_TOKEN_ADDRESS;
 
       if (!isNative) {
-        const contract = new ethers.Contract(fromToken, ERC20_ABI, provider).connect(signer);
+        const contract = new ethers.Contract(fromToken, ERC20_ABI, signer); 
         const parsedAmountIn = ethers.utils.parseUnits(amountIn, inputDecimals);
         const allowance = await contract.allowance(address, ROUTER_ADDRESS);
 
@@ -166,10 +166,8 @@ export function useSwapLogic() {
         }
       }
 
-      const connectedSigner = signer.connect(provider); // ✅ Explicit connection
-
       const receipt = await TokenSwap.swap(
-        connectedSigner,
+        signer,
         ROUTER_ADDRESS,
         bestPath,
         parseFloat(amountIn),
