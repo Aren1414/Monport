@@ -86,7 +86,8 @@ export function useSwapLogic() {
 
     setLoading(true);
     try {
-      const provider = new ethers.providers.JsonRpcProvider(monadTestnet.rpcUrls.default.http[0]);
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      await provider.send("eth_requestAccounts", []);
       const poolFetcher = new PoolFetcher("https://api.testnet.kuru.io");
       const inputDecimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
       const baseTokens = Object.entries(TOKENS).map(([symbol, addr]) => ({
@@ -121,7 +122,7 @@ export function useSwapLogic() {
       setBestPath(path);
 
       if (fromToken !== NATIVE_TOKEN_ADDRESS) {
-        const signer = provider.getSigner(address);
+        const signer = provider.getSigner();
         const contract = new ethers.Contract(fromToken, ERC20_ABI, signer);
         const parsedAmountIn = ethers.utils.parseUnits(parsedAmount.toString(), inputDecimals);
         const allowance = await contract.allowance(address, ROUTER_ADDRESS);
@@ -137,13 +138,7 @@ export function useSwapLogic() {
     } finally {
       setLoading(false);
     }
-  }, [
-    fromToken,
-    toToken,
-    amountIn,
-    isConnected,
-    address
-  ]);
+  }, [fromToken, toToken, amountIn, isConnected, address]);
 
   useEffect(() => {
     getQuote();
@@ -213,17 +208,7 @@ export function useSwapLogic() {
       setApprovalNeeded(false);
       setLoading(false);
     }
-  }, [
-    isConnected,
-    amountIn,
-    quote,
-    bestPath,
-    fromToken,
-    toToken,
-    fetchBalances,
-    slippage,
-    address
-  ]);
+  }, [isConnected, amountIn, quote, bestPath, fromToken, toToken, fetchBalances, slippage, address]);
 
   return {
     fromToken,
