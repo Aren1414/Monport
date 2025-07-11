@@ -160,7 +160,7 @@ export function useSwapLogic() {
       );
 
       const provider = new ethers.providers.JsonRpcProvider(monadTestnet.rpcUrls.default.http[0]);
-      const signer = provider.getSigner(address);
+      const signer = provider.getSigner(address); 
 
       const txRaw = await TokenSwap.constructSwapTransaction(
         signer,
@@ -171,6 +171,7 @@ export function useSwapLogic() {
         {}
       );
 
+      
       const hash = await walletClient.transport.request({
         method: "eth_sendTransaction",
         params: [{
@@ -200,6 +201,6 @@ export function useSwapLogic() {
     loading, approvalNeeded, balances,
     isConnected, address, walletClient, slippage,
     setSlippage, setFromToken, setToToken, setAmountIn,
-    doSwap, swapTokens, getQuote, markApprovalAsDone 
+    doSwap, swapTokens, getQuote, markApprovalAsDone
   };
 }
