@@ -147,7 +147,6 @@ export function useSwapLogic() {
     try {
       const inputDecimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
       const outputDecimals = TOKEN_METADATA[toToken]?.decimals ?? 18;
-      const isNative = fromToken === NATIVE_TOKEN_ADDRESS;
 
       const tokenInAmount = ethers.utils.parseUnits(amountIn, inputDecimals);
 
