@@ -39,7 +39,6 @@ export function useSwapLogic() {
     for (const [, tokenAddress] of Object.entries(TOKENS)) {
       try {
         const decimals = TOKEN_METADATA[tokenAddress]?.decimals ?? 18;
-
         if (tokenAddress === NATIVE_TOKEN_ADDRESS) {
           const balance = await provider.getBalance(address);
           newBalances[tokenAddress] = ethers.utils.formatUnits(balance, 18);
@@ -167,15 +166,17 @@ export function useSwapLogic() {
       }
 
       const receipt = await TokenSwap.swap(
-        signer,
+        signer, 
         ROUTER_ADDRESS,
         bestPath,
         parseFloat(amountIn),
         inputDecimals,
         outputDecimals,
         slippage,
-        !isNative,
-        txHash => console.log("🔁 Swap tx hash:", txHash)
+        false, 
+        null,
+        {},
+        null
       );
 
       console.log("📦 Swap receipt:", receipt);
