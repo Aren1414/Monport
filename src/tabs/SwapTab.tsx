@@ -22,13 +22,13 @@ export default function SwapTab() {
     setFromToken,
     setToToken,
     setAmountIn,
+    setApprovalNeeded,
     doSwap,
     swapTokens,
     getQuote
   } = useSwapLogic();
 
   const isAmountValid = !!amountIn && parseFloat(amountIn) > 0;
-  const isNative = fromToken === NATIVE_TOKEN_ADDRESS;
 
   return (
     <div className="tab swap-tab" style={{ maxWidth: 420, margin: "0 auto", padding: 16, width: "100%" }}>
@@ -149,7 +149,7 @@ export default function SwapTab() {
             return;
           }
 
-          if (!isNative && approvalNeeded) {
+          if (approvalNeeded) {
             try {
               const iface = new ethers.utils.Interface(ERC20_ABI);
               const data = iface.encodeFunctionData("approve", [
@@ -170,7 +170,8 @@ export default function SwapTab() {
 
               console.log("🧾 Approval tx:", hash);
               alert("✅ Token approved successfully.");
-              await getQuote();
+              setApprovalNeeded(false); 
+              await getQuote();         
             } catch (err) {
               alert("❌ Approval failed: " + (err as Error).message);
             }
@@ -183,7 +184,7 @@ export default function SwapTab() {
         style={{
           width: "100%",
           padding: 12,
-          background: approvalNeeded && !isNative ? "#ffc107" : "#28a745",
+          background: approvalNeeded ? "#ffc107" : "#28a745",
           color: "white",
           fontWeight: "bold",
           border: "none",
@@ -193,7 +194,7 @@ export default function SwapTab() {
       >
         {loading
           ? "Processing…"
-          : approvalNeeded && !isNative
+          : approvalNeeded
           ? "Approve"
           : !isAmountValid
           ? "Enter Amount"
