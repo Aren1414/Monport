@@ -149,7 +149,6 @@ export function useSwapLogic() {
       const outputDecimals = TOKEN_METADATA[toToken]?.decimals ?? 18;
 
       const tokenInAmount = ethers.utils.parseUnits(amountIn, inputDecimals);
-
       const clippedOutput = (bestPath.output * (100 - slippage)) / 100;
       const minTokenOutAmount = ethers.utils.parseUnits(
         clippedOutput.toFixed(outputDecimals),
@@ -157,12 +156,13 @@ export function useSwapLogic() {
       );
 
       const txRaw = await TokenSwap.constructSwapTransaction(
-        { getAddress: async () => address },
         ROUTER_ADDRESS,
         bestPath,
         tokenInAmount,
         minTokenOutAmount,
-        {}
+        {
+          from: address
+        }
       );
 
       const hash = await walletClient.transport.request({
