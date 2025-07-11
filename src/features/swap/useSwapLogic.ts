@@ -174,9 +174,11 @@ export function useSwapLogic() {
         outputDecimals,
         slippage,
         false,
-        () => {}, // ✅ no unused var warning
-        {},
-        null
+        (txHash) => {
+          console.log("🔁 Swap tx hash:", txHash);
+        },
+        {},          // txOptions
+        undefined    // slippageOptions
       );
 
       console.log("📦 Swap receipt:", receipt);
