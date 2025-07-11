@@ -32,46 +32,38 @@ export function useSwapLogic() {
   const previousBalancesRef = useRef<Record<string, string>>({});
 
   const fetchBalances = useCallback(async () => {
-    if (!isConnected || !address || !walletClient) return;
+  if (!isConnected || !address || !walletClient) return;
 
-    const publicClient = createPublicClient({
-      transport: custom(walletClient.transport),
-      chain: monadTestnet
-    });
+  const newBalances: Record<string, string> = {};
+  const rawProvider = new ethers.providers.JsonRpcProvider(monadTestnet.rpcUrls.default.http[0]);
 
-    const newBalances: Record<string, string> = {};
+  for (const [, tokenAddress] of Object.entries(TOKENS)) {
+    try {
+      const decimals = TOKEN_METADATA[tokenAddress]?.decimals ?? 18;
 
-    for (const [, tokenAddress] of Object.entries(TOKENS)) {
-      try {
-        const decimals = TOKEN_METADATA[tokenAddress]?.decimals ?? 18;
-
-        if (tokenAddress === NATIVE_TOKEN_ADDRESS) {
-          const balance = await publicClient.getBalance({ address });
-          newBalances[tokenAddress] = ethers.utils.formatUnits(balance, 18);
-        } else {
-          const balance = await publicClient.readContract({
-            address: tokenAddress,
-            abi: ERC20_ABI,
-            functionName: "balanceOf",
-            args: [address]
-          });
-          newBalances[tokenAddress] = ethers.utils.formatUnits(balance as bigint, decimals);
-        }
-      } catch (err) {
-        console.error(`❌ Error fetching balance for ${tokenAddress}:`, err);
-        newBalances[tokenAddress] = "0";
+      if (tokenAddress === NATIVE_TOKEN_ADDRESS) {
+        const balance = await rawProvider.getBalance(address);
+        newBalances[tokenAddress] = ethers.utils.formatUnits(balance, 18);
+      } else {
+        const contract = new ethers.Contract(tokenAddress, ERC20_ABI, rawProvider);
+        const balance = await contract.balanceOf(address);
+        newBalances[tokenAddress] = ethers.utils.formatUnits(balance, decimals);
       }
+    } catch (err) {
+      console.error(`❌ Error fetching balance for ${tokenAddress}:`, err);
+      newBalances[tokenAddress] = "0";
     }
+  }
 
-    const changed = Object.keys(newBalances).some(
-      key => newBalances[key] !== previousBalancesRef.current[key]
-    );
+  const changed = Object.keys(newBalances).some(
+    key => newBalances[key] !== previousBalancesRef.current[key]
+  );
 
-    if (changed) {
-      previousBalancesRef.current = newBalances;
-      setBalances(newBalances);
-    }
-  }, [isConnected, address, walletClient]);
+  if (changed) {
+    previousBalancesRef.current = newBalances;
+    setBalances(newBalances);
+  }
+}, [isConnected, address, walletClient]);
 
   useEffect(() => {
     fetchBalances();
