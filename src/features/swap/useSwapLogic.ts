@@ -35,7 +35,7 @@ export function useSwapLogic() {
     if (!isConnected || !address || !walletClient) return;
 
     const publicClient = createPublicClient({
-      transport: custom(walletClient.transport), 
+      transport: custom(walletClient.transport),
       chain: monadTestnet
     });
 
@@ -47,7 +47,7 @@ export function useSwapLogic() {
 
         if (tokenAddress === NATIVE_TOKEN_ADDRESS) {
           const balance = await publicClient.getBalance({ address });
-          newBalances[tokenAddress] = (Number(balance) / 10 ** 18).toFixed(6);
+          newBalances[tokenAddress] = ethers.utils.formatUnits(balance, 18);
         } else {
           const balance = await publicClient.readContract({
             address: tokenAddress,
@@ -55,15 +55,16 @@ export function useSwapLogic() {
             functionName: "balanceOf",
             args: [address]
           });
-          newBalances[tokenAddress] = (Number(balance) / 10 ** decimals).toFixed(6);
+          newBalances[tokenAddress] = ethers.utils.formatUnits(balance as bigint, decimals);
         }
-      } catch {
+      } catch (err) {
+        console.error(`❌ Error fetching balance for ${tokenAddress}:`, err);
         newBalances[tokenAddress] = "0";
       }
     }
 
     const changed = Object.keys(newBalances).some(
-      (key) => newBalances[key] !== previousBalancesRef.current[key]
+      key => newBalances[key] !== previousBalancesRef.current[key]
     );
 
     if (changed) {
@@ -78,7 +79,15 @@ export function useSwapLogic() {
 
   const getQuote = useCallback(async () => {
     const parsedAmount = parseFloat(amountIn);
-    if (!fromToken || !toToken || isNaN(parsedAmount) || parsedAmount <= 0 || !isConnected || !address || !walletClient) {
+    if (
+      !fromToken ||
+      !toToken ||
+      isNaN(parsedAmount) ||
+      parsedAmount <= 0 ||
+      !isConnected ||
+      !address ||
+      !walletClient
+    ) {
       setQuote(null);
       setBestPath(null);
       setApprovalNeeded(false);
@@ -90,9 +99,14 @@ export function useSwapLogic() {
       const provider = new ethers.providers.Web3Provider(walletClient.transport);
       const poolFetcher = new PoolFetcher("https://api.testnet.kuru.io");
       const inputDecimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
-      const baseTokens = Object.entries(TOKENS).map(([symbol, addr]) => ({ symbol, address: addr }));
+      const baseTokens = Object.entries(TOKENS).map(([symbol, addr]) => ({
+        symbol,
+        address: addr
+      }));
 
       const pools = await poolFetcher.getAllPools(fromToken, toToken, baseTokens);
+      console.log("✅ Pools fetched:", pools.length);
+
       const path = await PathFinder.findBestPath(
         provider,
         fromToken,
@@ -103,7 +117,10 @@ export function useSwapLogic() {
         pools
       );
 
+      console.log("🔍 PathFinder result:", path);
+
       if (!path || path.output <= 0) {
+        console.warn("⚠️ No valid path found for swap.");
         setQuote(null);
         setBestPath(null);
         setApprovalNeeded(false);
@@ -130,16 +147,22 @@ export function useSwapLogic() {
     } finally {
       setLoading(false);
     }
-  }, [fromToken, toToken, amountIn, isConnected, address, walletClient]);
+  }, [
+    fromToken,
+    toToken,
+    amountIn,
+    isConnected,
+    address,
+    walletClient
+  ]);
 
   useEffect(() => {
     getQuote();
   }, [getQuote]);
 
   const swapTokens = () => {
-    const temp = fromToken;
     setFromToken(toToken);
-    setToToken(temp);
+    setToToken(fromToken);
     setQuote(null);
     setAmountIn("");
     setBestPath(null);
@@ -178,7 +201,7 @@ export function useSwapLogic() {
         outputDecimals,
         slippage,
         !isNative,
-        (txHash) => {
+        txHash => {
           console.log("🔁 Swap tx hash:", txHash);
         }
       );
@@ -201,7 +224,18 @@ export function useSwapLogic() {
       setApprovalNeeded(false);
       setLoading(false);
     }
-  }, [isConnected, amountIn, quote, bestPath, fromToken, toToken, fetchBalances, walletClient, slippage, address]);
+  }, [
+    isConnected,
+    amountIn,
+    quote,
+    bestPath,
+    fromToken,
+    toToken,
+    fetchBalances,
+    walletClient,
+    slippage,
+    address
+  ]);
 
   return {
     fromToken,
