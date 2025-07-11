@@ -4,7 +4,7 @@ import React from "react";
 import { useSwapLogic } from "@/features/swap/useSwapLogic";
 import TokenSelect from "@/features/swap/TokenSelect";
 import ERC20_ABI from "@/abis/ERC20.json";
-import { ROUTER_ADDRESS } from "@/lib/constants"; 
+import { ROUTER_ADDRESS } from "@/lib/constants";
 import { ethers } from "ethers";
 
 export default function SwapTab() {
@@ -22,7 +22,6 @@ export default function SwapTab() {
     setFromToken,
     setToToken,
     setAmountIn,
-    setApprovalNeeded,
     doSwap,
     swapTokens,
     getQuote
@@ -170,8 +169,7 @@ export default function SwapTab() {
 
               console.log("🧾 Approval tx:", hash);
               alert("✅ Token approved successfully.");
-              setApprovalNeeded(false);
-              await getQuote();
+              await getQuote(); 
             } catch (err) {
               alert("❌ Approval failed: " + (err as Error).message);
             }
