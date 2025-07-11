@@ -155,8 +155,11 @@ export function useSwapLogic() {
         outputDecimals
       );
 
+      const provider = new ethers.providers.JsonRpcProvider(monadTestnet.rpcUrls.default.http[0]);
+      const signer = provider.getSigner(address); 
+
       const txRaw = await TokenSwap.constructSwapTransaction(
-        { getAddress: async () => address },  
+        signer,
         ROUTER_ADDRESS,
         bestPath,
         tokenInAmount,
@@ -170,7 +173,7 @@ export function useSwapLogic() {
           from: txRaw.from,
           to: txRaw.to,
           data: txRaw.data,
-          value: ethers.BigNumber.from(txRaw.value ?? "0").toHexString() 
+          value: ethers.BigNumber.from(txRaw.value ?? "0").toHexString()
         }]
       });
 
