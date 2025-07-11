@@ -155,14 +155,16 @@ export function useSwapLogic() {
         outputDecimals
       );
 
+      const provider = new ethers.providers.JsonRpcProvider(monadTestnet.rpcUrls.default.http[0]);
+      const signer = provider.getSigner(address);
+
       const txRaw = await TokenSwap.constructSwapTransaction(
+        signer, // 
         ROUTER_ADDRESS,
         bestPath,
         tokenInAmount,
         minTokenOutAmount,
-        {
-          from: address
-        }
+        {}
       );
 
       const hash = await walletClient.transport.request({
