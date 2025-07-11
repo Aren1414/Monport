@@ -147,7 +147,7 @@ export function useSwapLogic() {
     try {
       const provider = new ethers.providers.Web3Provider(window.ethereum);
       await provider.send("eth_requestAccounts", []);
-      const signer = provider.getSigner().connect(provider); 
+      const signer = provider.getSigner().connect(provider);
 
       const inputDecimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
       const outputDecimals = TOKEN_METADATA[toToken]?.decimals ?? 18;
@@ -174,7 +174,7 @@ export function useSwapLogic() {
         outputDecimals,
         slippage,
         false,
-        (_txHash: string | null) => {}, 
+        () => {}, // ✅ no unused var warning
         {},
         null
       );
