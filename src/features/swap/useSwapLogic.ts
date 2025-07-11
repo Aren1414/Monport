@@ -155,7 +155,7 @@ export function useSwapLogic() {
       const isNative = fromToken === NATIVE_TOKEN_ADDRESS;
 
       if (!isNative) {
-        const contract = new ethers.Contract(fromToken, ERC20_ABI, signer);
+        const contract = new ethers.Contract(fromToken, ERC20_ABI, provider).connect(signer);
         const parsedAmountIn = ethers.utils.parseUnits(amountIn, inputDecimals);
         const allowance = await contract.allowance(address, ROUTER_ADDRESS);
 
@@ -166,8 +166,10 @@ export function useSwapLogic() {
         }
       }
 
+      const connectedSigner = signer.connect(provider); // ✅ Explicit connection
+
       const receipt = await TokenSwap.swap(
-        signer,
+        connectedSigner,
         ROUTER_ADDRESS,
         bestPath,
         parseFloat(amountIn),
