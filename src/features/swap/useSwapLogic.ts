@@ -132,10 +132,6 @@ export function useSwapLogic() {
     setBestPath(null);
   };
 
-  const markApprovalAsDone = () => {
-    setApprovalNeeded(false);
-  };
-
   const doSwap = useCallback(async () => {
     const parsedQuote = parseFloat(quote ?? "0");
     if (
@@ -171,7 +167,6 @@ export function useSwapLogic() {
         {}
       );
 
-      
       const hash = await walletClient.transport.request({
         method: "eth_sendTransaction",
         params: [{
@@ -201,6 +196,6 @@ export function useSwapLogic() {
     loading, approvalNeeded, balances,
     isConnected, address, walletClient, slippage,
     setSlippage, setFromToken, setToToken, setAmountIn,
-    doSwap, swapTokens, getQuote, markApprovalAsDone
+    doSwap, swapTokens, getQuote
   };
 }
