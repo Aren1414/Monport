@@ -167,13 +167,24 @@ export function useSwapLogic() {
         {}
       );
 
+      const gasLimit = await provider.estimateGas({
+        from: txRaw.from,
+        to: txRaw.to,
+        data: txRaw.data,
+        value: txRaw.value ?? "0x0"
+      });
+
+      const gasPrice = await provider.getGasPrice();
+
       const hash = await walletClient.transport.request({
         method: "eth_sendTransaction",
         params: [{
           from: txRaw.from,
           to: txRaw.to,
           data: txRaw.data,
-          value: ethers.BigNumber.from(txRaw.value || 0).toHexString() 
+          value: ethers.BigNumber.from(txRaw.value ?? "0").toHexString(),
+          gas: gasLimit.toHexString(),
+          gasPrice: gasPrice.toHexString()
         }]
       });
 
