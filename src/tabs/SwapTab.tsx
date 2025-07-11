@@ -24,8 +24,7 @@ export default function SwapTab() {
     setAmountIn,
     doSwap,
     swapTokens,
-    getQuote,
-    markApprovalAsDone 
+    getQuote
   } = useSwapLogic();
 
   const isAmountValid = !!amountIn && parseFloat(amountIn) > 0;
@@ -170,8 +169,7 @@ export default function SwapTab() {
 
               console.log("🧾 Approval tx:", hash);
               alert("✅ Token approved successfully.");
-              markApprovalAsDone(); 
-              await getQuote();
+              await getQuote(); 
             } catch (err) {
               alert("❌ Approval failed: " + (err as Error).message);
             }
