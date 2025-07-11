@@ -85,8 +85,6 @@ export function useSwapLogic() {
     try {
       const provider = new ethers.providers.JsonRpcProvider(monadTestnet.rpcUrls.default.http[0]);
       const poolFetcher = new PoolFetcher("https://api.testnet.kuru.io");
-      const inputDecimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
-
       const baseTokens = Object.entries(TOKENS).map(([symbol, addr]) => ({
         symbol,
         address: addr
@@ -104,7 +102,6 @@ export function useSwapLogic() {
       );
 
       if (!path || path.output <= 0) {
-        console.warn("⚠️ No valid path found for swap.");
         setQuote(null);
         setBestPath(null);
         setApprovalNeeded(false);
@@ -113,18 +110,7 @@ export function useSwapLogic() {
 
       setQuote(path.output.toString());
       setBestPath(path);
-
-      if (fromToken !== NATIVE_TOKEN_ADDRESS) {
-        const signerProvider = new ethers.providers.Web3Provider(window.ethereum);
-        await signerProvider.send("eth_requestAccounts", []);
-        const signer = signerProvider.getSigner();
-        const contract = new ethers.Contract(fromToken, ERC20_ABI, signer);
-        const parsedAmountIn = ethers.utils.parseUnits(parsedAmount.toString(), inputDecimals);
-        const allowance = await contract.allowance(address, ROUTER_ADDRESS);
-        setApprovalNeeded(allowance.lt(parsedAmountIn));
-      } else {
-        setApprovalNeeded(false);
-      }
+      setApprovalNeeded(fromToken !== NATIVE_TOKEN_ADDRESS);
     } catch (err) {
       console.error("❌ getQuote error:", err);
       setQuote(null);
@@ -167,6 +153,18 @@ export function useSwapLogic() {
       const inputDecimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
       const outputDecimals = TOKEN_METADATA[toToken]?.decimals ?? 18;
       const isNative = fromToken === NATIVE_TOKEN_ADDRESS;
+
+      if (!isNative) {
+        const contract = new ethers.Contract(fromToken, ERC20_ABI, signer);
+        const parsedAmountIn = ethers.utils.parseUnits(amountIn, inputDecimals);
+        const allowance = await contract.allowance(address, ROUTER_ADDRESS);
+
+        if (allowance.lt(parsedAmountIn)) {
+          const tx = await contract.approve(ROUTER_ADDRESS, ethers.constants.MaxUint256);
+          await tx.wait();
+          alert("✅ Token approved.");
+        }
+      }
 
       const receipt = await TokenSwap.swap(
         signer,
