@@ -156,7 +156,7 @@ export function useSwapLogic() {
       );
 
       const provider = new ethers.providers.JsonRpcProvider(monadTestnet.rpcUrls.default.http[0]);
-      const signer = provider.getSigner(address); 
+      const signer = provider.getSigner(address);
 
       const txRaw = await TokenSwap.constructSwapTransaction(
         signer,
@@ -181,7 +181,14 @@ export function useSwapLogic() {
       alert("✅ Swap submitted. Check wallet for confirmation.");
     } catch (err) {
       console.error("❌ Swap error:", err);
-      alert("❌ Swap failed: " + (err as Error).message);
+
+      
+      if ((err as Error).message?.toLowerCase().includes("gas") || (err as Error).message?.toLowerCase().includes("insufficient")) {
+        alert("❌ تراکنش توسط کیف‌پول یا بلاکچین به خاطر گس رد شد. لطفاً مقدار کمی MON برای گس اضافه کن.");
+      } else {
+        alert("❌ Swap failed: " + (err as Error).message);
+      }
+
     } finally {
       setAmountIn("");
       setQuote(null);
