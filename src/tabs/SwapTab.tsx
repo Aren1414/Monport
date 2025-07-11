@@ -169,7 +169,7 @@ export default function SwapTab() {
 
               console.log("🧾 Approval tx:", hash);
               alert("✅ Token approved successfully.");
-              await getQuote(); 
+              await getQuote();
             } catch (err) {
               alert("❌ Approval failed: " + (err as Error).message);
             }
