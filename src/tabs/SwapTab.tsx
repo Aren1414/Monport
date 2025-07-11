@@ -18,6 +18,7 @@ export default function SwapTab() {
     balances,
     isConnected,
     address,
+    walletClient,
     setFromToken,
     setToToken,
     setAmountIn,
@@ -143,27 +144,33 @@ export default function SwapTab() {
       {/* Approve & Swap Button */}
       <button
         onClick={async () => {
-          if (!isConnected || !address) {
+          if (!isConnected || !address || !walletClient) {
             alert("❌ Wallet not connected.");
             return;
           }
 
           if (!isNative && approvalNeeded) {
             try {
-              const provider = new ethers.providers.Web3Provider(window.ethereum);
-              await provider.send("eth_requestAccounts", []);
-              const signer = provider.getSigner().connect(provider); 
-
-              const contract = new ethers.Contract(fromToken, ERC20_ABI, signer); 
-
-              const tx = await contract.approve(
+              const iface = new ethers.utils.Interface(ERC20_ABI);
+              const data = iface.encodeFunctionData("approve", [
                 ROUTER_ADDRESS,
                 ethers.constants.MaxUint256
-              );
-              await tx.wait();
+              ]);
 
+              const tx = {
+                from: address,
+                to: fromToken,
+                data
+              };
+
+              const hash = await walletClient.transport.request({
+                method: "eth_sendTransaction",
+                params: [tx]
+              });
+
+              console.log("🧾 Approval tx:", hash);
               alert("✅ Token approved successfully.");
-              await getQuote(); // optional refresh
+              await getQuote();
             } catch (err) {
               alert("❌ Approval failed: " + (err as Error).message);
             }
