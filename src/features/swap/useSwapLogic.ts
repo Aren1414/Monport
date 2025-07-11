@@ -33,18 +33,18 @@ export function useSwapLogic() {
   const fetchBalances = useCallback(async () => {
     if (!isConnected || !address || !walletClient) return;
 
+    const provider = new ethers.providers.JsonRpcProvider(monadTestnet.rpcUrls.default.http[0]);
     const newBalances: Record<string, string> = {};
-    const rawProvider = new ethers.providers.JsonRpcProvider(monadTestnet.rpcUrls.default.http[0]);
 
     for (const [, tokenAddress] of Object.entries(TOKENS)) {
       try {
         const decimals = TOKEN_METADATA[tokenAddress]?.decimals ?? 18;
 
         if (tokenAddress === NATIVE_TOKEN_ADDRESS) {
-          const balance = await rawProvider.getBalance(address);
+          const balance = await provider.getBalance(address);
           newBalances[tokenAddress] = ethers.utils.formatUnits(balance, 18);
         } else {
-          const contract = new ethers.Contract(tokenAddress, ERC20_ABI, rawProvider);
+          const contract = new ethers.Contract(tokenAddress, ERC20_ABI, provider);
           const balance = await contract.balanceOf(address);
           newBalances[tokenAddress] = ethers.utils.formatUnits(balance, decimals);
         }
@@ -71,12 +71,9 @@ export function useSwapLogic() {
   const getQuote = useCallback(async () => {
     const parsedAmount = parseFloat(amountIn);
     if (
-      !fromToken ||
-      !toToken ||
-      isNaN(parsedAmount) ||
-      parsedAmount <= 0 ||
-      !isConnected ||
-      !address
+      !fromToken || !toToken ||
+      isNaN(parsedAmount) || parsedAmount <= 0 ||
+      !isConnected || !address
     ) {
       setQuote(null);
       setBestPath(null);
@@ -86,17 +83,16 @@ export function useSwapLogic() {
 
     setLoading(true);
     try {
-      const provider = new ethers.providers.JsonRpcProvider(monadTestnet.rpcUrls.default.http[0]); // ✅ اصلاح‌شده
+      const provider = new ethers.providers.JsonRpcProvider(monadTestnet.rpcUrls.default.http[0]);
       const poolFetcher = new PoolFetcher("https://api.testnet.kuru.io");
       const inputDecimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
+
       const baseTokens = Object.entries(TOKENS).map(([symbol, addr]) => ({
         symbol,
         address: addr
       }));
 
       const pools = await poolFetcher.getAllPools(fromToken, toToken, baseTokens);
-      console.log("✅ Pools fetched:", pools.length);
-
       const path = await PathFinder.findBestPath(
         provider,
         fromToken,
@@ -106,8 +102,6 @@ export function useSwapLogic() {
         poolFetcher,
         pools
       );
-
-      console.log("🔍 PathFinder result:", path);
 
       if (!path || path.output <= 0) {
         console.warn("⚠️ No valid path found for swap.");
@@ -121,7 +115,9 @@ export function useSwapLogic() {
       setBestPath(path);
 
       if (fromToken !== NATIVE_TOKEN_ADDRESS) {
-        const signer = new ethers.providers.Web3Provider(window.ethereum).getSigner(); 
+        const signerProvider = new ethers.providers.Web3Provider(window.ethereum);
+        await signerProvider.send("eth_requestAccounts", []);
+        const signer = signerProvider.getSigner();
         const contract = new ethers.Contract(fromToken, ERC20_ABI, signer);
         const parsedAmountIn = ethers.utils.parseUnits(parsedAmount.toString(), inputDecimals);
         const allowance = await contract.allowance(address, ROUTER_ADDRESS);
@@ -154,12 +150,9 @@ export function useSwapLogic() {
   const doSwap = useCallback(async () => {
     const parsedQuote = parseFloat(quote ?? "0");
     if (
-      !isConnected ||
-      !quote ||
-      !bestPath ||
-      bestPath.output <= 0 ||
-      parsedQuote <= 0 ||
-      !address
+      !isConnected || !quote ||
+      !bestPath || bestPath.output <= 0 ||
+      parsedQuote <= 0 || !address
     ) {
       alert("❌ Swap aborted. Missing quote or connection.");
       return;
@@ -184,9 +177,7 @@ export function useSwapLogic() {
         outputDecimals,
         slippage,
         !isNative,
-        txHash => {
-          console.log("🔁 Swap tx hash:", txHash);
-        }
+        txHash => console.log("🔁 Swap tx hash:", txHash)
       );
 
       console.log("📦 Swap receipt:", receipt);
@@ -210,22 +201,10 @@ export function useSwapLogic() {
   }, [isConnected, amountIn, quote, bestPath, fromToken, toToken, fetchBalances, slippage, address]);
 
   return {
-    fromToken,
-    toToken,
-    amountIn,
-    quote,
-    loading,
-    approvalNeeded,
-    balances,
-    isConnected,
-    address,
-    slippage,
-    setSlippage,
-    setFromToken,
-    setToToken,
-    setAmountIn,
-    doSwap,
-    swapTokens,
-    getQuote
+    fromToken, toToken, amountIn, quote,
+    loading, approvalNeeded, balances,
+    isConnected, address, slippage,
+    setSlippage, setFromToken, setToToken, setAmountIn,
+    doSwap, swapTokens, getQuote
   };
 }
