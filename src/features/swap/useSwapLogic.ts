@@ -86,7 +86,7 @@ export function useSwapLogic() {
 
     setLoading(true);
     try {
-      const provider = new ethers.providers.JsonRpcProvider(monadTestnet.rpcUrls.default.http[0]); // ✅ مستقیم از RPC
+      const provider = new ethers.providers.JsonRpcProvider(monadTestnet.rpcUrls.default.http[0]);
       const poolFetcher = new PoolFetcher("https://api.testnet.kuru.io");
       const inputDecimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
       const baseTokens = Object.entries(TOKENS).map(([symbol, addr]) => ({
@@ -165,8 +165,7 @@ export function useSwapLogic() {
       !bestPath ||
       bestPath.output <= 0 ||
       parsedQuote <= 0 ||
-      !address ||
-      !walletClient
+      !address
     ) {
       alert("❌ Swap aborted. Missing quote or connection.");
       return;
@@ -174,7 +173,8 @@ export function useSwapLogic() {
 
     setLoading(true);
     try {
-      const provider = new ethers.providers.Web3Provider(walletClient.transport);
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      await provider.send("eth_requestAccounts", []);
       const signer = provider.getSigner();
 
       const inputDecimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
@@ -221,7 +221,6 @@ export function useSwapLogic() {
     fromToken,
     toToken,
     fetchBalances,
-    walletClient,
     slippage,
     address
   ]);
