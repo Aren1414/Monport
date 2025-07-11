@@ -135,7 +135,7 @@ export function useSwapLogic() {
   const doSwap = useCallback(async () => {
     const parsedQuote = parseFloat(quote ?? "0");
     if (
-      !isConnected || !quote ||
+      !isConnected || !walletClient || !quote ||
       !bestPath || bestPath.output <= 0 ||
       parsedQuote <= 0 || !address
     ) {
@@ -145,50 +145,39 @@ export function useSwapLogic() {
 
     setLoading(true);
     try {
-      const provider = new ethers.providers.Web3Provider(window.ethereum);
-      await provider.send("eth_requestAccounts", []);
-      const signer = provider.getSigner().connect(provider);
-
       const inputDecimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
       const outputDecimals = TOKEN_METADATA[toToken]?.decimals ?? 18;
       const isNative = fromToken === NATIVE_TOKEN_ADDRESS;
 
-      if (!isNative) {
-        const contract = new ethers.Contract(fromToken, ERC20_ABI, signer);
-        const parsedAmountIn = ethers.utils.parseUnits(amountIn, inputDecimals);
-        const allowance = await contract.allowance(address, ROUTER_ADDRESS);
+      const tokenInAmount = ethers.utils.parseUnits(amountIn, inputDecimals);
 
-        if (allowance.lt(parsedAmountIn)) {
-          const tx = await contract.approve(ROUTER_ADDRESS, ethers.constants.MaxUint256);
-          await tx.wait();
-          alert("✅ Token approved.");
-        }
-      }
-
-      const receipt = await TokenSwap.swap(
-        signer,
-        ROUTER_ADDRESS,
-        bestPath,
-        parseFloat(amountIn),
-        inputDecimals,
-        outputDecimals,
-        slippage,
-        false,
-        (txHash) => {
-          console.log("🔁 Swap tx hash:", txHash);
-        },
-        {},          // txOptions
-        undefined    // slippageOptions
+      const clippedOutput = (bestPath.output * (100 - slippage)) / 100;
+      const minTokenOutAmount = ethers.utils.parseUnits(
+        clippedOutput.toFixed(outputDecimals),
+        outputDecimals
       );
 
-      console.log("📦 Swap receipt:", receipt);
+      const txRaw = await TokenSwap.constructSwapTransaction(
+        { getAddress: async () => address },
+        ROUTER_ADDRESS,
+        bestPath,
+        tokenInAmount,
+        minTokenOutAmount,
+        {}
+      );
 
-      if (receipt?.status === 1) {
-        await fetchBalances();
-        alert("✅ Swap completed successfully.");
-      } else {
-        alert("⚠️ Swap failed or was reverted.");
-      }
+      const hash = await walletClient.transport.request({
+        method: "eth_sendTransaction",
+        params: [{
+          from: txRaw.from,
+          to: txRaw.to,
+          data: txRaw.data,
+          value: txRaw.value.toHexString()
+        }]
+      });
+
+      console.log("📦 Swap tx hash:", hash);
+      alert("✅ Swap submitted. Check wallet for confirmation.");
     } catch (err) {
       console.error("❌ Swap error:", err);
       alert("❌ Swap failed: " + (err as Error).message);
@@ -199,12 +188,12 @@ export function useSwapLogic() {
       setApprovalNeeded(false);
       setLoading(false);
     }
-  }, [isConnected, amountIn, quote, bestPath, fromToken, toToken, fetchBalances, slippage, address]);
+  }, [isConnected, walletClient, amountIn, quote, bestPath, fromToken, toToken, slippage, address]);
 
   return {
     fromToken, toToken, amountIn, quote,
     loading, approvalNeeded, balances,
-    isConnected, address, slippage,
+    isConnected, address, walletClient, slippage,
     setSlippage, setFromToken, setToToken, setAmountIn,
     doSwap, swapTokens, getQuote
   };
