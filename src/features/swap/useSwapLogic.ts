@@ -132,6 +132,11 @@ export function useSwapLogic() {
     setBestPath(null);
   };
 
+  
+  const markApprovalAsDone = () => {
+    setApprovalNeeded(false);
+  };
+
   const doSwap = useCallback(async () => {
     const parsedQuote = parseFloat(quote ?? "0");
     if (
@@ -156,7 +161,7 @@ export function useSwapLogic() {
       );
 
       const provider = new ethers.providers.JsonRpcProvider(monadTestnet.rpcUrls.default.http[0]);
-      const signer = provider.getSigner(address); 
+      const signer = provider.getSigner(address);
 
       const txRaw = await TokenSwap.constructSwapTransaction(
         signer,
@@ -196,6 +201,6 @@ export function useSwapLogic() {
     loading, approvalNeeded, balances,
     isConnected, address, walletClient, slippage,
     setSlippage, setFromToken, setToToken, setAmountIn,
-    doSwap, swapTokens, getQuote
+    doSwap, swapTokens, getQuote, markApprovalAsDone 
   };
 }
