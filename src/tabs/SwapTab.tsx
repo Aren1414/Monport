@@ -153,15 +153,16 @@ export default function SwapTab() {
               const provider = new ethers.providers.Web3Provider(window.ethereum);
               await provider.send("eth_requestAccounts", []);
               const signer = provider.getSigner();
-              const contract = new ethers.Contract(fromToken, ERC20_ABI, signer);
+              const contract = new ethers.Contract(fromToken, ERC20_ABI, provider).connect(signer); 
 
-              await contract.approve(
+              const tx = await contract.approve(
                 ROUTER_ADDRESS,
                 ethers.constants.MaxUint256
               );
+              await tx.wait();
 
               alert("✅ Token approved successfully.");
-              await getQuote();
+              await getQuote(); // optional
             } catch (err) {
               alert("❌ Approval failed: " + (err as Error).message);
             }
