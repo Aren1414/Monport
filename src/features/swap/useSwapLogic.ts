@@ -159,7 +159,7 @@ export function useSwapLogic() {
       const signer = provider.getSigner(address);
 
       const txRaw = await TokenSwap.constructSwapTransaction(
-        signer, // 
+        signer,
         ROUTER_ADDRESS,
         bestPath,
         tokenInAmount,
@@ -173,7 +173,7 @@ export function useSwapLogic() {
           from: txRaw.from,
           to: txRaw.to,
           data: txRaw.data,
-          value: txRaw.value.toHexString()
+          value: txRaw.value ? txRaw.value.toHexString() : "0x0" 
         }]
       });
 
