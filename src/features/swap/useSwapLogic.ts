@@ -49,8 +49,7 @@ export function useSwapLogic() {
           const balance = await contract.balanceOf(address);
           newBalances[tokenAddress] = ethers.utils.formatUnits(balance, decimals);
         }
-      } catch (err) {
-        console.error(`❌ Error fetching balance for ${tokenAddress}:`, err);
+      } catch {
         newBalances[tokenAddress] = "0";
       }
     }
@@ -122,8 +121,7 @@ export function useSwapLogic() {
         setApprovalNeeded(allowance.lt(inputAmount));
       }
 
-    } catch (err) {
-      console.error("❌ getQuote error:", err);
+    } catch {
       setQuote(null);
       setBestPath(null);
       setApprovalNeeded(false);
@@ -159,6 +157,11 @@ export function useSwapLogic() {
       return;
     }
 
+    if (walletClient.chain?.id !== monadTestnet.id) {
+      toast("❌ Wrong network. Please switch to Monad testnet.", "error", 6000);
+      return;
+    }
+
     setLoading(true);
     try {
       const inputDecimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
@@ -171,11 +174,8 @@ export function useSwapLogic() {
         outputDecimals
       );
 
-      const provider = new ethers.providers.JsonRpcProvider(monadTestnet.rpcUrls.default.http[0]);
-      const signer = provider.getSigner(address);
-
       const txRaw = await TokenSwap.constructSwapTransaction(
-        signer,
+        walletClient,
         ROUTER_ADDRESS,
         bestPath,
         tokenInAmount,
@@ -193,15 +193,13 @@ export function useSwapLogic() {
         }]
       });
 
-      if (!hash || typeof hash !== "string" || hash.length < 20) {
-        throw new Error("❌ Swap rejected or no tx hash returned");
+      if (!hash || typeof hash !== "string" || !/^0x([A-Fa-f0-9]{64})$/.test(hash)) {
+        throw new Error("Transaction rejected or invalid hash");
       }
 
-      console.log("📦 Swap tx hash:", hash);
       toast("✅ Swap submitted. Check wallet for confirmation.", "success", 3000);
-    } catch (err) {
-      console.error("❌ Swap error:", err);
-      toast("❌ Swap failed", "error", 6000);
+    } catch {
+      toast("❌ Swap failed or rejected by wallet", "error", 6000);
     } finally {
       setAmountIn("");
       setQuote(null);
@@ -209,7 +207,11 @@ export function useSwapLogic() {
       setApprovalNeeded(false);
       setLoading(false);
     }
-  }, [isConnected, walletClient, amountIn, quote, bestPath, fromToken, toToken, slippage, address, toast]);
+  }, [
+    isConnected, walletClient, amountIn, quote,
+    bestPath, fromToken, toToken, slippage,
+    address, toast
+  ]);
 
   return {
     fromToken, toToken, amountIn, quote,
