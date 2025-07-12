@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useAccount, useWalletClient } from "wagmi";
+import { useAccount, useWalletClient, useSwitchNetwork } from "wagmi";
 import { monadTestnet } from "wagmi/chains";
 import { PoolFetcher, PathFinder, TokenSwap } from "@kuru-labs/kuru-sdk";
 import type { RouteOutput } from "@kuru-labs/kuru-sdk";
@@ -17,7 +17,8 @@ import { useToast } from "@/hooks/useToast";
 
 export function useSwapLogic() {
   const { isConnected, address } = useAccount();
-  const { data: walletClient } = useWalletClient();
+  const { data: walletClient, chain } = useWalletClient();
+  const { switchNetwork } = useSwitchNetwork();
   const toast = useToast();
 
   const [fromToken, setFromToken] = useState(TOKENS.MON);
@@ -157,8 +158,9 @@ export function useSwapLogic() {
       return;
     }
 
-    if (walletClient.chain?.id !== monadTestnet.id) {
-      toast("❌ Wrong network. Please switch to Monad testnet.", "error", 6000);
+    if (chain?.id !== monadTestnet.id) {
+      toast("🔄 Switching to Monad testnet...", "info", 2000);
+      switchNetwork?.(monadTestnet.id);
       return;
     }
 
@@ -174,8 +176,11 @@ export function useSwapLogic() {
         outputDecimals
       );
 
+      const provider = new ethers.providers.JsonRpcProvider(monadTestnet.rpcUrls.default.http[0]);
+      const signer = provider.getSigner(address);
+
       const txRaw = await TokenSwap.constructSwapTransaction(
-        walletClient,
+        signer,
         ROUTER_ADDRESS,
         bestPath,
         tokenInAmount,
@@ -194,7 +199,7 @@ export function useSwapLogic() {
       });
 
       if (!hash || typeof hash !== "string" || !/^0x([A-Fa-f0-9]{64})$/.test(hash)) {
-        throw new Error("Transaction rejected or invalid hash");
+        throw new Error("Transaction rejected or hash invalid");
       }
 
       toast("✅ Swap submitted. Check wallet for confirmation.", "success", 3000);
@@ -208,9 +213,8 @@ export function useSwapLogic() {
       setLoading(false);
     }
   }, [
-    isConnected, walletClient, amountIn, quote,
-    bestPath, fromToken, toToken, slippage,
-    address, toast
+    isConnected, walletClient, amountIn, quote, bestPath,
+    fromToken, toToken, slippage, address, toast, chain, switchNetwork
   ]);
 
   return {
