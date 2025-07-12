@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
+import { useToast } from "@/hooks/useToast";
 import { useSwapLogic } from "@/features/swap/useSwapLogic";
 import TokenSelect from "@/features/swap/TokenSelect";
 import ERC20_ABI from "@/abis/ERC20.json";
 import { ROUTER_ADDRESS } from "@/lib/constants";
 import { ethers } from "ethers";
-import CustomToast from "@/components/CustomToast";
 
 export default function SwapTab() {
   const {
@@ -17,21 +17,9 @@ export default function SwapTab() {
     doSwap, swapTokens, getQuote, markApprovalAsDone
   } = useSwapLogic();
 
+  const toast = useToast();
+
   const isAmountValid = !!amountIn && parseFloat(amountIn) > 0;
-
-  const [toast, setToast] = useState<{
-    message: string;
-    type: "success" | "error" | "info";
-    duration?: number;
-  } | null>(null);
-
-  const showToast = (
-    message: string,
-    type: "success" | "error" | "info" = "info",
-    duration = 3500
-  ) => {
-    setToast({ message, type, duration });
-  };
 
   return (
     <div className="tab swap-tab" style={{ maxWidth: 420, margin: "0 auto", padding: 16, width: "100%" }}>
@@ -148,7 +136,7 @@ export default function SwapTab() {
       <button
         onClick={async () => {
           if (!isConnected || !address || !walletClient) {
-            showToast("❌ Wallet not connected", "error", 6000);
+            toast("❌ Wallet not connected", "error", 6000);
             return;
           }
 
@@ -172,17 +160,17 @@ export default function SwapTab() {
               });
 
               console.log("🧾 Approval tx:", hash);
-              showToast("✅ Token approved successfully", "success", 3000);
+              toast("✅ Token approved successfully", "success", 3000);
               markApprovalAsDone();
               await getQuote();
             } catch {
-              showToast("❌ Approval failed", "error", 6000);
+              toast("❌ Approval failed", "error", 6000);
             }
             return;
           }
 
           await doSwap();
-          showToast("✅ Swap submitted", "success", 3000);
+          toast("✅ Swap submitted", "success", 3000);
         }}
         disabled={loading || !isConnected || !isAmountValid || !quote}
         style={{
@@ -204,16 +192,6 @@ export default function SwapTab() {
           ? "Approve"
           : "Swap Now"}
       </button>
-
-      {/* نمایش نوتیف سفارشی */}
-      {toast && (
-        <CustomToast
-          message={toast.message}
-          type={toast.type}
-          duration={toast.duration}
-          onClose={() => setToast(null)}
-        />
-      )}
     </div>
   );
 }
