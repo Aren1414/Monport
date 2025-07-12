@@ -193,6 +193,10 @@ export function useSwapLogic() {
         }]
       });
 
+      if (!hash || typeof hash !== "string" || hash.length < 20) {
+        throw new Error("❌ Swap rejected or no tx hash returned");
+      }
+
       console.log("📦 Swap tx hash:", hash);
       toast("✅ Swap submitted. Check wallet for confirmation.", "success", 3000);
     } catch (err) {
