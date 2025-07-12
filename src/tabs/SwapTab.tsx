@@ -175,7 +175,7 @@ export default function SwapTab() {
               showToast("✅ Token approved successfully", "success", 3000);
               markApprovalAsDone();
               await getQuote();
-            } catch (err) {
+            } catch {
               showToast("❌ Approval failed", "error", 6000);
             }
             return;
