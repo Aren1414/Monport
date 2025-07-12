@@ -9,8 +9,7 @@ import welcomeAbi from '~/abis/WelcomeNFT.json'
 
 const WELCOME_CONTRACT_ADDRESS = '0x40649af9dEE8bDB94Dc21BA2175AE8f5181f14AE'
 const NFT_PRICE = 0.3
-const VIDEO_URL =
-  'https://zxmqva22v53mlvaeypxc7nyw7ucxf5dat53l2ngf2umq6kiftn3a.arweave.net/zdkKg1qvdsXUBMPuL7cW_QVy9GCfdr00xdUZDykFm3Y'
+const videoUrl = "https://welcome-mon.aren-silver12.workers.dev/";
 const MINI_APP_URL = 'https://monport-three.vercel.app/?tab=welcome'
 
 const MONAD_TESTNET_CHAIN_ID = 10143
