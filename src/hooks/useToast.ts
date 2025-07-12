@@ -1,6 +1,7 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect } from "react";
+import type { ReactNode } from "react";
 
 type ToastType = "success" | "error" | "info";
 
@@ -18,7 +19,7 @@ interface ToastProviderProps {
   children: ReactNode;
 }
 
-export function ToastProvider(props: ToastProviderProps) {
+export function ToastProvider({ children }: ToastProviderProps): JSX.Element {
   const [toast, setToast] = useState<ToastData | null>(null);
 
   const showToast: ToastContextType = (
@@ -30,10 +31,9 @@ export function ToastProvider(props: ToastProviderProps) {
   };
 
   useEffect(() => {
-    if (toast) {
-      const timer = setTimeout(() => setToast(null), toast.duration);
-      return () => clearTimeout(timer);
-    }
+    if (!toast) return;
+    const timer = setTimeout(() => setToast(null), toast.duration);
+    return () => clearTimeout(timer);
   }, [toast]);
 
   const bgColor = {
@@ -44,8 +44,8 @@ export function ToastProvider(props: ToastProviderProps) {
 
   return (
     <ToastContext.Provider value={showToast}>
-      {props.children}
-      {toast && (
+      {children}
+      {!!toast && (
         <div
           style={{
             position: "fixed",
