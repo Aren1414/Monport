@@ -13,10 +13,12 @@ import {
 } from "@/lib/constants";
 import { ethers } from "ethers";
 import ERC20_ABI from "@/abis/ERC20.json";
+import { useToast } from "@/hooks/useToast";
 
 export function useSwapLogic() {
   const { isConnected, address } = useAccount();
   const { data: walletClient } = useWalletClient();
+  const toast = useToast();
 
   const [fromToken, setFromToken] = useState(TOKENS.MON);
   const [toToken, setToToken] = useState(TOKENS.USDC);
@@ -68,68 +70,67 @@ export function useSwapLogic() {
   }, [fetchBalances]);
 
   const getQuote = useCallback(async () => {
-  const parsedAmount = parseFloat(amountIn);
-  if (
-    !fromToken || !toToken ||
-    isNaN(parsedAmount) || parsedAmount <= 0 ||
-    !isConnected || !address
-  ) {
-    setQuote(null);
-    setBestPath(null);
-    setApprovalNeeded(false);
-    return;
-  }
-
-  setLoading(true);
-  try {
-    const provider = new ethers.providers.JsonRpcProvider(monadTestnet.rpcUrls.default.http[0]);
-    const poolFetcher = new PoolFetcher("https://api.testnet.kuru.io");
-    const baseTokens = Object.entries(TOKENS).map(([symbol, addr]) => ({
-      symbol,
-      address: addr
-    }));
-
-    const pools = await poolFetcher.getAllPools(fromToken, toToken, baseTokens);
-    const path = await PathFinder.findBestPath(
-      provider,
-      fromToken,
-      toToken,
-      parsedAmount,
-      "amountIn",
-      poolFetcher,
-      pools
-    );
-
-    if (!path || path.output <= 0) {
+    const parsedAmount = parseFloat(amountIn);
+    if (
+      !fromToken || !toToken ||
+      isNaN(parsedAmount) || parsedAmount <= 0 ||
+      !isConnected || !address
+    ) {
       setQuote(null);
       setBestPath(null);
       setApprovalNeeded(false);
       return;
     }
 
-    setQuote(path.output.toString());
-    setBestPath(path);
+    setLoading(true);
+    try {
+      const provider = new ethers.providers.JsonRpcProvider(monadTestnet.rpcUrls.default.http[0]);
+      const poolFetcher = new PoolFetcher("https://api.testnet.kuru.io");
+      const baseTokens = Object.entries(TOKENS).map(([symbol, addr]) => ({
+        symbol,
+        address: addr
+      }));
 
-    
-    if (fromToken === NATIVE_TOKEN_ADDRESS) {
+      const pools = await poolFetcher.getAllPools(fromToken, toToken, baseTokens);
+      const path = await PathFinder.findBestPath(
+        provider,
+        fromToken,
+        toToken,
+        parsedAmount,
+        "amountIn",
+        poolFetcher,
+        pools
+      );
+
+      if (!path || path.output <= 0) {
+        setQuote(null);
+        setBestPath(null);
+        setApprovalNeeded(false);
+        return;
+      }
+
+      setQuote(path.output.toString());
+      setBestPath(path);
+
+      if (fromToken === NATIVE_TOKEN_ADDRESS) {
+        setApprovalNeeded(false);
+      } else {
+        const decimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
+        const contract = new ethers.Contract(fromToken, ERC20_ABI, provider);
+        const allowance = await contract.allowance(address, ROUTER_ADDRESS);
+        const inputAmount = ethers.utils.parseUnits(amountIn, decimals);
+        setApprovalNeeded(allowance.lt(inputAmount));
+      }
+
+    } catch (err) {
+      console.error("❌ getQuote error:", err);
+      setQuote(null);
+      setBestPath(null);
       setApprovalNeeded(false);
-    } else {
-      const decimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
-      const contract = new ethers.Contract(fromToken, ERC20_ABI, provider);
-      const allowance = await contract.allowance(address, ROUTER_ADDRESS);
-      const inputAmount = ethers.utils.parseUnits(amountIn, decimals);
-      setApprovalNeeded(allowance.lt(inputAmount));
+    } finally {
+      setLoading(false);
     }
-
-  } catch (err) {
-    console.error("❌ getQuote error:", err);
-    setQuote(null);
-    setBestPath(null);
-    setApprovalNeeded(false);
-  } finally {
-    setLoading(false);
-  }
-}, [fromToken, toToken, amountIn, isConnected, address]);
+  }, [fromToken, toToken, amountIn, isConnected, address]);
 
   useEffect(() => {
     getQuote();
@@ -143,7 +144,6 @@ export function useSwapLogic() {
     setBestPath(null);
   };
 
-  
   const markApprovalAsDone = () => {
     setApprovalNeeded(false);
   };
@@ -155,7 +155,7 @@ export function useSwapLogic() {
       !bestPath || bestPath.output <= 0 ||
       parsedQuote <= 0 || !address
     ) {
-      alert("❌ Swap aborted. Missing quote or connection.");
+      toast("❌ Swap aborted. Missing quote or connection.", "error", 6000);
       return;
     }
 
@@ -194,10 +194,10 @@ export function useSwapLogic() {
       });
 
       console.log("📦 Swap tx hash:", hash);
-      alert("✅ Swap submitted. Check wallet for confirmation.");
+      toast("✅ Swap submitted. Check wallet for confirmation.", "success", 3000);
     } catch (err) {
       console.error("❌ Swap error:", err);
-      alert("❌ Swap failed: " + (err as Error).message);
+      toast("❌ Swap failed", "error", 6000);
     } finally {
       setAmountIn("");
       setQuote(null);
@@ -205,13 +205,13 @@ export function useSwapLogic() {
       setApprovalNeeded(false);
       setLoading(false);
     }
-  }, [isConnected, walletClient, amountIn, quote, bestPath, fromToken, toToken, slippage, address]);
+  }, [isConnected, walletClient, amountIn, quote, bestPath, fromToken, toToken, slippage, address, toast]);
 
   return {
     fromToken, toToken, amountIn, quote,
     loading, approvalNeeded, balances,
     isConnected, address, walletClient, slippage,
     setSlippage, setFromToken, setToToken, setAmountIn,
-    doSwap, swapTokens, getQuote, markApprovalAsDone 
+    doSwap, swapTokens, getQuote, markApprovalAsDone
   };
 }
