@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect } from "react";
 
 type ToastType = "success" | "error" | "info";
 
@@ -10,14 +10,20 @@ interface ToastData {
   duration: number;
 }
 
-const ToastContext = createContext<(msg: string, type?: ToastType, duration?: number) => void>(() => {});
+type ToastContextType = (msg: string, type?: ToastType, duration?: number) => void;
 
-export function ToastProvider({ children }: { children: React.ReactNode }) {
+const ToastContext = createContext<ToastContextType>(() => {});
+
+interface ToastProviderProps {
+  children: React.ReactNode;
+}
+
+export function ToastProvider({ children }: ToastProviderProps) {
   const [toast, setToast] = useState<ToastData | null>(null);
 
-  const showToast = (
-    message: string,
-    type: ToastType = "info",
+  const showToast: ToastContextType = (
+    message,
+    type = "info",
     duration = type === "error" ? 6000 : 3500
   ) => {
     setToast({ message, type, duration });
@@ -25,9 +31,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (toast) {
-      const timer = setTimeout(() => {
-        setToast(null);
-      }, toast.duration);
+      const timer = setTimeout(() => setToast(null), toast.duration);
       return () => clearTimeout(timer);
     }
   }, [toast]);
