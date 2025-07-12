@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useAccount, useWalletClient, useSwitchNetwork } from "wagmi";
+import { useAccount, useWalletClient, useChainId, useSwitchChain } from "wagmi";
 import { monadTestnet } from "wagmi/chains";
 import { PoolFetcher, PathFinder, TokenSwap } from "@kuru-labs/kuru-sdk";
 import type { RouteOutput } from "@kuru-labs/kuru-sdk";
@@ -17,8 +17,9 @@ import { useToast } from "@/hooks/useToast";
 
 export function useSwapLogic() {
   const { isConnected, address } = useAccount();
-  const { data: walletClient, chain } = useWalletClient();
-  const { switchNetwork } = useSwitchNetwork();
+  const { data: walletClient } = useWalletClient();
+  const chainId = useChainId();
+  const { switchChain } = useSwitchChain();
   const toast = useToast();
 
   const [fromToken, setFromToken] = useState(TOKENS.MON);
@@ -158,9 +159,9 @@ export function useSwapLogic() {
       return;
     }
 
-    if (chain?.id !== monadTestnet.id) {
+    if (chainId !== monadTestnet.id) {
       toast("🔄 Switching to Monad testnet...", "info", 2000);
-      switchNetwork?.(monadTestnet.id);
+      switchChain({ chainId: monadTestnet.id });
       return;
     }
 
@@ -199,12 +200,12 @@ export function useSwapLogic() {
       });
 
       if (!hash || typeof hash !== "string" || !/^0x([A-Fa-f0-9]{64})$/.test(hash)) {
-        throw new Error("Transaction rejected or hash invalid");
+        throw new Error("Swap rejected or invalid hash");
       }
 
       toast("✅ Swap submitted. Check wallet for confirmation.", "success", 3000);
     } catch {
-      toast("❌ Swap failed or rejected by wallet", "error", 6000);
+      toast("❌ Swap failed or was rejected", "error", 6000);
     } finally {
       setAmountIn("");
       setQuote(null);
@@ -214,7 +215,7 @@ export function useSwapLogic() {
     }
   }, [
     isConnected, walletClient, amountIn, quote, bestPath,
-    fromToken, toToken, slippage, address, toast, chain, switchNetwork
+    fromToken, toToken, slippage, address, toast, chainId, switchChain
   ]);
 
   return {
