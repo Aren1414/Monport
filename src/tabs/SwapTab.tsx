@@ -169,8 +169,7 @@ export default function SwapTab() {
             return;
           }
 
-          await doSwap();
-          toast("✅ Swap submitted", "success", 3000);
+          await doSwap(); 
         }}
         disabled={loading || !isConnected || !isAmountValid || !quote}
         style={{
