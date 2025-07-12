@@ -5,13 +5,13 @@ import { useAccount, useChainId, useSwitchChain, useWalletClient } from 'wagmi'
 import { writeContract } from 'viem/actions'
 import { parseEther } from 'viem'
 import { sdk } from '@farcaster/miniapp-sdk'
+import { useToast } from '@/hooks/useToast'
 import welcomeAbi from '~/abis/WelcomeNFT.json'
 
 const WELCOME_CONTRACT_ADDRESS = '0x40649af9dEE8bDB94Dc21BA2175AE8f5181f14AE'
 const NFT_PRICE = 0.3
 const VIDEO_URL = 'https://welcome-mon.aren-silver12.workers.dev/'
 const MINI_APP_URL = 'https://monport-three.vercel.app/?tab=welcome'
-
 const MONAD_TESTNET_CHAIN_ID = 10143
 
 export default function WelcomeTab() {
@@ -19,6 +19,7 @@ export default function WelcomeTab() {
   const chainId = useChainId()
   const { switchChain } = useSwitchChain()
   const { data: walletClient } = useWalletClient()
+  const toast = useToast()
 
   const [selectedAmount, setSelectedAmount] = useState(1)
   const [isMinting, setIsMinting] = useState(false)
@@ -36,13 +37,12 @@ export default function WelcomeTab() {
       await sdk.actions.ready()
       await sdk.actions.addMiniApp()
     }
-
     init()
   }, [])
 
   const mintNFT = async () => {
     if (!walletClient || !address || chainId !== MONAD_TESTNET_CHAIN_ID) {
-      alert('❌ Please connect your wallet and switch to the Monad Testnet.')
+      toast('❌ Please connect your wallet and switch to Monad Testnet.', 'error', 6000)
       return
     }
 
@@ -58,10 +58,10 @@ export default function WelcomeTab() {
         value: totalPrice,
       })
 
-      alert(`🎉 Success! You minted ${selectedAmount} NFT(s) for ${totalPriceMon} MON.`)
+      toast(`🎉 Success! You minted ${selectedAmount} NFT(s) for ${totalPriceMon} MON.`, 'success', 5000)
     } catch (error) {
-      console.error('Mint error:', error)
-      alert('❌ Mint failed. Please check your wallet balance or network status.')
+      console.error('❌ Mint error:', error)
+      toast('❌ Mint failed. Check balance or wallet status.', 'error', 6000)
     } finally {
       setIsMinting(false)
     }
@@ -69,9 +69,7 @@ export default function WelcomeTab() {
 
   const shareToWarpcast = () => {
     const message = `🚀 Just minted a Welcome NFT on Monad!\n\nJoin the Mini App and mint yours now 👇\n\nCreated by @overo.eth`
-    const shareUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(
-      message
-    )}&embeds[]=${encodeURIComponent(MINI_APP_URL)}`
+    const shareUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(message)}&embeds[]=${encodeURIComponent(MINI_APP_URL)}`
     window.open(shareUrl, '_blank')
   }
 
@@ -88,22 +86,12 @@ export default function WelcomeTab() {
       <h2>Welcome to MonPort</h2>
       <p>🎉 Mint your commemorative NFT celebrating Monad & Farcaster</p>
 
-      <video
-        width="100%"
-        controls
-        autoPlay
-        loop
-        muted
-        style={{ borderRadius: 12 }}
-      >
+      <video width="100%" controls autoPlay loop muted style={{ borderRadius: 12 }}>
         <source src={VIDEO_URL} type="video/mp4" />
         Your browser does not support video playback.
       </video>
 
-      <div
-        className="mint-options"
-        style={{ margin: '16px 0', display: 'flex', gap: 8 }}
-      >
+      <div className="mint-options" style={{ margin: '16px 0', display: 'flex', gap: 8 }}>
         {[1, 5, 10].map((amt) => (
           <button
             key={amt}
@@ -121,15 +109,7 @@ export default function WelcomeTab() {
         ))}
       </div>
 
-      <div
-        style={{
-          marginBottom: 16,
-          fontSize: 16,
-          fontWeight: 'bold',
-          textAlign: 'center',
-          color: '#333',
-        }}
-      >
+      <div style={{ marginBottom: 16, fontSize: 16, fontWeight: 'bold', textAlign: 'center', color: '#333' }}>
         Total Price: {totalPriceMon} MON
       </div>
 
