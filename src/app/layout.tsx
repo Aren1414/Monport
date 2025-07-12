@@ -3,6 +3,7 @@ import Script from "next/script";
 import { getSession } from "~/auth";
 import "~/app/globals.css";
 import { Providers } from "~/app/providers";
+import { ToastProvider } from "@/hooks/useToast";
 import {
   APP_NAME,
   APP_DESCRIPTION,
@@ -53,10 +54,7 @@ export default async function RootLayout({
         <meta name="description" content={APP_DESCRIPTION} />
         <meta name="theme-color" content="#2266ee" />
         <title>{APP_NAME}</title>
-
-        {/* ✅ Mini App Frame v2 metadata */}
         <meta property="fc:frame" content={frameMeta} />
-
         <Script
           src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"
           strategy="beforeInteractive"
@@ -64,7 +62,9 @@ export default async function RootLayout({
       </head>
       <body>
         <noscript>You need to enable JavaScript to run this app.</noscript>
-        <Providers session={session}>{children}</Providers>
+        <Providers session={session}>
+          <ToastProvider>{children}</ToastProvider>
+        </Providers>
       </body>
     </html>
   );
