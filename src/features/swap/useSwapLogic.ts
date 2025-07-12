@@ -68,57 +68,68 @@ export function useSwapLogic() {
   }, [fetchBalances]);
 
   const getQuote = useCallback(async () => {
-    const parsedAmount = parseFloat(amountIn);
-    if (
-      !fromToken || !toToken ||
-      isNaN(parsedAmount) || parsedAmount <= 0 ||
-      !isConnected || !address
-    ) {
+  const parsedAmount = parseFloat(amountIn);
+  if (
+    !fromToken || !toToken ||
+    isNaN(parsedAmount) || parsedAmount <= 0 ||
+    !isConnected || !address
+  ) {
+    setQuote(null);
+    setBestPath(null);
+    setApprovalNeeded(false);
+    return;
+  }
+
+  setLoading(true);
+  try {
+    const provider = new ethers.providers.JsonRpcProvider(monadTestnet.rpcUrls.default.http[0]);
+    const poolFetcher = new PoolFetcher("https://api.testnet.kuru.io");
+    const baseTokens = Object.entries(TOKENS).map(([symbol, addr]) => ({
+      symbol,
+      address: addr
+    }));
+
+    const pools = await poolFetcher.getAllPools(fromToken, toToken, baseTokens);
+    const path = await PathFinder.findBestPath(
+      provider,
+      fromToken,
+      toToken,
+      parsedAmount,
+      "amountIn",
+      poolFetcher,
+      pools
+    );
+
+    if (!path || path.output <= 0) {
       setQuote(null);
       setBestPath(null);
       setApprovalNeeded(false);
       return;
     }
 
-    setLoading(true);
-    try {
-      const provider = new ethers.providers.JsonRpcProvider(monadTestnet.rpcUrls.default.http[0]);
-      const poolFetcher = new PoolFetcher("https://api.testnet.kuru.io");
-      const baseTokens = Object.entries(TOKENS).map(([symbol, addr]) => ({
-        symbol,
-        address: addr
-      }));
+    setQuote(path.output.toString());
+    setBestPath(path);
 
-      const pools = await poolFetcher.getAllPools(fromToken, toToken, baseTokens);
-      const path = await PathFinder.findBestPath(
-        provider,
-        fromToken,
-        toToken,
-        parsedAmount,
-        "amountIn",
-        poolFetcher,
-        pools
-      );
-
-      if (!path || path.output <= 0) {
-        setQuote(null);
-        setBestPath(null);
-        setApprovalNeeded(false);
-        return;
-      }
-
-      setQuote(path.output.toString());
-      setBestPath(path);
-      setApprovalNeeded(fromToken !== NATIVE_TOKEN_ADDRESS);
-    } catch (err) {
-      console.error("❌ getQuote error:", err);
-      setQuote(null);
-      setBestPath(null);
+    
+    if (fromToken === NATIVE_TOKEN_ADDRESS) {
       setApprovalNeeded(false);
-    } finally {
-      setLoading(false);
+    } else {
+      const decimals = TOKEN_METADATA[fromToken]?.decimals ?? 18;
+      const contract = new ethers.Contract(fromToken, ERC20_ABI, provider);
+      const allowance = await contract.allowance(address, ROUTER_ADDRESS);
+      const inputAmount = ethers.utils.parseUnits(amountIn, decimals);
+      setApprovalNeeded(allowance.lt(inputAmount));
     }
-  }, [fromToken, toToken, amountIn, isConnected, address]);
+
+  } catch (err) {
+    console.error("❌ getQuote error:", err);
+    setQuote(null);
+    setBestPath(null);
+    setApprovalNeeded(false);
+  } finally {
+    setLoading(false);
+  }
+}, [fromToken, toToken, amountIn, isConnected, address]);
 
   useEffect(() => {
     getQuote();
