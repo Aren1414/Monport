@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 
 type ToastType = "success" | "error" | "info";
 
@@ -15,10 +15,10 @@ type ToastContextType = (message: string, type?: ToastType, duration?: number) =
 const ToastContext = createContext<ToastContextType>(() => {});
 
 interface ToastProviderProps {
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
-export const ToastProvider: React.FC<ToastProviderProps> = ({ children }) => {
+export function ToastProvider(props: ToastProviderProps) {
   const [toast, setToast] = useState<ToastData | null>(null);
 
   const showToast: ToastContextType = (
@@ -31,9 +31,7 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({ children }) => {
 
   useEffect(() => {
     if (toast) {
-      const timer = setTimeout(() => {
-        setToast(null);
-      }, toast.duration);
+      const timer = setTimeout(() => setToast(null), toast.duration);
       return () => clearTimeout(timer);
     }
   }, [toast]);
@@ -46,8 +44,8 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({ children }) => {
 
   return (
     <ToastContext.Provider value={showToast}>
-      {children}
-      {toast ? (
+      {props.children}
+      {toast && (
         <div
           style={{
             position: "fixed",
@@ -67,9 +65,11 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({ children }) => {
         >
           {toast.message}
         </div>
-      ) : null}
+      )}
     </ToastContext.Provider>
   );
-};
+}
 
-export const useToast = () => useContext(ToastContext);
+export function useToast(): ToastContextType {
+  return useContext(ToastContext);
+}
